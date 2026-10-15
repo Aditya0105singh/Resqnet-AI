@@ -37,14 +37,14 @@ const FEATURES = [
   { to: "/command", icon: <Map className="size-5" />, title: "Live console", body: "The whole city on one map: requests, units, shelters, floods and closed roads, updating every minute." },
   { to: "/sos", icon: <Languages className="size-5" />, title: "Citizen SOS", body: "Send a test message in three languages and see exactly what the system understood." },
   { to: "/crew", icon: <Smartphone className="size-5" />, title: "Crew app", body: "The phone screen a boat crew uses. It works without signal and syncs safely later." },
-  { to: "/chaos", icon: <MessageSquareWarning className="size-5" />, title: "Failure lab", body: "Break a bridge, a boat, a shelter and the network at once, then watch everything re-plan." },
+  { to: "/judge", icon: <MessageSquareWarning className="size-5" />, title: "Kerala 2018 story", body: "Five chapters of the August 2018 flood in Aluva, with the real river levels, and three failures at the peak." },
   { to: "/decision-lab", icon: <FlaskConical className="size-5" />, title: "What-if lab", body: "Rewind to any minute, change one decision, and compare the two futures side by side." },
   { to: "/arena", icon: <ScrollText className="size-5" />, title: "Benchmarks", body: "Our approach against a central control room, repeated over many runs with confidence ranges." },
 ];
 
 export default function Home() {
   const h = useHeadline();
-  const svc = h ? `+${Math.round(h.service.mean * 100)}%` : "+10%";
+  const svc = h ? `+${Math.round(h.service.mean * 100)} pts` : "+10 pts";
   const mins = h ? `${Math.round(Math.abs(h.time.mean))} min` : "19 min";
   return (
     <div>
@@ -53,7 +53,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.05fr_1fr]">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-white px-3 py-1 text-[12.5px] font-medium text-brand">
-              <span className="size-1.5 rounded-full bg-brand" /> Flood rescue coordination · tested on Aluva, Kerala
+              <span className="size-1.5 rounded-full bg-brand" /> Flood rescue coordination · real map of Aluva, Kerala
             </div>
             <h1 className="mt-5 font-display text-[38px] leading-[1.05] font-semibold tracking-[-0.03em] text-ink sm:text-[54px]">
               When the rescue plan breaks, <span className="text-brand">rescue keeps going.</span>
@@ -119,7 +119,7 @@ export default function Home() {
       <section className="mx-auto max-w-[1200px] px-5 py-16">
         <SectionHead eyebrow="Measured, not claimed" title="What happens when the control room goes down" sub="Same floods, same incidents, same failures: our multi-agent approach against a central optimiser, repeated over 10 paired runs with 95% confidence ranges (on the synthetic test city)." />
         <div className="mt-10 grid gap-4 md:grid-cols-3">
-          <BigStat value={svc} label="more people served" note="when the central control room fails" />
+          <BigStat value={svc} label="higher share of people served" note="when the central control room fails (service rate, in percentage points)" />
           <BigStat value={mins} label="faster on average" note="to reach people waiting for rescue" />
           <BigStat value="0" label="safety rules broken" note="in every scenario and strategy tested" tone="ok" />
         </div>
@@ -154,7 +154,7 @@ export default function Home() {
       <section className="mx-auto grid max-w-[1200px] gap-6 px-5 py-16 md:grid-cols-3">
         <Trust icon={<ShieldCheck className="size-5" />} title="Safety you can check" body="Seven safety rules are checked on every action. Hundreds of randomised stress tests have never broken one." />
         <Trust icon={<Bot className="size-5" />} title="AI that can't act alone" body="AI reads messages and explains decisions, citing the exact records it used. Only a human can approve an action." />
-        <Trust icon={<Users className="size-5" />} title="Honest about limits" body="Roads, bridges and places in Aluva are real OpenStreetMap data. The flood and incidents are simulated, and every page says so." />
+        <Trust icon={<Users className="size-5" />} title="Honest about limits" body="Roads, bridges and terrain around Aluva are real (OpenStreetMap, Copernicus), and the 2018 scenario replays the real river discharge. Flood depths, incidents and SOS messages are simulated, and every page says so." />
       </section>
 
       {/* CTA */}

@@ -304,10 +304,10 @@ function KeyFindings({ ev }: { ev: any }) {
         runs += m.route_violations?.n ?? 0;
         worst = Math.max(worst, m.route_violations?.max ?? 0);
       }
-  const pct = (x: number) => `${x > 0 ? "+" : ""}${Math.round(x * 100)}%`;
+  const pts = (x: number) => `${x > 0 ? "+" : ""}${Math.round(x * 100)} pts`; // service rate is a share, so its difference is in percentage points
   const cards: { tone: "good" | "honest"; big: string; title: string; body: string }[] = [];
   if (out?.service_rate && out?.mean_time_to_service)
-    cards.push({ tone: "good", big: pct(out.service_rate.mean), title: "more people served when the control room fails", body: `and ${Math.abs(out.mean_time_to_service.mean).toFixed(0)} min faster on average. The agents keep negotiating; the central optimiser has nobody to give orders.` });
+    cards.push({ tone: "good", big: pts(out.service_rate.mean), title: "higher share of people served when the control room fails", body: `and ${Math.abs(out.mean_time_to_service.mean).toFixed(0)} min faster on average. The agents keep negotiating; the central optimiser has nobody to give orders.` });
   if (healthy?.mean_time_to_service)
     cards.push({ tone: "honest", big: `${healthy.mean_time_to_service.mean > 0 ? "+" : ""}${healthy.mean_time_to_service.mean.toFixed(1)} min`, title: "slower than the central optimiser on a healthy network", body: "When everything works, one optimiser with perfect information is as good or slightly faster. We report it rather than hide it." });
   if (split?.people_rescued)

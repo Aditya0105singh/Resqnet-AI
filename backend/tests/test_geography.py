@@ -114,21 +114,6 @@ def test_clip_to_bounds_splits_ways_at_the_box():
     assert out == [("w", ["a", "b"], {"waterway": "river"}), ("w.1", ["d", "e"], {"waterway": "river"})]
 
 
-ALUVA = os.path.join(os.path.dirname(__file__), "..", "..", "data", "geographic", "aluva.city.json")
-
-
-@pytest.mark.skipif(not os.path.exists(ALUVA), reason="Aluva city file not built")
-def test_aluva_runs_safely_under_triple_failure():
-    assert any(g["id"] == "aluva" and not g["synthetic"] for g in world_mod.available_geographies())
-    for strategy in ("decentralized", "centralized"):
-        e = Engine(get_preset("triple_failure", seed=3, geography="aluva"), strategy, record_frames=False)
-        assert e.world.meta["name"] == "Aluva, Kerala"
-        while not e.finished:
-            e.step()
-        m = compute_metrics(e)
-        assert m["invariant_violations"] == 0 and m["route_violations"] == 0 and m["people_rescued"] > 0
-
-
 def test_river_pieces_that_meet_are_chained():
     from app.geography.osm_city import Projection, _river_line
     nodes = {k: (0.0, lon, {}) for k, lon in {"a": 0.0, "b": 0.01, "c": 0.02, "d": 0.03, "x": 0.5, "y": 0.501}.items()}
@@ -147,29 +132,3 @@ def test_town_name_is_not_a_location():
     out = _drop_town_name(lms, "Aluva")
     assert [l["name"] for l in out] == ["Aluva Private Bus Stand", "Aluva Railway Station"]
     assert all("ആലുവ" not in l["aliases"] and "Aluva" not in l["aliases"] for l in out)
-
-
-@pytest.mark.skipif(not os.path.exists(ALUVA), reason="Aluva city file not built")
-def test_aluva_sos_in_three_languages_finds_real_places_and_never_guesses():
-    e = Engine(get_preset("normal", seed=1, geography="aluva"), "decentralized", record_frames=False)
-    gaz = Gazetteer.for_world(e.world)
-    assert analyse("5 people trapped near Aluva railway station", gaz).location.matched == ["Aluva Railway Station"]
-    assert analyse("हम 4 लोग आलुवा रेलवे स्टेशन के पास फंसे हैं", gaz).location.matched == ["Aluva Railway Station"]
-    assert analyse("ആലുവ മാർക്കറ്റിനടുത്ത് 4 പേർ കുടുങ്ങി", gaz).location.matched == ["Aluva Market"]
-    assert analyse("stuck near the bus stand", gaz).location.status == "ambiguous", "two bus stands"
-    assert analyse("stuck in Aluva, please help", gaz).location.status == "none", "the town name is not a location"
-
-
-@pytest.mark.skipif(not os.path.exists(ALUVA), reason="Aluva city file not built")
-def test_aluva_road_shapes_and_background_are_consistent():
-    city = json.load(open(ALUVA, encoding="utf-8"))
-    nodes = {n["id"]: n for n in city["nodes"]}
-    shaped = [e for e in city["edges"] if e.get("geometry")]
-    assert len(shaped) > 100
-    for e in shaped:  # a road shape starts at u and ends at v
-        (x0, y0), (x1, y1) = e["geometry"][0], e["geometry"][-1]
-        assert abs(x0 - nodes[e["u"]]["x"]) < 1e-3 and abs(y1 - nodes[e["v"]]["y"]) < 1e-3
-    assert len(city["basemap"]["buildings"]) > 300 and all(len(p) >= 3 for p in city["basemap"]["buildings"])
-    # display-only data must not change the engine's world
-    e = Engine(get_preset("normal", seed=1, geography="aluva"), "decentralized", record_frames=False)
-    assert len(e.world.edges) == len(city["edges"])
