@@ -108,7 +108,9 @@ export const useSim = create<SimState>((set, get) => ({
         /* stale id → create fresh */
       }
     }
-    await get().createSim("normal", "decentralized");
+    // open on the real Aluva map when it is installed; Riverbend (synthetic) otherwise
+    const geos = await api.get<{ geographies: { id: string }[] }>("/api/geographies").catch(() => ({ geographies: [] }));
+    await get().createSim("normal", "decentralized", geos.geographies.some((g) => g.id === "aluva") ? { geography: "aluva" } : {});
   },
   createSim: async (scenario, strategy, overrides = {}) => {
     set((s) => ({ busy: { ...s.busy, create: true } }));

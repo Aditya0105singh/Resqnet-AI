@@ -117,7 +117,7 @@ export default function Home() {
 
       {/* results */}
       <section className="mx-auto max-w-[1200px] px-5 py-16">
-        <SectionHead eyebrow="Measured, not claimed" title="What happens when the control room goes down" sub="Same floods, same incidents, same failures: our multi-agent approach against a central optimiser, repeated over 10 paired runs with 95% confidence ranges." />
+        <SectionHead eyebrow="Measured, not claimed" title="What happens when the control room goes down" sub="Same floods, same incidents, same failures: our multi-agent approach against a central optimiser, repeated over 10 paired runs with 95% confidence ranges (on the synthetic test city)." />
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           <BigStat value={svc} label="more people served" note="when the central control room fails" />
           <BigStat value={mins} label="faster on average" note="to reach people waiting for rescue" />

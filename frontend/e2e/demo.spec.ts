@@ -11,9 +11,11 @@ test("guided demo runs end to end on the real engine", async ({ page }) => {
   // what each step actually returned
   await expect(page.getByText(/Understood: 5 people, needs elderly/)).toBeVisible();
   await expect(page.getByText(/not recognised, so nothing is guessed/)).toBeVisible();
-  await expect(page.getByText(/citizen SOS RPT-\d+ at N43/)).toBeVisible();
+  await expect(page.getByText("Placed at Manapuram Mahadeva Temple, by the Periyar.")).toBeVisible();
+  await expect(page.getByText(/citizen SOS RPT-\d+ at N001/)).toBeVisible();
   await expect(page.getByText(/committed, with [BG]\d+ chosen from \d+ feasible bid/)).toBeVisible();
-  await expect(page.getByText(/\[TRIPLE_FAILURE\]|\[CLOSE_EDGE\]/).first()).toBeVisible();
+  await expect(page.getByText(/disabled: engine failure/).first()).toBeVisible();
+  await expect(page.getByText(/Three minutes later: I-\d{3} is .*0 safety violations/)).toBeVisible();
   await expect(page.getByText(/0 grounding warning/)).toBeVisible();
   await expect(page.getByText(/Coordinator outage, multi-agent − centralised: service rate \+/)).toBeVisible();
   expect(errors).toEqual([]);
@@ -27,13 +29,13 @@ test("citizen SOS is placed and approved by a dispatcher in the UI", async ({ br
   await citizen.goto("/sos");
   await citizen.getByRole("button", { name: "മലയാളം" }).click();
   await citizen.getByRole("button", { name: "Send SOS" }).click();
-  await expect(citizen.getByText("Riverside Shiva Temple (N44)")).toBeVisible();
+  await expect(citizen.getByText("Aluva Market (N081)")).toBeVisible();
   await expect(citizen.getByText(/A dispatcher is confirming the location/)).toBeVisible();
 
   const dispatcher = await ctx.newPage();
   await dispatcher.goto("/command");
   await dispatcher.getByRole("button", { name: /Approvals ·/ }).click();
-  await expect(dispatcher.getByText("Open citizen SOS at N44")).toBeVisible();
+  await expect(dispatcher.getByText("Open citizen SOS at N081")).toBeVisible();
   await dispatcher.getByRole("button", { name: "Place & approve" }).click();
   await expect(dispatcher.getByText(/approved by dispatcher/).first()).toBeVisible();
 
@@ -46,11 +48,11 @@ test("crew update queued without signal is rejected after the mission is cancell
   await page.goto("/command");
   await page.getByRole("button", { name: "New run" }).waitFor();
   const sim = await page.evaluate(() => localStorage.getItem("resqnet.sim"));
-  await page.goto("/crew/B1");
+  await page.goto("/crew/G1");
   await page.getByRole("button", { name: "Take crew control" }).click();
   let mission: string | undefined;
   for (let i = 0; i < 30 && !mission; i++) {
-    const v = await (await request.get(`/api/simulations/${sim}/crew/B1`)).json();
+    const v = await (await request.get(`/api/simulations/${sim}/crew/G1`)).json();
     mission = v.mission?.assignment;
     if (!mission) await request.post(`/api/simulations/${sim}/step`, { data: { ticks: 1 } });
   }
