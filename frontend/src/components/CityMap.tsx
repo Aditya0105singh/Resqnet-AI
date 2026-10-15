@@ -34,7 +34,23 @@ interface Props {
 const ALL: Layers = { roads: true, water: true, flood: true, closures: true, routes: true, incidents: true, units: true, shelters: true, uncertain: true, labels: false };
 const PAD = 0.7;
 
-export function CityMap({ world, frame, layers: layerProp, selection, onSelect, onEdgeClick, onNodeClick, mode = "select", transitionMs = 900, compact, className, highlight = [] }: Props) {
+/** Map symbols are sized for Riverbend's ~10 km extent. Other cities are drawn in display
+ * units (km ÷ extent/10) so markers keep their size; distances in the engine stay in km. */
+function displayScale(world: StaticWorld): number {
+  if (world.name.startsWith("Riverbend")) return 1;
+  const xs = world.nodes.map((n) => n.x), ys = world.nodes.map((n) => n.y);
+  const extent = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+  return extent > 0 ? extent / 10 : 1;
+}
+
+export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, selection, onSelect, onEdgeClick, onNodeClick, mode = "select", transitionMs = 900, compact, className, highlight = [] }: Props) {
+  const u = useMemo(() => displayScale(rawWorld), [rawWorld]);
+  const world = useMemo(() => (u === 1 ? rawWorld : { ...rawWorld, nodes: rawWorld.nodes.map((n) => ({ ...n, x: n.x / u, y: n.y / u })) }), [rawWorld, u]);
+  const frame = useMemo(() => {
+    if (u === 1) return rawFrame;
+    const sc = <T extends { x: number; y: number }>(xs: T[]) => xs.map((e) => ({ ...e, x: e.x / u, y: e.y / u }));
+    return { ...rawFrame, resources: sc(rawFrame.resources), incidents: sc(rawFrame.incidents), shelters: sc(rawFrame.shelters) };
+  }, [rawFrame, u]);
   const layers = { ...ALL, ...layerProp };
   const nodes = useMemo(() => Object.fromEntries(world.nodes.map((n) => [n.id, n])), [world]);
   const bounds = useMemo(() => {
@@ -42,7 +58,12 @@ export function CityMap({ world, frame, layers: layerProp, selection, onSelect, 
     const ys = world.nodes.map((n) => n.y);
     return { x0: Math.min(...xs) - PAD, y0: Math.min(...ys) - PAD, w: Math.max(...xs) - Math.min(...xs) + 2 * PAD, h: Math.max(...ys) - Math.min(...ys) + 2 * PAD };
   }, [world]);
-  const river = useMemo(() => world.nodes.filter((n) => n.kind === "river").sort((a, b) => a.x - b.x), [world]);
+  // river nodes in channel order (R0, R1, …): a real river can meander back on itself
+  const river = useMemo(() => world.nodes.filter((n) => n.kind === "river").sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)) || a.x - b.x), [world]);
+  const nbColor = useMemo(() => {
+    const extra = ["#0891b2", "#7c3aed", "#d97706", "#dc2626", "#15803d", "#db2777", "#0d9488", "#4f46e5"];
+    return Object.fromEntries(world.neighbourhoods.map((z, i) => [z.id, NB_COLOR[z.id] ?? extra[i % extra.length]]));
+  }, [world]);
   const nbCentroids = useMemo(() => {
     const acc: Record<string, { x: number; y: number; n: number }> = {};
     for (const n of world.nodes) {
@@ -102,7 +123,7 @@ export function CityMap({ world, frame, layers: layerProp, selection, onSelect, 
         onPointerUp={onUp}
         onPointerLeave={onUp}
         role="img"
-        aria-label="Synthetic map of Riverbend"
+        aria-label={`Map of ${world.name}`}
       >
         <defs>
           <filter id="blur-flood" x="-50%" y="-50%" width="200%" height="200%">
@@ -118,7 +139,7 @@ export function CityMap({ world, frame, layers: layerProp, selection, onSelect, 
           {world.nodes
             .filter((n) => n.kind !== "river")
             .map((n) => (
-              <circle key={"d" + n.id} cx={n.x} cy={n.y} r={0.78} fill={NB_COLOR[n.neighbourhood]} opacity={0.035} />
+              <circle key={"d" + n.id} cx={n.x} cy={n.y} r={0.78} fill={nbColor[n.neighbourhood]} opacity={0.035} />
             ))}
           {/* river */}
           {layers.water && (
@@ -147,7 +168,7 @@ export function CityMap({ world, frame, layers: layerProp, selection, onSelect, 
           {/* district labels */}
           {!compact &&
             nbCentroids.map((c) => (
-              <text key={"nl" + c.id} x={c.x} y={c.y + (c.y < 3 ? -0.95 : 1.05)} textAnchor="middle" fontSize={0.2} fontFamily="JetBrains Mono" letterSpacing={0.02} fill={NB_COLOR[c.id]} opacity={0.75}>
+              <text key={"nl" + c.id} x={c.x} y={c.y + (c.y < 3 ? -0.95 : 1.05)} textAnchor="middle" fontSize={0.2} fontFamily="JetBrains Mono" letterSpacing={0.02} fill={nbColor[c.id]} opacity={0.75}>
                 {c.name.toUpperCase()}
               </text>
             ))}
@@ -375,6 +396,7 @@ export function CityMap({ world, frame, layers: layerProp, selection, onSelect, 
             })}
         </g>
       </svg>
+      {world.attribution && <div className="no-print pointer-events-none absolute bottom-1 left-2 text-[10px] text-mute">{world.attribution}</div>}
       {!compact && (
         <div className="no-print absolute right-3 bottom-3 flex flex-col overflow-hidden rounded-xl border border-line-2 bg-white/90 shadow-sm backdrop-blur">
           <button aria-label="Zoom in" className="p-1.5 hover:bg-wash" onClick={() => setView((v) => ({ ...v, k: Math.min(4, v.k * 1.25) }))}>

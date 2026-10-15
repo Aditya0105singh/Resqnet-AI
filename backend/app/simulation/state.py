@@ -89,6 +89,9 @@ class GraphNode:
     kind: str  # land | river | shelter | station
     label: str = ""
     depth: float = 0.0  # current synthetic flood depth (m)
+    lat: Optional[float] = None  # real coordinates when the city came from OpenStreetMap
+    lon: Optional[float] = None
+    provenance: str = "synthetic"
 
 
 @dataclass
@@ -317,6 +320,8 @@ class WorldState:
     # network partitions: [{id, members: [agent ids], start, until}] — members can only
     # talk to each other; everyone else (incident agents, other units, shelters) is cut off
     partitions: list[dict[str, Any]] = field(default_factory=list)
+    # where the geography came from: name, synthetic flag, attribution, assumptions, landmarks
+    meta: dict[str, Any] = field(default_factory=dict)
 
     def partition_of(self, agent_id: str) -> Optional[str]:
         for p in self.partitions:

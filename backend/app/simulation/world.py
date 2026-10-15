@@ -6,8 +6,11 @@ changes incidents, reports and their noise. Nothing here is real-world data.
 from __future__ import annotations
 
 import dataclasses
+import json
 import math
+import os
 import random
+import re
 
 from .scenarios import ScenarioConfig
 from .state import (
@@ -135,7 +138,53 @@ def nearest_land_nbhd(world: WorldState, node_id: str) -> str:
     return best.neighbourhood
 
 
+GEO_DIR = os.environ.get("RESQNET_GEO_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "geographic"))
+RIVERBEND_META = {
+    "name": "Riverbend (synthetic)",
+    "synthetic": True,
+    "disclaimer": "Synthetic city for research and education. Not real geography or live flood data.",
+    "attribution": "",
+}
+
+
+def available_geographies() -> list[dict]:
+    out = [{"id": "riverbend", "name": RIVERBEND_META["name"], "synthetic": True}]
+    if os.path.isdir(GEO_DIR):
+        for f in sorted(os.listdir(GEO_DIR)):
+            if f.endswith(".city.json"):
+                try:
+                    c = load_city_file(f[: -len(".city.json")])
+                    out.append({"id": f[: -len(".city.json")], "name": c["name"], "synthetic": c.get("synthetic", False), "attribution": c["source"].get("attribution", "")})
+                except (OSError, ValueError, KeyError):
+                    continue
+    return out
+
+
+def load_city_file(stem: str) -> dict:
+    if not re.fullmatch(r"[a-z0-9_-]{1,64}", stem or ""):
+        raise ValueError(f"bad geography id {stem!r}")
+    path = os.path.join(GEO_DIR, f"{stem}.city.json")
+    with open(path, encoding="utf-8") as f:
+        city = json.load(f)
+    if city.get("format") != "resqnet-city/1":
+        raise ValueError(f"{path} is not a resqnet-city/1 file")
+    return city
+
+
+def _from_city(city: dict) -> tuple[dict[str, GraphNode], dict[str, GraphEdge], dict[str, Neighbourhood]]:
+    nodes = {n["id"]: GraphNode(n["id"], n["x"], n["y"], n["elevation"], n["neighbourhood"], n["kind"], n.get("label", ""), lat=n.get("lat"), lon=n.get("lon"), provenance=n.get("provenance", "")) for n in city["nodes"]}
+    edges = {}
+    for e in city["edges"]:
+        k = e["kind"]
+        edges[e["id"]] = GraphEdge(e["id"], e["u"], e["v"], k, e["length_km"], name=e.get("name", ""), clearance=e.get("clearance", 99.0),
+                                   ground_ok=k in (EdgeKind.ROAD, EdgeKind.BRIDGE), boat_ok=k in (EdgeKind.RIVER, EdgeKind.JETTY))
+    nbs = {z["id"]: Neighbourhood(z["id"], z["name"], z["flood_factor"]) for z in city["neighbourhoods"]}
+    return nodes, edges, nbs
+
+
 def build_world(cfg: ScenarioConfig, strategy: str) -> WorldState:
+    if cfg.geography and cfg.geography != "riverbend":
+        return _build_from_city(cfg, strategy, load_city_file(cfg.geography))
     nodes, edges = build_city()
     resources: dict[str, RescueResource] = {}
     for i, (name, cap, home) in enumerate(BOAT_SPECS[: max(0, min(cfg.boats, len(BOAT_SPECS)))]):
@@ -161,7 +210,41 @@ def build_world(cfg: ScenarioConfig, strategy: str) -> WorldState:
         neighbourhoods={n.id: Neighbourhood(n.id, n.name, n.flood_factor) for n in NEIGHBOURHOODS},
         resources=resources,
         shelters=shelters,
+        meta=dict(RIVERBEND_META),
     )
+
+
+def _build_from_city(cfg: ScenarioConfig, strategy: str, city: dict) -> WorldState:
+    nodes, edges, nbs = _from_city(city)
+    resources: dict[str, RescueResource] = {}
+    boat_homes = [h for h in city.get("boat_homes", []) if h in nodes]
+    ground_homes = [h for h in city.get("ground_homes", []) if h in nodes]
+    if boat_homes:
+        for i, (name, cap, _home) in enumerate(BOAT_SPECS[: max(0, min(cfg.boats, len(BOAT_SPECS)))]):
+            home = boat_homes[i % len(boat_homes)]
+            resources[f"B{i + 1}"] = RescueResource(f"B{i + 1}", name, ResourceKind.BOAT, cap, 16.0, home, home)
+    if ground_homes:
+        for i, (name, cap, _home) in enumerate(GROUND_SPECS[: max(0, min(cfg.ground_units, len(GROUND_SPECS)))]):
+            home = ground_homes[i % len(ground_homes)]
+            resources[f"G{i + 1}"] = RescueResource(f"G{i + 1}", name, ResourceKind.GROUND, cap, 28.0, home, home)
+    shelters: dict[str, Shelter] = {}
+    for i, s in enumerate(city["shelters"]):
+        cap = cfg.shelter_capacity[i] if i < len(cfg.shelter_capacity) else 40
+        occ = cfg.shelter_occupancy[i] if i < len(cfg.shelter_occupancy) else 0
+        shelters[s["id"]] = Shelter(s["id"], s["name"], s["node"], int(cap), min(int(occ), int(cap)))
+    src = city.get("source", {})
+    meta = {
+        "name": city["name"],
+        "synthetic": bool(city.get("synthetic")),
+        "disclaimer": ("Synthetic test geography." if city.get("synthetic") else "Real road and river geometry from OpenStreetMap; incidents, floods, shelters and units are simulated.")
+        + " Elevation, jetties and bridge clearances are scenario-assumed.",
+        "attribution": src.get("attribution", ""),
+        "license": src.get("license", ""),
+        "assumptions": city.get("assumptions", []),
+        "landmarks": city.get("landmarks", []),
+        "geography": cfg.geography,
+    }
+    return WorldState(tick=0, seed=cfg.seed, scenario=cfg.key, strategy=strategy, nodes=nodes, edges=edges, neighbourhoods=nbs, resources=resources, shelters=shelters, meta=meta)
 
 
 def generate_reports(world: WorldState, cfg: ScenarioConfig) -> list[IncidentReport]:
@@ -172,7 +255,7 @@ def generate_reports(world: WorldState, cfg: ScenarioConfig) -> list[IncidentRep
     """
     rng = random.Random(cfg.seed * 7919 + 17)
     land = [n for n in world.nodes.values() if n.kind == "land"]
-    if cfg.key == "bridge_dependency":
+    if cfg.key == "bridge_dependency" and world.meta.get("name") == RIVERBEND_META["name"]:
         land = [n for n in land if int(n.id[1]) >= 3]
     peak = 1.2 + cfg.flood_severity * 2.2
     weights = []

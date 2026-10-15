@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { CircleAlert, CircleCheck, Info, Pause, Play, RotateCcw, SkipForward, TriangleAlert, X, Bot } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "../lib/api";
 import { useSim } from "../store/sim";
 import { clock, STRATEGY_LABEL } from "../lib/format";
 import { Badge, Button, cx, Segmented } from "./ui";
@@ -143,6 +144,11 @@ export function NewRunMenu() {
   const [open, setOpen] = useState(false);
   const [scenario, setScenario] = useState(sim?.scenario ?? "normal");
   const [strategy, setStrategy] = useState<Strategy>(sim?.strategy ?? "decentralized");
+  const [geos, setGeos] = useState<{ id: string; name: string; synthetic: boolean; attribution?: string }[]>([]);
+  const [geography, setGeography] = useState("riverbend");
+  useEffect(() => {
+    if (open && !geos.length) api.get<{ geographies: typeof geos }>("/api/geographies").then((r) => setGeos(r.geographies)).catch(() => {});
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   const SC = [
     ["bridge_dependency", "Across the river"],
     ["coordinator_outage", "Coordinator outage (t=15 to 75)"],
@@ -153,6 +159,9 @@ export function NewRunMenu() {
     ["bridge_closure", "Critical bridge closure"],
     ["resource_shortage", "Resource shortage"],
     ["shelter_overflow", "Shelter overflow"],
+    ["viral_sos", "Forwarded SOS cascade"],
+    ["network_partition", "Network partition (t=20)"],
+    ["lossy_network", "Degraded radio network"],
   ];
   return (
     <div className="relative">
@@ -169,6 +178,19 @@ export function NewRunMenu() {
               </button>
             ))}
           </div>
+          {geos.length > 1 && (
+            <>
+              <div className="label mt-3 mb-1.5">city</div>
+              <select aria-label="City" className="h-8 w-full rounded-lg border border-line-2 bg-white px-2 text-sm" value={geography} onChange={(e) => setGeography(e.target.value)}>
+                {geos.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                    {g.synthetic ? "" : " · OpenStreetMap"}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <div className="label mt-3 mb-1.5">coordination strategy</div>
           <Segmented size="sm" value={strategy} onChange={setStrategy} options={(["decentralized", "message_passing", "centralized", "greedy"] as Strategy[]).map((s) => ({ value: s, label: STRATEGY_LABEL[s] }))} />
           <div className="mt-3 flex justify-end gap-2">
@@ -180,7 +202,7 @@ export function NewRunMenu() {
               variant="solid"
               loading={busy}
               onClick={async () => {
-                await createSim(scenario, strategy).catch(() => {});
+                await createSim(scenario, strategy, geography === "riverbend" ? {} : { geography }).catch(() => {});
                 setOpen(false);
               }}
             >

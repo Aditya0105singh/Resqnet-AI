@@ -72,9 +72,9 @@ def compact_frame(f: dict[str, Any]) -> dict[str, Any]:
 def apply_modifications(eng: Engine, mods: dict[str, Any]) -> list[str]:
     notes: list[str] = []
     for _ in range(int(mods.get("extra_boats") or 0)):
-        notes += eng._apply_event("ADD_RESOURCE", {"kind": "boat", "node": mods.get("boat_node") or "R3"}, "counterfactual").effects
+        notes += eng._apply_event("ADD_RESOURCE", {"kind": "boat", "node": mods.get("boat_node")} if mods.get("boat_node") else {"kind": "boat"}, "counterfactual").effects
     for _ in range(int(mods.get("extra_ground") or 0)):
-        notes += eng._apply_event("ADD_RESOURCE", {"kind": "ground", "node": mods.get("ground_node") or "N14"}, "counterfactual").effects
+        notes += eng._apply_event("ADD_RESOURCE", {"kind": "ground", "node": mods.get("ground_node")} if mods.get("ground_node") else {"kind": "ground"}, "counterfactual").effects
     for eid, state in (mods.get("edges") or {}).items():
         notes += eng._apply_event("OPEN_EDGE" if state == "open" else "CLOSE_EDGE", {"edge_id": eid, "reason": "counterfactual"}, "counterfactual").effects
     for sid, delta in (mods.get("shelter_delta") or {}).items():

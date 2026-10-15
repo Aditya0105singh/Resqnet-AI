@@ -26,6 +26,7 @@ from ..routing.router import believed_closed
 from ..simulation.engine import EVENT_TYPES, Engine, EventError
 from ..simulation.scenarios import POLICIES, PRESETS, STRATEGIES, ScenarioConfig, get_preset
 from ..simulation.serialize import static_world
+from ..simulation.world import available_geographies
 from ..simulation.state import ResourceStatus
 from .report import build_report, report_pdf
 from ..intelligence.extract import analyse, fingerprint
@@ -228,7 +229,7 @@ class AdversarialIn(BaseModel):
 
 ALLOWED_OVERRIDES = {
     "seed", "duration", "flood_severity", "flood_peak_tick", "initial_incidents", "arrival_incidents", "arrival_window", "boats", "ground_units",
-    "shelter_capacity", "shelter_occupancy", "report_noise", "duplicate_rate", "delayed_report_rate", "false_alarm_rate", "contradiction_rate", "forward_rate", "fusion_dedup",
+    "shelter_capacity", "shelter_occupancy", "report_noise", "duplicate_rate", "delayed_report_rate", "false_alarm_rate", "contradiction_rate", "forward_rate", "fusion_dedup", "geography",
     "comm_delay", "msg_latency", "msg_loss", "msg_duplicate", "policy", "weights", "neighbourhood_priority", "schedule", "name",
 }
 
@@ -254,6 +255,7 @@ def make_config(scenario: str, seed: Optional[int], overrides: dict[str, Any]) -
         (0 <= cfg.msg_loss <= 0.5 and 0 <= cfg.msg_duplicate <= 0.5, "msg_loss and msg_duplicate must be 0..0.5"),
         (all(0 <= x <= 1 for x in (cfg.report_noise, cfg.duplicate_rate, cfg.delayed_report_rate, cfg.false_alarm_rate, cfg.contradiction_rate, cfg.forward_rate)), "rates must be 0..1"),
         (isinstance(cfg.fusion_dedup, bool), "fusion_dedup must be true or false"),
+        (cfg.geography in {g["id"] for g in available_geographies()}, f"geography must be one of {[g['id'] for g in available_geographies()]}"),
         (cfg.policy in POLICIES, f"policy must be one of {list(POLICIES)}"),
         (set(cfg.weights) >= {"T", "R", "U", "F"} and all(0 <= float(v) <= 1 for v in cfg.weights.values()), "weights need T,R,U,F in 0..1"),
         (len(cfg.shelter_capacity) == 3 and all(0 <= int(c) <= 500 for c in cfg.shelter_capacity), "shelter_capacity needs 3 values 0..500"),
@@ -286,6 +288,13 @@ def evaluation() -> Any:
         raise err(404, "NO_EVALUATION", "no published evaluation yet: run python scripts/run_benchmarks.py")
 
 
+@app.get("/api/geographies")
+def geographies() -> dict[str, Any]:
+    """Cities a run can use: synthetic Riverbend plus any data/geographic/*.city.json
+    produced by scripts/build_geo.py."""
+    return {"geographies": available_geographies()}
+
+
 @app.get("/api/scenarios")
 def scenarios() -> dict[str, Any]:
     return {
@@ -297,7 +306,10 @@ def scenarios() -> dict[str, Any]:
 
 
 @app.get("/api/world")
-def world() -> dict[str, Any]:
+def world(sim: Optional[str] = None) -> dict[str, Any]:
+    """Static geometry: of a given simulation's city, or of Riverbend by default."""
+    if sim:
+        return static_world(get_session(sim).engine.world)
     return static_world(Engine(get_preset("normal"), record_frames=False).world)
 
 

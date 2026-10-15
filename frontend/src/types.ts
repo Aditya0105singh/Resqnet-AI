@@ -21,6 +21,9 @@ export interface WorldEdge {
 export interface StaticWorld {
   name: string;
   disclaimer: string;
+  attribution?: string;
+  synthetic?: boolean;
+  assumptions?: string[];
   nodes: WorldNode[];
   edges: WorldEdge[];
   neighbourhoods: { id: string; name: string; flood_factor: number }[];

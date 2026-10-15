@@ -121,6 +121,7 @@ export const useSim = create<SimState>((set, get) => ({
         /* ignore */
       }
       set({ sim, frame, audit: [], rounds: [], selection: null, decisionId: null, lastSeq: 0 });
+      set({ world: await api.get<StaticWorld>(`/api/world?sim=${sim.id}`) }); // each run may use a different city
     } catch (e) {
       get().toast({ kind: "crit", title: "Could not create simulation", body: (e as Error).message });
       throw e;
@@ -137,6 +138,7 @@ export const useSim = create<SimState>((set, get) => ({
       /* ignore */
     }
     set({ sim, frame, audit: [], rounds: [], selection: null, lastSeq: 0 });
+    set({ world: await api.get<StaticWorld>(`/api/world?sim=${sim.id}`) });
   },
   control: async (action, ticks = 1) => {
     const sim = get().sim;

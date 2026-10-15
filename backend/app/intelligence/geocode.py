@@ -60,7 +60,17 @@ class Gazetteer:
 
     @classmethod
     def for_world(cls, world: Any, path: str = DEFAULT_PATH) -> "Gazetteer":
-        data = _load(os.path.abspath(path))
+        meta = getattr(world, "meta", {}) or {}
+        if meta.get("geography") and meta.get("geography") != "riverbend":
+            # an OSM city: landmarks and their multilingual aliases come from OSM name tags
+            data = {
+                "synthetic": meta.get("synthetic", False),
+                "landmarks": [{"id": l["id"], "name": l["name"], "node": l["node"], "aliases": sorted({l["name"], *l.get("aliases", [])})} for l in meta.get("landmarks", []) if l["node"] in world.nodes],
+                "bridges": [{"edge": e.id, "aliases": [e.name]} for e in world.edges.values() if e.kind == "bridge" and e.name],
+                "areas": [{"neighbourhood": z.id, "aliases": [z.name]} for z in world.neighbourhoods.values()],
+            }
+        else:
+            data = _load(os.path.abspath(path))
         ends = {e.id: sorted([e.u, e.v]) for e in world.edges.values() if e.kind == "bridge"}
         areas: dict[str, list[str]] = {}
         for n in world.nodes.values():

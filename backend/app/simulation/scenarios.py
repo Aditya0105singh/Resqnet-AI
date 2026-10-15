@@ -36,6 +36,7 @@ class ScenarioConfig:
     delayed_report_rate: float = 0.10
     false_alarm_rate: float = 0.0
     contradiction_rate: float = 0.0
+    geography: str = "riverbend"  # or the stem of data/geographic/<stem>.city.json
     forward_rate: float = 0.0  # chance a resident SOS is forwarded verbatim 2–5 more times
     fusion_dedup: bool = True  # count verbatim forwards once (False = ablation: every copy is a witness)
     comm_delay: int = 1  # ticks before a decentralised agent hears a broadcast
