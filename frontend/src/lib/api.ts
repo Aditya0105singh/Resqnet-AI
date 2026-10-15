@@ -10,10 +10,16 @@ export class ApiError extends Error {
 
 /** Address of the API server. Empty (the default) means "same address as this page", which is how the
  * single-container build and the dev proxy work. Set VITE_BACKEND_URL at build time (for example
- * https://resqnet-ai.onrender.com) when the website is hosted separately from the server. */
-export const BACKEND_URL: string = ((import.meta.env.VITE_BACKEND_URL as string | undefined) ?? "").replace(/\/+$/, "");
+ * https://resqnet-ai.onrender.com) when the website is hosted separately from the server.
+ * Tolerates a pasted value with spaces, quotes, a trailing slash or a missing https://. */
+function cleanBackendUrl(raw: string | undefined): string {
+  let u = (raw ?? "").trim().replace(/^["']|["']$/g, "").trim().replace(/\/+$/, "");
+  if (u && !/^https?:\/\//i.test(u)) u = "https://" + u;
+  return u;
+}
+export const BACKEND_URL: string = cleanBackendUrl(import.meta.env.VITE_BACKEND_URL as string | undefined);
 export const apiUrl = (path: string) => BACKEND_URL + path;
-export const wsUrl = (path: string) => (BACKEND_URL ? BACKEND_URL.replace(/^http/, "ws") : `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`) + path;
+export const wsUrl = (path: string) => (BACKEND_URL ? BACKEND_URL.replace(/^http/i, "ws") : `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`) + path;
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   let res: Response;

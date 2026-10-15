@@ -18,7 +18,15 @@ export function useSimSocket(simId: string | undefined) {
 
     const connect = () => {
       setConn(retry.current === 0 ? "connecting" : "reconnecting");
-      ws = new WebSocket(wsUrl(`/ws/simulations/${simId}`));
+      try {
+        ws = new WebSocket(wsUrl(`/ws/simulations/${simId}`));
+      } catch {
+        // an invalid address must not take the page down: report offline and keep retrying
+        setConn("offline");
+        retry.current += 1;
+        timer = setTimeout(connect, 8000);
+        return;
+      }
       ws.onopen = () => {
         retry.current = 0;
         setConn("live");
