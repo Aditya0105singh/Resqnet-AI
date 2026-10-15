@@ -1,35 +1,44 @@
-# 5-minute judge demo
+# Demo scripts
 
-**Setup:** start the backend and frontend, open `/command`, click **New run** and choose *A · Normal flood*, strategy *Multi-agent*. Speed 2×.
+**Setup.** Start the backend and frontend (see README), then open **`/demo`**.
 
-**Opening line:** "Most emergency dashboards tell you where the crisis is. resqnet shows how autonomous rescue resources negotiate, recover and coordinate after the original rescue plan becomes impossible."
+Every step on that page runs the real engine and shows what it returned. If a live step ever behaves differently, the screen shows the actual result rather than a scripted one. That is the point.
 
-### 1. The world (30 s), `/command`
-- Riverbend is synthetic: a river, three bridges, five neighbourhoods. Blue haze is flood depth; dashed blue roads are impassable for ground teams, and the wider pale-blue streets can now be navigated by boat.
-- There are 12 SOS incidents. Diamond size shows people, colour shows urgency, and dashed outlines are unverified reports.
-- Press **Start** and watch the activity feed fill with commitments.
+> The one sentence to leave with the judges: **"RESQNET doesn't just find a rescue route. It keeps rescue decisions coordinated, safe and explainable when the situation changes."**
 
-### 2. Real negotiation (45 s), `/agents`
-- Open the latest eventful round. Show the message graph: BIDs (dashed), PROVISIONAL_ACCEPT, an agent REJECT with its reason (e.g. "B2 prefers I-007 (cost 0.41 < 0.47)"), shelter RESERVE/ACCEPT, then COMMIT.
-- Point out that every message is computed: no LLM, no script. Deferred acceptance makes the matching conflict-free.
+## Three-minute version (`/demo`, "Run the whole demo" or step by step)
 
-### 3. Break it three ways (60 s), `/command`
-- Ask a judge to click **Triple failure**. The engine picks a bridge, a committed boat and the shelter with the most inbound reservations from live state.
-- In the feed: the bridge closes, the boat is disabled and its commitment cancelled, the shelter revokes its reservations LIFO, and each affected unit renegotiates another shelter. A new round reassigns the stranded request.
-- Optionally have the judge also click **Close BR…** or **Fail B…** while the system is still adapting.
+| Time | Step on `/demo` | What to say |
+|---|---|---|
+| 0:00–0:20 | 1. A flood is unfolding | "A synthetic city in flood. Every boat, team and shelter is an independent agent negotiating rescues live, under a safety shield." |
+| 0:20–0:45 | 2. Citizen SOS in Hindi | "A citizen writes in Hindi. We extract evidence: 5 people, an elderly person, rising water, trapped upstairs, so urgency is 5 by a fixed rule. 'Near the river' is not a location, so we don't invent one: it goes to a human." |
+| 0:45–1:00 | 3. Dispatcher places and approves | "A dispatcher confirms where they are. Approval re-runs every safety check against the state right now." |
+| 1:00–1:20 | 4. Agents negotiate | "Units bid on their own, possibly stale, view of the roads. The cheapest feasible bid wins, a shelter reserves seats, and the shield validates the commit." Click **Open the decision record**. |
+| 1:20–1:50 | 5. Triple failure | "Now we break it three ways at once: a bridge, a committed boat, and the shelter people are heading to. Affected commitments are cancelled, reservations revoked, and missions renegotiated, with zero safety violations." |
+| 1:50–2:10 | 6. Crew's updated mission | "The crew sees the new plan on a phone. Every tap is a validated, idempotent event, and updates queued without signal are reconciled when it returns." |
+| 2:10–2:35 | 7. Ask the Commander | "Ask why. The answer comes only from the run's records, every claim is cited and checked, and the assistant can only *propose* actions." |
+| 2:35–3:00 | 8. Every claim is measured | "Ten paired seeds, 95% confidence intervals. On a healthy network the central optimiser is as good or better, and we say so. When the coordinator fails, the agents keep serving: about 10 points more service and 19 minutes faster." |
 
-### 4. Why did it do that? (45 s)
-- Click **why?** on a reassignment. The Decision Inspector shows the evidence and confidence, every candidate's cost broken down into T/R/U/F, the rejections, the shelter negotiation, all safety checks, and "what would change this decision".
+## Six-minute version
 
-### 5. What if? (45 s), `/decision-lab`
-- Fork at t≈20 with **+2 boats** (or reopen the bridge) and run both futures.
-- Show the synchronised maps and the measured deltas. Point out where the alternative did **worse** (for example fairness or utilisation): results are measured, not promised.
+Do the three-minute version, then add:
 
-### 6. Fair comparison (30 s), `/arena`
-- Run 6 seeds on *triple_failure*. Be candid: the centralised optimiser is about 1–3 minutes faster on mean time-to-service. Multi-agent comes close with stale, partial information and no central coordinator, uses fewer coordination messages, and has zero safety violations across the board.
+1. **Offline crew (45 s), `/crew/B1` on a phone-sized window.**
+   1. Take crew control and accept a mission.
+   2. Tick **simulate no signal** and tap **Depart**; it shows as *queued*.
+   3. On `/command`, cancel that mission (Inspect the unit, then *Request reassignment*).
+   4. Untick no signal. The queued Depart comes back **rejected** with the dispatcher's reason, and it is never applied.
+2. **Message-passing agents and partitions (45 s), `/command`.**
+   1. New run → *Network Partition* scenario, strategy *Message-passing*.
+   2. Show `LOST` messages and timeouts on `/agents`.
+   3. Say: "No strategy commits across the split. Availability drops, never safety."
+3. **Disputed reports (30 s), `/command`, *Forwarded SOS Cascade* scenario.**
+   1. Open a DISPUTED incident: forwards are counted once, and credible conflicting reports wait for a human (Confirm / Verify / Dismiss).
+   2. Mention the measured effect: significantly fewer trips to rumoured victims for every strategy.
+4. **Evidence (30 s), `/research`.** Show the PS 27 compliance matrix with test names, the assumptions page, and the data provenance page, including what is *not* real yet.
 
-### 7. Trust (30 s), `/replay` and `/safety`
-- **Verify deterministic replay**: "rebuilt N ticks, every state hash matches."
-- **Find weakest scenario**: the adversarial search ranks the worst failure combinations it found. Open one in the simulator. "We go looking for where we fail."
+## Honest answers to likely questions
 
-**Close:** "They broke the plan three ways. It recovered, explained every change, and let you test whether another decision would have been better."
+- **"Is decentralised better?"** On a healthy network, no: centralised is as good or slightly better. Under a coordinator outage, yes, under the stated assumption that peer communication survives. See `/arena` → Published results.
+- **"Is this real Kerala data?"** No. The city is synthetic. Real OpenStreetMap and Copernicus data are planned but were not available in the build environment; see `/research` → Data provenance.
+- **"Does the LLM decide anything?"** No. It extracts evidence and answers questions with citations. Urgency, location, safety and approval are deterministic or human.

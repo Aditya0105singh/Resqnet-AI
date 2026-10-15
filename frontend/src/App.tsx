@@ -19,6 +19,8 @@ const Safety = lazy(() => import("./pages/Safety"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Sos = lazy(() => import("./pages/Sos"));
 const Crew = lazy(() => import("./pages/Crew"));
+const Demo = lazy(() => import("./pages/Demo"));
+const Research = lazy(() => import("./pages/Research"));
 
 export default function App() {
   const bootstrap = useSim((s) => s.bootstrap);
@@ -41,7 +43,11 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/command" replace />} />
               <Route path="/command" element={<Command />} />
+              <Route path="/demo" element={<Demo />} />
               <Route path="/judge" element={<Judge />} />
+              <Route path="/research" element={<Research />} />
+              <Route path="/chaos" element={<Scenarios />} />
+              <Route path="/audit" element={<Replay />} />
               <Route path="/dispatch" element={<Dispatch />} />
               <Route path="/agents" element={<Agents />} />
               <Route path="/scenarios" element={<Scenarios />} />

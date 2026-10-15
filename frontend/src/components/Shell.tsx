@@ -7,18 +7,19 @@ import { Badge, Button, cx, Segmented } from "./ui";
 import type { Strategy } from "../types";
 
 const NAV = [
-  { to: "/judge", label: "Judge Mode" },
+  { to: "/demo", label: "Guided Demo" },
   { to: "/command", label: "Command" },
   { to: "/sos", label: "Citizen SOS" },
   { to: "/crew", label: "Crew App" },
   { to: "/dispatch", label: "Fleet" },
   { to: "/agents", label: "Negotiation" },
-  { to: "/scenarios", label: "Chaos Lab" },
+  { to: "/chaos", label: "Chaos Lab" },
   { to: "/decision-lab", label: "Decision Lab" },
   { to: "/arena", label: "Arena" },
-  { to: "/replay", label: "Replay" },
+  { to: "/audit", label: "Audit" },
   { to: "/safety", label: "Safety" },
   { to: "/reports", label: "Report" },
+  { to: "/research", label: "Evidence" },
 ];
 
 export function Logo() {

@@ -59,6 +59,12 @@ cd backend && python -m pytest tests -q -p no:asyncio
 cd frontend && npx tsc -b && npx vite build
 ```
 
+End-to-end browser tests (Playwright) start the backend and frontend themselves. They cover the guided demo, citizen SOS → dispatcher placement, offline crew reconciliation and the evidence page:
+
+```bash
+cd frontend && npm run e2e      # elsewhere first: npx playwright install chromium
+```
+
 The suite has 141 tests: determinism, replay, rerouting, retreat on a closing edge, unreachable requests, double booking, stale state, expired reservations, capacity limits, boat failure, stranded passengers, shelter overflow, triple failure under all three strategies, contradictory and duplicate reports, delayed information, benchmarks, counterfactual sanity checks, policy-change renegotiation, the API, WebSocket resync and PDF export. It also covers message transport: loss, duplicate delivery, timeouts, lease expiry and partitions. Hypothesis property tests check the safety invariants under random failure sequences.
 
 ### Reproduce benchmarks
@@ -73,6 +79,8 @@ This runs the optimisation-quality and failure-resilience suites, plus the noise
 
 | Route | Page |
 |---|---|
+| `/demo` | Guided demonstration: 8 live steps with the engine's actual results |
+| `/research` | Evidence: PS 27 compliance, benchmarks, assumptions, data provenance (rendered from `docs/`) |
 | `/command` | Live Command Center: map, incident queue, agent activity, inspector, approval queue, KPIs, one-click chaos |
 | `/crew/:unit` | Rescue crew app (phone): mission, route, escalation, offline outbox |
 | `/sos` | Citizen SOS (simulation): multilingual message, what the system understood, live status |
@@ -95,7 +103,9 @@ This runs the optimisation-quality and failure-resilience suites, plus the noise
 - [docs/COMMANDER.md](docs/COMMANDER.md): grounded question answering, citation checks, no-authority design
 - [docs/SOS_INTAKE.md](docs/SOS_INTAKE.md): multilingual SOS pipeline, safety design and evaluation
 - [docs/MESSAGE_PASSING.md](docs/MESSAGE_PASSING.md): message-passing agents, network faults and their measured cost
-- [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): 5-minute judge demo
+- [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): 3- and 6-minute demo scripts
+- [docs/ps27-compliance.md](docs/ps27-compliance.md): requirement → code → test evidence
+- [docs/assumptions.md](docs/assumptions.md) · [docs/dataset-provenance.md](docs/dataset-provenance.md)
 
 ## Repository layout
 

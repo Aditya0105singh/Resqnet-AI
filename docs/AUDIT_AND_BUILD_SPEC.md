@@ -219,7 +219,14 @@ Each work package lists its files, the change, and its exit test. WP1–WP4 are 
 - **API:** `POST /api/simulations/{id}/ask {question}`. The UI is a chat drawer in `components/Shell.tsx`.
 - The offline fallback is the existing `engine.explain()` templates.
 
-### WP9: Routes, demo and polish
+### WP9: Routes, demo and polish ✅ built
+
+> - `/demo` replaces Judge Mode with 8 live steps.
+> - `/research` renders `docs/` at build time.
+> - `/chaos` and `/audit` are route aliases.
+> - Playwright `frontend/e2e/demo.spec.ts` has 4 tests.
+> - Vendor chunks are split, and the chunk-size warning is gone.
+> - **WP5 (real geography) is blocked:** the environment's network policy denies OpenStreetMap hosts. See [dataset-provenance.md](dataset-provenance.md).
 
 - **`App.tsx` routes:** add `/sos`, `/crew/:id`, `/chaos` (rename of `/scenarios`), `/audit` (merge of `/replay` and `/safety`), `/research`, and `/demo` (the existing `Judge.tsx` evolves into the guided sequence).
 - **New `pages/Research.tsx`:** shows the assumptions, data provenance, test matrix status and limitations, loaded from `docs/` at build time.
