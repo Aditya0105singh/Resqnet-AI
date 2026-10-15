@@ -285,6 +285,7 @@ export interface ScenarioConfig {
   weights: Record<string, number>;
   neighbourhood_priority: Record<string, number>;
   schedule: { tick: number; type: string; params: Record<string, unknown> }[];
+  geography?: string;
 }
 export interface SimSummary {
   id: string;

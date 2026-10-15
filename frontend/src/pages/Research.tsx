@@ -34,7 +34,7 @@ export default function Research() {
   const doc = DOCS.find((d) => d.id === active) ?? DOCS[0];
   return (
     <div className="space-y-3 p-3">
-      <PageHeader eyebrow="evidence & evaluation" title="What is built, how it is measured, and what it assumes" sub="These pages are the repository's documentation, rendered as committed. Every claim links to code, tests or reproducible data; limitations are listed alongside results." />
+      <PageHeader eyebrow="Results" title="Evidence & documentation" sub="How each requirement is met and tested, where the data comes from, and what is assumed or simulated." />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
         <nav aria-label="Documents" className="panel h-fit p-2">
           {DOCS.map((d) => (

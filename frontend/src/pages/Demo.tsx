@@ -19,7 +19,7 @@ const ev = (sim: string, type: string, params: Record<string, unknown>) => api.p
 const STEPS: Step[] = [
   {
     title: "A flood is unfolding",
-    say: "This is a synthetic city. Boats, ground teams and shelters are independent agents negotiating rescues in real time, under a safety shield.",
+    say: "A flood is rising in a test city. Every boat, rescue team and shelter is an independent agent that negotiates rescues in real time, and every plan passes a safety check.",
     run: async (ctx, t) => {
       await t.step(6);
       const f = (await api.get<any>(`/api/simulations/${ctx.sim}`)).frame;
@@ -29,7 +29,7 @@ const STEPS: Step[] = [
   },
   {
     title: "A citizen sends an SOS in Hindi",
-    say: "Rules (or Claude, opt-in) extract only evidence. Urgency comes from a fixed rule, and the location “near the river” is not invented: it goes to a human.",
+    say: "The system reads the message and pulls out the facts: how many people, who is vulnerable, how urgent. “Near the river” is not a real location, so it does not guess. A human decides.",
     run: async (ctx) => {
       const r = await api.post<any>(`/api/simulations/${ctx.sim}/sos`, { text: HINDI_SOS });
       const x = r.extraction;
@@ -46,7 +46,7 @@ const STEPS: Step[] = [
   },
   {
     title: "The dispatcher places it and approves",
-    say: "Nothing reaches the agents until a human confirms the location. Approval re-runs every safety check against the current state.",
+    say: "A dispatcher marks where the people are and approves. Approving re-checks safety against the situation right now.",
     run: async (ctx) => {
       if (!ctx.proposal) return { ok: false, lines: ["No pending SOS proposal (run step 2 first)."] };
       const r = await ev(ctx.sim, "APPROVE_PROPOSAL", { proposal_id: ctx.proposal, set: { node: PLACE_AT } });
@@ -57,7 +57,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Agents negotiate the rescue",
-    say: "Units bid on the request with their own, possibly stale, view of the roads. The cheapest feasible bid wins, a shelter reserves seats, and the shield validates the commit.",
+    say: "Nearby units bid for the rescue using what they know about the roads. The best bid wins, a shelter reserves space, and the safety check approves it.",
     run: async (ctx, t) => {
       if (!ctx.incident) return { ok: false, lines: ["Run step 3 first."] };
       let decs: any[] = [];
@@ -82,7 +82,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Break it three ways at once",
-    say: "A live bridge collapses, a committed boat fails and a busy shelter overflows, all chosen from the live state. Affected commitments are cancelled and renegotiated.",
+    say: "Now three things fail at once: a bridge in use collapses, a busy boat breaks down and a shelter fills up. Affected rescues are cancelled and re-negotiated, safely.",
     run: async (ctx, t) => {
       const r = await ev(ctx.sim, "TRIPLE_FAILURE", {});
       await t.step(2);
@@ -92,7 +92,7 @@ const STEPS: Step[] = [
   },
   {
     title: "The crew sees its updated mission",
-    say: "Each unit's crew works from a phone app. Every tap is a validated, idempotent engine event, and updates queued without signal are reconciled when it returns.",
+    say: "The boat crew sees its new mission on a phone. Every tap is checked, and updates made without signal are synced safely when signal returns.",
     run: async (ctx) => {
       const f = (await api.get<any>(`/api/simulations/${ctx.sim}`)).frame;
       const live = f.resources.filter((r: any) => r.assignment_id && r.status !== "DISABLED");
@@ -110,7 +110,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Ask the Mission Commander",
-    say: "It answers only from the run's records, cites every claim, and can only propose actions, which a dispatcher must approve.",
+    say: "Ask the AI assistant why something happened. It answers only from the run's records, cites every claim, and can only suggest actions for a human to approve.",
     run: async (ctx) => {
       const q = ctx.incident ? `Why was ${ctx.incident} reassigned?` : "Status";
       const a = await api.post<any>(`/api/simulations/${ctx.sim}/ask`, { question: q });
@@ -119,7 +119,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Every claim is measured",
-    say: "Ten paired seeds per cell, 95% confidence intervals. On a healthy network the central optimiser is as good or better; when the coordinator fails, the agents keep serving.",
+    say: "Every claim is measured over 10 paired runs with 95% confidence ranges. On a healthy network a central optimiser is as good or better. When it fails, the agents keep rescuing people.",
     run: async () => {
       const ev10 = await api.get<any>("/api/evaluation");
       const p = ev10.suites.resilience.scenarios.coordinator_outage.paired["decentralized-centralized"];
@@ -181,19 +181,24 @@ export default function Demo() {
   };
 
   return (
-    <div className="space-y-3 p-3">
-      <section className="rounded-2xl bg-slate-950 p-6 text-white">
-        <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">RESQNET · guided demonstration</p>
-        <h1 className="my-2 text-3xl font-semibold">It doesn't just find a rescue route. It keeps rescue decisions coordinated, safe and explainable when the situation changes.</h1>
-        <p className="max-w-3xl text-slate-300">Eight steps, about three minutes. Every button runs the real engine; what appears under each step is what the system actually returned on this run.</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="solid" icon={<PlayCircle className="size-4" />} loading={running !== null} onClick={runAll}>
+    <div className="space-y-4 p-3 sm:p-4">
+      <section className="rounded-2xl bg-[#0b2530] px-6 py-8 text-white sm:px-8">
+        <p className="text-[13px] font-semibold text-cyan-300">Guided demo · about 3 minutes</p>
+        <h1 className="mt-2 max-w-4xl font-display text-[26px] leading-tight font-semibold tracking-tight sm:text-[34px]">RESQNET doesn't just find a rescue route. It keeps rescue decisions coordinated, safe and explainable when everything changes.</h1>
+        <p className="mt-3 max-w-3xl text-cyan-50/75">Eight live steps. Each button runs the real system, and what you see under each step is what it actually returned.</p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <Button variant="outline" size="lg" icon={<PlayCircle className="size-5" />} loading={running !== null} onClick={runAll} className="border-0">
             Run the whole demo
           </Button>
-          <Button disabled={running !== null} onClick={start}>
-            New run (seed 7, full fleet)
+          <Button size="lg" variant="ghost" disabled={running !== null} onClick={start} className="text-white hover:bg-white/10">
+            Restart
           </Button>
-          <span className="self-center text-sm text-slate-400">{done}/{STEPS.length} steps done</span>
+          <div className="flex items-center gap-3">
+            <div className="h-1.5 w-40 overflow-hidden rounded-full bg-white/15">
+              <div className="h-full bg-cyan-300 transition-all" style={{ width: `${(done / STEPS.length) * 100}%` }} />
+            </div>
+            <span className="text-sm text-cyan-50/75">{done}/{STEPS.length} steps done</span>
+          </div>
         </div>
       </section>
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -202,7 +207,7 @@ export default function Demo() {
             const r = results[i];
             const can = !!ctx && running === null && (i === 0 || !!results[i - 1]);
             return (
-              <li key={s.title} className={cx("panel p-4", running === i && "ring-2 ring-info/40")}>
+              <li key={s.title} className={cx("panel p-4 transition", running === i && "ring-2 ring-brand/40", !r && !can && "opacity-75")}>
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">{running === i ? <Loader2 className="size-5 animate-spin text-info" /> : r ? <CheckCircle2 className={cx("size-5", r.ok ? "text-ok" : "text-warn")} /> : <Circle className="size-5 text-faint" />}</div>
                   <div className="min-w-0 flex-1">
@@ -210,15 +215,14 @@ export default function Demo() {
                       <div className="text-[15px] font-semibold">
                         {i + 1}. {s.title}
                       </div>
-                      <Button size="sm" icon={<Play className="size-3.5" />} disabled={!can} onClick={() => ctx && runStep(i, ctx)}>
-                        {r ? "Run again" : "Do it"}
+                      <Button size="sm" variant={can && !r ? "primary" : "outline"} icon={<Play className="size-3.5" />} disabled={!can} onClick={() => ctx && runStep(i, ctx)}>
+                        {r ? "Run again" : "Run step"}
                       </Button>
                     </div>
-                    <p className="mt-1 text-[12.5px] text-mute">
-                      <Badge>say</Badge> {s.say}
-                    </p>
+                    <p className="mt-1 text-[13.5px] leading-relaxed text-ink-2">{s.say}</p>
                     {r && (
-                      <div className="mt-2 space-y-1 rounded-lg bg-black/[0.03] p-2.5 text-[12.5px] leading-relaxed">
+                      <div className="mt-3 space-y-1 rounded-lg border border-line bg-wash p-3 text-[12.5px] leading-relaxed">
+                        <div className="label mb-1">What the system returned</div>
                         {r.lines.map((l, j) => (
                           <div key={j}>{l}</div>
                         ))}
@@ -236,11 +240,14 @@ export default function Demo() {
               <CityMap world={world} frame={frame} />
             </div>
           ) : (
-            <div className="panel flex h-64 items-center justify-center p-6 text-center text-sm text-mute">Start the demo to load a fresh run (seed 7, full fleet). The live map appears here.</div>
+            <div className="panel flex h-64 flex-col items-center justify-center gap-3 p-6 text-center text-sm text-mute">
+              <PlayCircle className="size-8 text-faint" />
+              Press “Run the whole demo” and the live map appears here.
+            </div>
           )}
         </div>
       </div>
-      <p className="text-[12px] text-mute">Research and education simulation in a synthetic city. Assumptions, such as the coordinator outage leaving peer communication intact, are listed on the <Link className="underline" to="/research">evidence page</Link>.</p>
+      <p className="text-[12px] text-mute">Research simulation in a test city (the demo uses a fixed seed and the full fleet). Assumptions, such as the coordinator outage leaving peer communication intact, are listed on the <Link className="underline" to="/research">evidence page</Link>.</p>
     </div>
   );
 }

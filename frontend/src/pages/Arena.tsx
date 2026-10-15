@@ -421,9 +421,9 @@ export default function Arena() {
   return (
     <div className="space-y-3 p-3">
       <PageHeader
-        eyebrow="strategy arena"
-        title="Multi-agent negotiation vs a fair centralised optimiser"
-        sub="Every strategy runs the same scenario, seeds, incident arrivals and failure schedule, with the same safety shield, shelter agents and cost function. They differ only in information access and coordination mechanism. Healthy-network quality and failure resilience are reported separately; if the centralised baseline wins, this page says so."
+        eyebrow="Results"
+        title="Benchmarks: agents vs a central optimiser"
+        sub="Every approach faces exactly the same floods, incidents and failures. We report averages with 95% confidence ranges, including where the central optimiser wins."
         right={<Segmented value={tab} onChange={setTab} options={[{ value: "published", label: "Published results" }, { value: "run", label: "Run your own" }]} />}
       />
       {tab === "published" ? <Published /> : <RunOwn />}

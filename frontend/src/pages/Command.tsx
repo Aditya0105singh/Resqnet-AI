@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { Crosshair, Layers as LayersIcon, MapPinPlus, MousePointer2, Scissors } from "lucide-react";
+import { ChevronDown, Crosshair, Layers as LayersIcon, MapPinPlus, MousePointer2, Scissors } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useSim, type Layers } from "../store/sim";
 import { CityMap, MapLegend } from "../components/CityMap";
-import { ChaosButtons } from "../components/Chaos";
+import { ChaosMenu } from "../components/Chaos";
 import { ActivityFeed } from "../components/Feed";
 import { SelectionPanel } from "../components/SelectionPanel";
 import { Approvals } from "../components/Approvals";
 import { NewRunMenu, SimControls } from "../components/Shell";
 import { Badge, Button, cx, Empty, inputCls, Panel, Segmented, Spinner, Stat } from "../components/ui";
-import { fmt, INCIDENT_TONE, isOpen, pct, statusLabel, URGENCY_TONE } from "../lib/format";
+import { clock, fmt, INCIDENT_TONE, isOpen, pct, statusLabel } from "../lib/format";
 
 export default function Command() {
   const { world, frame, sim, layers, selection, setSelection, toggleLayer, inject, audit } = useSim();
@@ -18,6 +18,7 @@ export default function Command() {
   const [tab, setTab] = useState<"detail" | "feed" | "approvals">("feed");
   const [sos, setSos] = useState({ people: 4, urgency: 4 });
   const [showLayers, setShowLayers] = useState(false);
+  const [moreKpis, setMoreKpis] = useState(false);
 
   const incidents = useMemo(() => {
     if (!frame) return [];
@@ -37,7 +38,7 @@ export default function Command() {
       <SimControls
         extra={
           <>
-            <ChaosButtons />
+            <ChaosMenu />
             <NewRunMenu />
           </>
         }
@@ -45,14 +46,14 @@ export default function Command() {
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[300px_1fr_360px]">
         {/* incident queue */}
         <Panel
-          title="incident queue"
-          sub={`${m.open_incidents} open · ${frame.incidents.filter((i) => isOpen(i) && i.unassigned > 0).length} uncovered`}
+          title="rescue requests"
+          sub={`${m.open_incidents} open · ${frame.incidents.filter((i) => isOpen(i) && i.unassigned > 0).length} still need a unit`}
           right={<Badge tone="neutral">{incidents.length}</Badge>}
           bodyClass="flex flex-col"
           className="max-lg:h-80"
         >
           <div className="border-b border-line px-3 py-2">
-            <Segmented size="sm" value={filter} onChange={setFilter} options={[{ value: "open", label: "Open" }, { value: "urgent", label: "Urgent" }, { value: "uncovered", label: "Uncovered" }, { value: "all", label: "All" }]} />
+            <Segmented size="sm" value={filter} onChange={setFilter} options={[{ value: "open", label: "Open" }, { value: "urgent", label: "Urgent" }, { value: "uncovered", label: "No unit yet" }, { value: "all", label: "All" }]} />
           </div>
           <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
             {incidents.length === 0 ? (
@@ -67,9 +68,10 @@ export default function Command() {
                       setSelection({ type: "incident", id: i.id });
                       setTab("detail");
                     }}
-                    className={cx("flex w-full items-start gap-2.5 border-b border-line/70 px-3 py-2 text-left hover:bg-wash", selection?.type === "incident" && selection.id === i.id && "bg-info-soft/40")}
+                    title={`Location ${i.node} · report confidence ${fmt(i.confidence, 2)} · urgency ${i.urgency} of 5`}
+                    className={cx("flex w-full items-start gap-3 border-b border-line/70 px-3.5 py-2.5 text-left hover:bg-wash", selection?.type === "incident" && selection.id === i.id && "bg-brand-soft")}
                   >
-                    <span className="mono mt-0.5 grid size-6 shrink-0 place-items-center rounded-md text-[11px] font-semibold text-white" style={{ background: i.urgency >= 5 ? "#dc2626" : i.urgency >= 4 ? "#d97706" : i.urgency >= 3 ? "#0891b2" : "#a1a1aa" }}>
+                    <span aria-label={`urgency ${i.urgency} of 5`} className="mono mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg text-[12px] font-semibold text-white" style={{ background: i.urgency >= 5 ? "#dc2626" : i.urgency >= 4 ? "#d97706" : i.urgency >= 3 ? "#0891b2" : "#a1a1aa" }}>
                       {i.urgency}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -78,12 +80,14 @@ export default function Command() {
                         <Badge tone={INCIDENT_TONE[i.status]}>{statusLabel(i.status)}</Badge>
                         {late && <Badge tone="crit">late</Badge>}
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-mute">
-                        {i.people} waiting{i.unassigned ? ` · ${i.unassigned} uncovered` : ""} · {i.node} · conf {fmt(i.confidence, 2)}
+                      <div className="mt-0.5 truncate text-[12.5px] text-ink-2">
+                        {i.people} waiting{i.unassigned ? (i.unassigned >= i.people ? " · no unit yet" : ` · ${i.unassigned} not covered`) : ""}
                       </div>
-                      {i.assigned.length > 0 && <div className="mono mt-0.5 text-[10.5px] text-info">→ {i.assigned.join(", ")}</div>}
+                      {i.assigned.length > 0 && <div className="mt-0.5 text-[12px] text-brand">Unit {i.assigned.join(", ")} on the way</div>}
                     </div>
-                    <span className="mono shrink-0 text-[10.5px] text-faint">t{i.deadline}</span>
+                    <span className={cx("shrink-0 text-[11px]", late ? "font-medium text-crit" : "text-mute")} title="Rescue deadline">
+                      by {clock(i.deadline).slice(2)}
+                    </span>
                   </button>
                 );
               })
@@ -152,7 +156,7 @@ export default function Command() {
             }}
             onNodeClick={(node) => inject("NEW_INCIDENT", { node, people: sos.people, urgency: sos.urgency, source: "responder" }, `SOS at ${node}`)}
           />
-          <div className="absolute bottom-3 left-3 z-10 rounded-xl border border-line bg-white/90 px-3 py-1.5 backdrop-blur">
+          <div className="absolute bottom-3 left-3 z-10 hidden rounded-xl border border-line bg-white/90 px-3 py-1.5 backdrop-blur sm:block">
             <MapLegend />
           </div>
         </section>
@@ -166,30 +170,38 @@ export default function Command() {
               value={tab}
               onChange={setTab}
               options={[
-                { value: "feed", label: "Feed" },
-                { value: "detail", label: "Inspect" },
-                { value: "approvals", label: pendingCount ? `Approve · ${pendingCount}` : "Approve" },
+                { value: "feed", label: "Activity" },
+                { value: "detail", label: "Details" },
+                { value: "approvals", label: pendingCount ? `Approvals · ${pendingCount}` : "Approvals" },
               ]}
             />
           }
-          right={<span className="mono text-[10.5px] text-faint">{audit.length} records</span>}
+          right={<span className="text-[11.5px] text-mute">{audit.length} events</span>}
           bodyClass="flex flex-col"
         >
           <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">{tab === "feed" ? <ActivityFeed /> : tab === "approvals" ? <Approvals /> : <SelectionPanel />}</div>
         </Panel>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[repeat(8,1fr)_1.6fr]">
-        <Kpi label="people rescued" value={m.people_rescued} hint={`${m.people_in_transit} in transit`} tone="ok" />
-        <Kpi label="still waiting" value={m.unmet_people} hint={`${m.open_incidents} open incidents`} tone={m.unmet_people > 20 ? "warn" : undefined} />
-        <Kpi label="mean time to service" value={fmt(m.mean_time_to_service)} unit="min" hint={`median ${fmt(m.median_time_to_service)}`} />
-        <Kpi label="deadline misses" value={m.deadline_misses} hint={`of ${m.urgent_incidents} urgent`} tone={m.deadline_misses ? "crit" : undefined} />
-        <Kpi label="utilisation" value={pct(m.utilisation)} hint={`${m.idle_with_demand_ticks} idle-w/-demand`} />
-        <Kpi label="fairness (Jain)" value={fmt(m.fairness_jain, 2)} hint="1.0 = even waits" tone="info" />
-        <Kpi label="reroutes / reassign" value={`${m.reroutes}/${m.reassignments}`} hint={`${m.cancellations} cancellations`} />
-        <Kpi label="safety" value={m.route_violations + m.invariant_violations === 0 ? "0 viol." : m.route_violations + m.invariant_violations} hint={`${m.safety_rejections} rejected · ${m.blocked_moves} blocked`} tone={m.route_violations + m.invariant_violations ? "crit" : "ok"} />
+      {/* key numbers */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[repeat(4,1fr)_1.5fr_auto]">
+        <Kpi label="people rescued" value={m.people_rescued} hint={`${m.people_in_transit} on the way to shelter`} tone="ok" />
+        <Kpi label="still waiting" value={m.unmet_people} hint={`across ${m.open_incidents} requests`} tone={m.unmet_people > 20 ? "warn" : undefined} />
+        <Kpi label="avg. time to reach people" value={fmt(m.mean_time_to_service)} unit="min" hint={`${m.deadline_misses} of ${m.urgent_incidents} urgent missed deadline`} tone={m.deadline_misses ? "crit" : undefined} />
+        <Kpi label="safety rules broken" value={m.route_violations + m.invariant_violations} hint={`${m.safety_rejections} unsafe plans blocked`} tone={m.route_violations + m.invariant_violations ? "crit" : "ok"} />
         <MiniChart />
+        <button type="button" aria-expanded={moreKpis} onClick={() => setMoreKpis((v) => !v)} className="panel col-span-2 flex items-center justify-center gap-1 px-4 py-3 text-[13px] font-medium text-ink-2 hover:text-ink md:col-span-4 xl:col-span-1">
+          {moreKpis ? "Fewer" : "More"} numbers <ChevronDown className={cx("size-4 transition", moreKpis && "rotate-180")} />
+        </button>
+        {moreKpis && (
+          <div className="panel fade-in col-span-full grid grid-cols-2 gap-x-6 gap-y-4 px-4 py-3.5 md:grid-cols-5">
+            <Stat label="units busy" value={pct(m.utilisation)} hint={`${m.idle_with_demand_ticks} idle minutes while people waited`} />
+            <Stat label="fairness" value={fmt(m.fairness_jain, 2)} hint="1.0 = every area waits equally" tone="info" />
+            <Stat label="route changes" value={m.reroutes} hint="units re-planned their path" />
+            <Stat label="reassignments" value={m.reassignments} hint={`${m.cancellations} missions cancelled`} />
+            <Stat label="blocked moves" value={m.blocked_moves} hint="stopped at a closed road" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -215,13 +227,13 @@ function MiniChart() {
   }, [frame]);
   return (
     <div className="panel col-span-2 px-3 pt-2 md:col-span-4 xl:col-span-1">
-      <div className="label">rescued vs waiting</div>
+      <div className="label">rescued vs waiting over time</div>
       <div className="h-[52px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={series} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
             <XAxis dataKey="tick" hide />
             <YAxis hide />
-            <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} labelFormatter={(t) => `t=${t}`} />
+            <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} labelFormatter={(t) => `minute ${t}`} />
             <Area type="monotone" dataKey="waiting" stroke="#d97706" fill="#fef3c7" strokeWidth={1.5} isAnimationActive={false} />
             <Area type="monotone" dataKey="rescued" stroke="#15803d" fill="#dcfce7" strokeWidth={1.5} isAnimationActive={false} />
           </AreaChart>

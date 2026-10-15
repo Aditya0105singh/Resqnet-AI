@@ -92,9 +92,9 @@ export default function DecisionLab() {
     <div className="space-y-3 p-3">
       <SimControls />
       <PageHeader
-        eyebrow="counterfactual decision lab"
+        eyebrow="Labs"
         title="What if we had decided differently?"
-        sub="Forks the run at a chosen tick — full world state, commitments, agent knowledge and the pre-generated future report stream — then runs the baseline and your alternative under identical future events. Results are measured, including when the alternative is worse."
+        sub="Pick a moment in the run, change one decision, and both futures play out under exactly the same events. You see the measured difference, even when the alternative is worse."
       />
       <div className="grid gap-3 xl:grid-cols-[380px_1fr]">
         <Panel title="alternative decision" sub={`fork any tick in 0…${frame.tick}`}>

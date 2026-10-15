@@ -76,27 +76,30 @@ export default function Agents() {
     <div className="space-y-3 p-3">
       <SimControls />
       <PageHeader
-        eyebrow="agent negotiation lab"
-        title="Real bids, real rejections, one conflict-free commitment set"
-        sub="Every message below was produced by the engine. Incident agents publish requests; rescue agents bid on their own (possibly stale) view of the network; deferred acceptance resolves conflicts; shelter agents grant or refuse seats; the safety shield has the final word."
+        eyebrow="Labs"
+        title="How rescue units negotiate"
+        sub="Each rescue request is offered to nearby units. They bid using what they know, the best bid wins, a shelter confirms space, and a safety check approves it. Every message below is real."
         right={
           <>
-            <select className={cx(inputCls, "h-8 w-40")} value={policy} onChange={(e) => { const v = e.target.value; inject("SET_POLICY", { policy: v }, `Policy → ${v}`).then((ok) => ok && setPolicy(v)); }}>
-              {["balanced", "fastest", "urgency_first", "equity"].map((p) => (
-                <option key={p}>{p}</option>
+            <label className="text-[13px] text-mute" htmlFor="policy">Priority</label>
+            <select id="policy" className="h-8 rounded-lg border border-line-2 bg-white px-2 text-[13px]" value={policy} onChange={(e) => { const v = e.target.value; inject("SET_POLICY", { policy: v }, `Policy → ${v}`).then((ok) => ok && setPolicy(v)); }}>
+              {[["balanced", "Balanced"], ["fastest", "Fastest pickup"], ["urgency_first", "Most urgent first"], ["equity", "Fair across areas"]].map(([p, l]) => (
+                <option key={p} value={p}>
+                  {l}
+                </option>
               ))}
             </select>
             <Button size="sm" variant="solid" icon={<RefreshCw className="size-3.5" />} onClick={() => inject("SET_POLICY", { policy, renegotiate: true }, "Forced renegotiation")}>
-              Force renegotiation
+              Re-negotiate now
             </Button>
           </>
         }
       />
       <div className="grid gap-3 xl:grid-cols-[300px_1fr_420px]">
-        <Panel title="negotiation rounds" sub={`${list.length} rounds · ${frame.metrics.negotiation_messages} messages`} right={<label className="flex items-center gap-1 text-xs text-mute"><input type="checkbox" checked={onlyCommits} onChange={(e) => setOnlyCommits(e.target.checked)} />eventful</label>} className="h-[640px]">
+        <Panel title="negotiation rounds" sub={`${list.length} rounds · ${frame.metrics.negotiation_messages} messages`} right={<label className="flex items-center gap-1 text-xs text-mute"><input type="checkbox" checked={onlyCommits} onChange={(e) => setOnlyCommits(e.target.checked)} />only with results</label>} className={list.length ? "h-[640px]" : "h-[320px]"}>
           <div className="scroll-thin h-full overflow-y-auto">
             {shown.length === 0 ? (
-              <Empty title="No rounds yet" body="Start or step the simulation." />
+              <Empty title="No negotiation yet" body="Press Start (top left) and units will begin bidding for rescues." />
             ) : (
               shown.map((r) => (
                 <button key={r.id} onClick={() => setRid(r.id)} className={cx("block w-full border-b border-line/70 px-3 py-2 text-left hover:bg-wash", rid === r.id && "bg-info-soft/50")}>
@@ -117,7 +120,7 @@ export default function Agents() {
           </div>
         </Panel>
 
-        <Panel title={detail ? `${detail.id} · message graph` : "message graph"} sub={detail ? `${detail.strategy} · ${detail.incidents.length} requests × ${detail.resources.length} agents` : undefined} className="h-[640px]">
+        <Panel title={detail ? `${detail.id} · message graph` : "message graph"} sub={detail ? `${detail.strategy} · ${detail.incidents.length} requests × ${detail.resources.length} agents` : undefined} className={list.length ? "h-[640px]" : "h-[320px]"}>
           {!detail ? (
             <Spinner label="Select a round" />
           ) : (
@@ -129,7 +132,7 @@ export default function Agents() {
           )}
         </Panel>
 
-        <Panel title="what happened" sub={detail ? `${detail.messages.length} messages · ${detail.commits.length} commits` : undefined} className="h-[640px]" right={detail && <select className="mono rounded border border-line px-1 text-[11px]" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}><option value="all">all</option>{Object.keys(TYPE_STYLE).map((t) => <option key={t}>{t}</option>)}</select>}>
+        <Panel title="what happened" sub={detail ? `${detail.messages.length} messages · ${detail.commits.length} commits` : undefined} className={list.length ? "h-[640px]" : "h-[320px]"} right={detail && <select className="mono rounded border border-line px-1 text-[11px]" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}><option value="all">all</option>{Object.keys(TYPE_STYLE).map((t) => <option key={t}>{t}</option>)}</select>}>
           <div className="scroll-thin h-full overflow-y-auto">
             {detail?.decisions?.length ? (
               <div className="flex flex-wrap gap-1 border-b border-line p-2">

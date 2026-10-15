@@ -74,9 +74,9 @@ export default function Replay() {
   return (
     <div className="space-y-3 p-3">
       <PageHeader
-        eyebrow="mission replay & decision audit"
-        title="Scrub through what actually happened"
-        sub="Frames are the engine's own recorded state per tick. Verification rebuilds the whole run from (scenario, seed, strategy, injected-event log) and compares state hashes tick by tick."
+        eyebrow="Results"
+        title="Mission replay"
+        sub="Scrub through the run minute by minute. You can also rebuild the whole run from scratch and check it matches exactly."
         right={
           <>
             <Button size="sm" icon={<RefreshCw className="size-3.5" />} loading={loading} onClick={load}>
