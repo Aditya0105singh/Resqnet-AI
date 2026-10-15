@@ -103,3 +103,27 @@ def test_api_lists_and_uses_geographies(geo_dir):
 def test_overpass_query_is_bounded():
     q = overpass_query(10.08, 76.33, 10.13, 76.38)
     assert "10.08,76.33,10.13,76.38" in q and 'waterway"~"^(river|canal)$"' in q and "out body" in q
+
+
+def test_clip_to_bounds_splits_ways_at_the_box():
+    from app.geography.osm_city import clip_to_bounds
+    nodes = {"a": (0.0, 0.0, {}), "b": (0.0, 0.5, {}), "c": (0.0, 5.0, {}), "d": (0.0, 0.8, {}), "e": (0.0, 0.9, {})}
+    ways = [("w", ["a", "b", "c", "d", "e"], {"waterway": "river"})]
+    inside, out = clip_to_bounds(nodes, ways, (-1.0, -1.0, 1.0, 1.0))
+    assert "c" not in inside
+    assert out == [("w", ["a", "b"], {"waterway": "river"}), ("w.1", ["d", "e"], {"waterway": "river"})]
+
+
+ALUVA = os.path.join(os.path.dirname(__file__), "..", "..", "data", "geographic", "aluva.city.json")
+
+
+@pytest.mark.skipif(not os.path.exists(ALUVA), reason="Aluva city file not built")
+def test_aluva_runs_safely_under_triple_failure():
+    assert any(g["id"] == "aluva" and not g["synthetic"] for g in world_mod.available_geographies())
+    for strategy in ("decentralized", "centralized"):
+        e = Engine(get_preset("triple_failure", seed=3, geography="aluva"), strategy, record_frames=False)
+        assert e.world.meta["name"] == "Aluva, Kerala"
+        while not e.finished:
+            e.step()
+        m = compute_metrics(e)
+        assert m["invariant_violations"] == 0 and m["route_violations"] == 0 and m["people_rescued"] > 0
