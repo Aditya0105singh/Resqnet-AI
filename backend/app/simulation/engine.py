@@ -710,6 +710,19 @@ class Engine:
             "verify": f"{inc.id}: dispatcher ordered a verification visit",
         }[decision])
 
+    def read_snapshot(self) -> "Engine":
+        """A consistent, read-only copy for question answering (frames and message logs
+        detached). Taken on the thread that owns the engine; safe to read elsewhere."""
+        heavy = ("frames", "rounds", "metric_series", "hashes", "listeners", "route_ghosts", "uncovered_series")
+        saved = {k: getattr(self, k) for k in heavy}
+        try:
+            for k, v in saved.items():
+                setattr(self, k, type(v)())
+            return copy.deepcopy(self)
+        finally:
+            for k, v in saved.items():
+                setattr(self, k, v)
+
     # ================================================================ approval queue
     def dry_run(self, type_: str, params: dict[str, Any]) -> dict[str, Any]:
         """Preview an action by applying it to a throwaway copy of the engine: the exact

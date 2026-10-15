@@ -37,6 +37,8 @@ interface SimState {
   lastSeq: number;
   busy: Record<string, boolean>;
   setSelection: (s: Selection) => void;
+  askOpen: boolean;
+  setAskOpen: (v: boolean) => void;
   openDecision: (id: string | null) => void;
   toggleLayer: (k: keyof Layers) => void;
   toast: (t: Omit<Toast, "id">) => void;
@@ -69,6 +71,8 @@ export const useSim = create<SimState>((set, get) => ({
   lastSeq: 0,
   busy: {},
   setSelection: (selection) => set({ selection }),
+  askOpen: false,
+  setAskOpen: (askOpen) => set({ askOpen }),
   openDecision: (decisionId) => set({ decisionId }),
   toggleLayer: (k) => set((s) => ({ layers: { ...s.layers, [k]: !s.layers[k] } })),
   toast: (t) => {

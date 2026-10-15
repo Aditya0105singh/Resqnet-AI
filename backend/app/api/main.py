@@ -30,6 +30,7 @@ from ..simulation.state import ResourceStatus
 from .report import build_report, report_pdf
 from ..intelligence.extract import analyse, fingerprint
 from ..intelligence.geocode import Gazetteer
+from ..intelligence import commander
 
 app = FastAPI(title="RESQNET AI", version="1.0.0", description="Multi-agent flood rescue coordination digital twin (synthetic research simulation).")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -554,6 +555,32 @@ def sos_status(s: Any, receipt: str) -> dict[str, Any]:
 @app.get("/api/simulations/{sim_id}/sos/{receipt}")
 def get_sos_status(sim_id: str, receipt: str) -> dict[str, Any]:
     return sos_status(get_session(sim_id), receipt)
+
+
+class AskIn(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+
+
+@app.post("/api/simulations/{sim_id}/ask")
+async def ask_commander(sim_id: str, body: AskIn) -> dict[str, Any]:
+    """Mission Commander. Answers from a read-only snapshot taken now (so the running
+    simulation is never read mid-tick). Any action it suggests is queued as a proposal
+    from "ai-commander" on the live engine; only a dispatcher can approve it."""
+    s = get_session(sim_id)
+    snap = s.engine.read_snapshot()
+    out = await asyncio.get_running_loop().run_in_executor(None, commander.ask, body.question, snap)
+    queued = []
+    for p in out.pop("proposals"):
+        try:
+            s.engine.inject("PROPOSE_ACTION", {**p, "source": "ai-commander"}, "ai-commander")
+            queued.append(list(s.engine.proposals)[-1])
+        except EventError as exc:
+            out["warnings"].append(f"could not queue proposal: {exc}")
+    out["queued_proposals"] = queued
+    if queued:
+        s.persist()
+        await s.broadcast("event")
+    return out
 
 
 @app.get("/api/simulations/{sim_id}/proposals")

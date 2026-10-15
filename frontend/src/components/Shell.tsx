@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { CircleAlert, CircleCheck, Info, Pause, Play, RotateCcw, SkipForward, TriangleAlert, X } from "lucide-react";
+import { CircleAlert, CircleCheck, Info, Pause, Play, RotateCcw, SkipForward, TriangleAlert, X, Bot } from "lucide-react";
 import { useState } from "react";
 import { useSim } from "../store/sim";
 import { clock, STRATEGY_LABEL } from "../lib/format";
@@ -35,6 +35,8 @@ export function Logo() {
 
 export function TopBar() {
   const conn = useSim((s) => s.conn);
+  const askOpen = useSim((s) => s.askOpen);
+  const setAskOpen = useSim((s) => s.setAskOpen);
   const loc = useLocation();
   return (
     <div className="no-print sticky top-0 z-30">
@@ -58,6 +60,9 @@ export function TopBar() {
             })}
           </nav>
           <div className="flex shrink-0 items-center gap-2">
+            <button onClick={() => setAskOpen(!askOpen)} className={cx("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12.5px]", askOpen ? "border-ink bg-ink text-white" : "border-line-2 bg-white hover:border-ink")}>
+              <Bot className="size-3.5" /> Ask
+            </button>
             <span className={cx("mono inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px]", conn === "live" ? "border-ok/25 bg-ok-soft text-ok" : conn === "offline" ? "border-crit/25 bg-crit-soft text-crit" : "border-warn/25 bg-warn-soft text-warn")}>
               <span className={cx("size-1.5 rounded-full bg-current", conn !== "live" && "animate-pulse")} />
               {conn === "live" ? "live" : conn}

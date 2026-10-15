@@ -4,6 +4,7 @@ import { useSim } from "./store/sim";
 import { useSimSocket } from "./hooks/useSimSocket";
 import { Toasts, TopBar } from "./components/Shell";
 import { DecisionInspector } from "./components/DecisionInspector";
+import { CommanderDrawer } from "./components/Commander";
 import { Empty, Spinner } from "./components/ui";
 import Command from "./pages/Command";
 
@@ -30,6 +31,7 @@ export default function App() {
   return (
     <div className="fog min-h-full">
       <TopBar />
+      <CommanderDrawer />
       <main className="mx-auto max-w-[1680px] overflow-x-hidden">
         {conn === "offline" && !sim ? (
           <Empty title="Backend unreachable" body="Start the API with scripts/start-backend (port 8000), then reload this page." />
