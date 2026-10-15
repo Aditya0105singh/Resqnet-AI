@@ -848,3 +848,24 @@ async def ws_sim(ws: WebSocket, sim_id: str) -> None:
         pass
     finally:
         s.clients.discard(ws)
+
+
+# ================================================================ single-container deployment
+# When the built frontend exists (frontend/dist, or RESQNET_STATIC), serve it from the same
+# origin as the API and WebSocket. Registered last so every /api and /ws route wins.
+STATIC_DIR = os.path.realpath(os.environ.get("RESQNET_STATIC", os.path.join(os.path.dirname(__file__), "..", "..", "..", "frontend", "dist")))
+if os.path.isfile(os.path.join(STATIC_DIR, "index.html")):
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
+
+    if os.path.isdir(os.path.join(STATIC_DIR, "assets")):
+        app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def spa(path: str) -> Any:
+        if path.startswith(("api/", "ws/")) or path in ("api", "ws"):
+            raise err(404, "NOT_FOUND", f"no route /{path}")
+        target = os.path.realpath(os.path.join(STATIC_DIR, path))
+        if path and target.startswith(STATIC_DIR + os.sep) and os.path.isfile(target):
+            return FileResponse(target)
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))  # client-side routes (/command, /crew/B1, …)

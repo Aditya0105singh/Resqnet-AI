@@ -1,0 +1,17 @@
+# docker compose up --build   →   http://localhost:8000
+services:
+  resqnet:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Optional Claude features (off by default; the app runs fully offline without them)
+      RESQNET_SOS_LLM: ${RESQNET_SOS_LLM:-off}
+      RESQNET_COMMANDER_LLM: ${RESQNET_COMMANDER_LLM:-off}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - resqnet-data:/var/lib/resqnet   # SQLite event store: runs survive restarts
+    restart: unless-stopped
+
+volumes:
+  resqnet-data:

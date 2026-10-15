@@ -76,6 +76,14 @@ python scripts/run_benchmarks.py 10
 
 This runs the optimisation-quality and failure-resilience suites, plus the noise and message-loss sweeps, over 10 paired seeds (about 1 min on 4 cores). It writes raw per-seed CSVs and `summary.json` to `data/evaluation/benchmarks/`, and the tables, with 95% bootstrap CIs, to `docs/benchmark_results.md`. The `/arena` page shows the same published results. See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) for definitions and the honest reading.
 
+### Run as one container
+
+```bash
+docker compose up --build        # → http://localhost:8000 (app, API and WebSocket on one port)
+```
+
+The image builds the frontend and serves it from FastAPI. Runs are kept in a volume, so they survive restarts. Claude features stay off unless `RESQNET_SOS_LLM=on` / `RESQNET_COMMANDER_LLM=on` and `ANTHROPIC_API_KEY` are set. Without Docker, `cd frontend && npx vite build` and then starting the backend serves the built app on port 8000.
+
 ## Pages
 
 | Route | Page |
