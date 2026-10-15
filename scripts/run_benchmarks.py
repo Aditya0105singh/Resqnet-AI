@@ -1,25 +1,27 @@
-"""Reproduce docs/BENCHMARKS.md results: python scripts/run_benchmarks.py [n_seeds]"""
+"""Reproduce every published benchmark number.
+
+    python scripts/run_benchmarks.py [n_seeds] [--workers N]
+
+Runs the optimisation-quality suite, the failure-resilience suite and the parameter
+sweeps over seeds 1..n_seeds (default 10) for every strategy, then writes:
+
+    data/evaluation/benchmarks/<suite>/<scenario>.csv   raw per-seed rows
+    data/evaluation/benchmarks/sweeps/<sweep>.csv       raw per-seed sweep rows
+    data/evaluation/benchmarks/summary.json             aggregates + CIs (served at /api/evaluation)
+    docs/benchmark_results.md                           human-readable tables
+"""
+import argparse
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(ROOT, "backend"))
 
-from app.analysis.runs import benchmark  # noqa: E402
-from app.simulation.scenarios import get_preset  # noqa: E402
+from app.analysis.evaluation import run_all  # noqa: E402
 
-N = int(sys.argv[1]) if len(sys.argv) > 1 else 10
-KEYS = [("mean_time_to_service", "mean TTS (min)"), ("deadline_misses", "urgent misses"), ("unmet_people", "unmet people"), ("idle_with_demand_ticks", "idle w/ demand"), ("fairness_jain", "fairness (Jain)"), ("route_violations", "route violations"), ("negotiation_messages", "messages"), ("compute_ms", "coord. ms")]
-
-out = [f"Seeds 1–{N}, 180 ticks each, all strategies share the same seeds, events, cost function and safety shield. Mean ± sd.\n"]
-for sc in ["normal", "contradictory", "triple_failure", "resource_shortage"]:
-    res = benchmark(get_preset(sc), ["decentralized", "centralized", "greedy"], list(range(1, N + 1)))
-    out.append(f"\n### {sc}\n\n| strategy | " + " | ".join(l for _, l in KEYS) + " |\n|---|" + "---|" * len(KEYS))
-    for s, summ in res["summary"].items():
-        out.append(f"| {s} | " + " | ".join(f"{summ[k]['mean']} ± {summ[k]['std']}" if summ[k]["mean"] is not None else "—" for k, _ in KEYS) + " |")
-    p = res["paired_decentralized_minus_centralized"]
-    out.append("\nPaired (decentralized − centralized): " + ", ".join(f"{k} {v['mean']:+} ± {v['std']}" for k, v in p.items() if v["mean"] is not None))
-    print(sc, "done", flush=True)
-path = os.path.join(os.path.dirname(__file__), "..", "docs", "benchmark_results.md")
-with open(path, "w", encoding="utf-8") as f:
-    f.write("\n".join(out) + "\n")
-print("wrote", path)
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("n_seeds", nargs="?", type=int, default=10)
+    ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
+    a = ap.parse_args()
+    run_all(list(range(1, a.n_seeds + 1)), ROOT, workers=a.workers)

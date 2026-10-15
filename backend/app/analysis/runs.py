@@ -11,6 +11,8 @@ import statistics
 import time
 from typing import Any, Callable, Optional
 
+import numpy as np
+
 from ..metrics.metrics import SUMMARY_KEYS, compute_metrics
 from ..simulation.engine import Engine, EventError
 from ..simulation.scenarios import POLICIES, ScenarioConfig
@@ -166,17 +168,63 @@ def run_one(cfg: ScenarioConfig, strategy: str) -> dict[str, Any]:
     return out
 
 
+BOOTSTRAP_RESAMPLES = 2000
+MIN_N_FOR_CI = 5  # below this a bootstrap CI is too unstable to report
+PAIRED_KEYS = ("mean_time_to_service", "service_rate", "people_rescued", "deadline_misses", "unmet_people", "fairness_jain", "idle_with_demand_ticks", "negotiation_messages", "mean_recovery_time", "outage_uncovered_people_minutes")
+PAIRS = (("decentralized", "centralized"), ("message_passing", "centralized"), ("message_passing", "decentralized"), ("decentralized", "greedy"))
+
+
+def bootstrap_ci(xs: list[float], level: float = 0.95) -> tuple[Optional[float], Optional[float]]:
+    """Percentile bootstrap CI of the mean. Seeded from the data, so it is reproducible.
+    With fewer than MIN_N_FOR_CI values a CI is not meaningful and (None, None) is returned."""
+    if len(xs) < MIN_N_FOR_CI:
+        return None, None
+    arr = np.asarray(xs, dtype=float)
+    if np.all(arr == arr[0]):
+        return float(arr[0]), float(arr[0])
+    rng = np.random.default_rng(len(xs) * 7919 + int(abs(arr.sum()) * 1000) % 100_003)
+    means = rng.choice(arr, size=(BOOTSTRAP_RESAMPLES, len(arr)), replace=True).mean(axis=1)
+    lo, hi = np.quantile(means, [(1 - level) / 2, 1 - (1 - level) / 2])
+    return float(lo), float(hi)
+
+
 def aggregate(values: list[Optional[float]]) -> dict[str, Optional[float]]:
-    xs = [v for v in values if v is not None]
+    """Mean, sd, median, IQR and a 95% bootstrap CI of the mean. `n` counts the values
+    that exist (e.g. recovery time is missing for runs that never recovered)."""
+    xs = [float(v) for v in values if v is not None]
     if not xs:
-        return {"mean": None, "std": None, "min": None, "max": None, "n": 0}
+        return {"mean": None, "std": None, "median": None, "q1": None, "q3": None, "ci_low": None, "ci_high": None, "min": None, "max": None, "n": 0}
+    q1, med, q3 = (float(x) for x in np.quantile(xs, [0.25, 0.5, 0.75]))
+    lo, hi = bootstrap_ci(xs)
+    r = lambda v: None if v is None else round(v, 3)  # noqa: E731
     return {
-        "mean": round(statistics.fmean(xs), 3),
-        "std": round(statistics.stdev(xs), 3) if len(xs) > 1 else 0.0,
-        "min": round(min(xs), 3),
-        "max": round(max(xs), 3),
+        "mean": r(statistics.fmean(xs)),
+        "std": r(statistics.stdev(xs)) if len(xs) > 1 else 0.0,
+        "median": r(med),
+        "q1": r(q1),
+        "q3": r(q3),
+        "ci_low": r(lo),
+        "ci_high": r(hi),
+        "min": r(min(xs)),
+        "max": r(max(xs)),
         "n": len(xs),
     }
+
+
+def paired_difference(runs: list[dict[str, Any]], a: str, b: str, key: str, seeds: list[int]) -> dict[str, Any]:
+    """Per-seed difference a − b on the same seed and event schedule. `significant` is true
+    when the 95% CI of the mean difference excludes zero (needs n ≥ MIN_N_FOR_CI)."""
+    diffs = []
+    for seed in seeds:
+        ra = next((r for r in runs if r["seed"] == seed and r["strategy"] == a), None)
+        rb = next((r for r in runs if r["seed"] == seed and r["strategy"] == b), None)
+        if ra and rb and ra.get(key) is not None and rb.get(key) is not None:
+            diffs.append(ra[key] - rb[key])
+    agg = aggregate(diffs)
+    agg["significant"] = agg["ci_low"] is not None and (agg["ci_low"] > 0 or agg["ci_high"] < 0)
+    agg["n_negative"] = sum(1 for d in diffs if d < 0)  # seeds where a < b
+    agg["n_positive"] = sum(1 for d in diffs if d > 0)  # seeds where a > b
+    return agg
 
 
 def benchmark(cfg: ScenarioConfig, strategies: list[str], seeds: list[int], progress: Optional[Callable[[float], None]] = None) -> dict[str, Any]:
@@ -193,18 +241,25 @@ def benchmark(cfg: ScenarioConfig, strategies: list[str], seeds: list[int], prog
             done += 1
             if progress:
                 progress(done / total)
-    summary = {s: {k: aggregate([r[k] for r in runs if r["strategy"] == s]) for k in SUMMARY_KEYS + ["wall_ms"]} for s in strategies}
-    paired: dict[str, Any] = {}
-    if "decentralized" in strategies and "centralized" in strategies:
-        for k in ("mean_time_to_service", "deadline_misses", "unmet_people", "fairness_jain", "idle_with_demand_ticks", "negotiation_messages"):
-            diffs = []
-            for seed in seeds:
-                a = next(r for r in runs if r["seed"] == seed and r["strategy"] == "decentralized")[k]
-                b = next(r for r in runs if r["seed"] == seed and r["strategy"] == "centralized")[k]
-                if a is not None and b is not None:
-                    diffs.append(a - b)
-            paired[k] = aggregate(diffs)
-    return {"scenario": cfg.key, "seeds": seeds, "strategies": strategies, "runs": runs, "summary": summary, "paired_decentralized_minus_centralized": paired}
+    return summarise(cfg.key, strategies, seeds, runs)
+
+
+def summarise(scenario: str, strategies: list[str], seeds: list[int], runs: list[dict[str, Any]]) -> dict[str, Any]:
+    summary = {s: {k: aggregate([r.get(k) for r in runs if r["strategy"] == s]) for k in SUMMARY_KEYS + ["wall_ms"]} for s in strategies}
+    pairs: dict[str, dict[str, Any]] = {}
+    for a, b in PAIRS:
+        if a in strategies and b in strategies:
+            pairs[f"{a}-{b}"] = {k: paired_difference(runs, a, b, k, seeds) for k in PAIRED_KEYS}
+    legacy = pairs.get("decentralized-centralized", {})
+    return {
+        "scenario": scenario,
+        "seeds": seeds,
+        "strategies": strategies,
+        "runs": runs,
+        "summary": summary,
+        "paired": pairs,
+        "paired_decentralized_minus_centralized": {k: v for k, v in legacy.items() if k in ("mean_time_to_service", "deadline_misses", "unmet_people", "fairness_jain", "idle_with_demand_ticks", "negotiation_messages")},
+    }
 
 
 # ---------------------------------------------------------------- adversarial

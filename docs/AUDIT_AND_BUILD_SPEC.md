@@ -109,7 +109,9 @@ Each work package lists its files, the change, and its exit test. WP1–WP4 are 
   - after heal, reconciliation leaves no double booking;
   - latency 0 and loss 0 reproduce the current outputs exactly (hash-equal).
 
-### WP2: Statistics and the two-question evaluation
+### WP2: Statistics and the two-question evaluation ✅ built
+
+> Built as `backend/app/analysis/evaluation.py` and `scripts/run_benchmarks.py`, with the Arena tab *Published results*. Coordinator outages and partitions break no commitment, so outage recovery is measured on the uncovered-demand backlog (`outage_uncovered_people_minutes`, `mean_outage_backlog_clear`). Findings are in [BENCHMARKS.md](BENCHMARKS.md).
 
 - **`analysis/runs.py` (`aggregate`):** add median, IQR, and a 95% bootstrap CI (numpy, seeded). Paired differences get their own CI.
 - **`analysis/runs.py`:** add a `recovery` metric, which already partly exists in `engine._update_disruptions`. Define it as the time from the disruption tick until every affected incident has a valid commitment again, with `never_recovered` counted separately.
