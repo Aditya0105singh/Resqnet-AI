@@ -186,7 +186,7 @@ export default function Command() {
       {/* key numbers */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[repeat(4,1fr)_1.5fr_auto]">
         <Kpi label="people rescued" value={m.people_rescued} hint={`${m.people_in_transit} on the way to shelter`} tone="ok" />
-        <Kpi label="still waiting" value={m.unmet_people} hint={`across ${m.open_incidents} requests`} tone={m.unmet_people > 20 ? "warn" : undefined} />
+        <Kpi label="not yet safe" value={m.unmet_people} hint={m.people_in_transit ? `${m.people_in_transit} on board · incl. not yet reported` : "incl. people not yet reported"} tone={m.unmet_people > 20 ? "warn" : undefined} />
         <Kpi label="avg. time to reach people" value={fmt(m.mean_time_to_service)} unit="min" hint={`${m.deadline_misses} of ${m.urgent_incidents} urgent missed deadline`} tone={m.deadline_misses ? "crit" : undefined} />
         <Kpi label="safety rules broken" value={m.route_violations + m.invariant_violations} hint={`${m.safety_rejections} unsafe plans blocked`} tone={m.route_violations + m.invariant_violations ? "crit" : "ok"} />
         <MiniChart />

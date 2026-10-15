@@ -47,6 +47,7 @@ class Options:
     name: str = "OSM city"
     synthetic: bool = False
     clip: bool = True  # trim to the extract's <bounds>, when present
+    aliases: dict[str, list[str]] = field(default_factory=dict)  # extra names per landmark name, e.g. translations
 
 
 # ---------------------------------------------------------------- parsing
@@ -220,12 +221,35 @@ def _largest_component(pos: dict, edges: dict) -> tuple[dict, dict]:
 
 
 def _river_line(nodes: dict, ways: list, proj: Projection) -> list[tuple[float, float]]:
+    """The longest river: OSM splits rivers into many ways, so ways that meet end to end are chained first."""
+    segs = [[r for r in refs if r in nodes] for _wid, refs, tags in ways if tags.get("waterway") in ("river", "canal")]
+    segs = [sg for sg in segs if len(sg) >= 2]
+    chains: list[list[str]] = []
+    for sg in segs:
+        chains.append(list(sg))
+        merged = True
+        while merged:
+            merged = False
+            cur = chains[-1]
+            for i, other in enumerate(chains[:-1]):
+                if other[-1] == cur[0]:
+                    joined = other + cur[1:]
+                elif cur[-1] == other[0]:
+                    joined = cur + other[1:]
+                elif other[0] == cur[0]:
+                    joined = other[::-1] + cur[1:]
+                elif other[-1] == cur[-1]:
+                    joined = other + cur[::-1][1:]
+                else:
+                    continue
+                chains.pop(i)
+                chains[-1] = joined
+                merged = True
+                break
     best: list[tuple[float, float]] = []
     best_len = 0.0
-    for _wid, refs, tags in ways:
-        if tags.get("waterway") not in ("river", "canal"):
-            continue
-        pts = [proj.xy(nodes[r][0], nodes[r][1]) for r in refs if r in nodes]
+    for ch in chains:
+        pts = [proj.xy(nodes[r][0], nodes[r][1]) for r in ch]
         length = sum(_dist(a, b) for a, b in zip(pts, pts[1:]))
         if length > best_len:
             best, best_len = pts, length
@@ -298,6 +322,31 @@ def _feature_points(nodes: dict, ways: list, proj: Projection) -> list[tuple[tup
             pts = [nodes[r] for r in refs if r in nodes]
             if pts:
                 out.append((proj.xy(sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)), tags))
+    return out
+
+
+def _drop_town_name(landmarks: list[dict], town: str) -> list[dict]:
+    """The town's own name is not a location inside the town.
+
+    Stops and stations are often tagged just "Aluva" (with name:ml "ആലുവ"), so a message saying
+    "Aluva railway station" would match the bus stop instead. Single-word aliases of landmarks
+    named after the town are removed everywhere; such a landmark keeps a longer alias as its name
+    ("Aluva Private Bus Stand") or is dropped.
+    """
+    if not town:
+        return landmarks
+    tl = town.lower()
+    town_words = {a for lm in landmarks if lm["name"].lower() == tl for a in lm["aliases"] if " " not in a.strip()}
+    town_words.add(town)
+    out = []
+    for lm in landmarks:
+        aliases = [a for a in lm["aliases"] if a not in town_words]
+        if not aliases:
+            continue
+        name = lm["name"] if lm["name"] not in town_words else max(aliases, key=len)
+        out.append({**lm, "name": name, "aliases": sorted(set(aliases) | {name})})
+    for i, lm in enumerate(out, 1):
+        lm["id"] = f"L{i}"
     return out
 
 
@@ -425,6 +474,12 @@ def build_city(xml_text: str, opt: Optional[Options] = None, source: Optional[di
             continue
         aliases = sorted({t[k].strip() for k in ALIAS_TAGS if t.get(k)})
         landmarks.append({"id": f"L{len(landmarks) + 1}", "name": t["name"], "node": near, "aliases": aliases, "type": next((t[k] for k in LANDMARK_KEYS if t.get(k)), t.get("place", "")), "provenance": "osm"})
+    landmarks = _drop_town_name(landmarks, opt.name.split(",")[0].strip())
+    for lm in landmarks:
+        extra = opt.aliases.get(lm["name"], [])
+        if extra:
+            lm["aliases"] = sorted(set(lm["aliases"]) | set(extra))
+            lm["added_aliases"] = sorted(extra)  # project-added, not from OSM
 
     boat_homes = [f"R{i}" for i in range(0, len(river), max(1, len(river) // 7))][:7] if river else []
     ground_homes = _farthest_points(sorted(land), land, 6)

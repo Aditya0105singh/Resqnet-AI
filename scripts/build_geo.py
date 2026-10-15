@@ -50,6 +50,7 @@ if __name__ == "__main__":
     ap.add_argument("--neighbourhoods", type=int, default=5)
     ap.add_argument("--save-osm", help="also save the downloaded XML here")
     ap.add_argument("--synthetic", action="store_true", help="mark the output as a synthetic/test geography")
+    ap.add_argument("--aliases", help="JSON file: landmark name -> extra names (e.g. Hindi/Malayalam), marked project-added")
     a = ap.parse_args()
     if a.osm_file:
         xml = open(a.osm_file, encoding="utf-8").read()
@@ -59,7 +60,12 @@ if __name__ == "__main__":
         source = {"input": f"Overpass API bbox {a.bbox}", "overpass": OVERPASS}
         if a.save_osm:
             open(a.save_osm, "w", encoding="utf-8").write(xml)
-    city = build_city(xml, Options(merge_km=a.merge_km, river_step_km=a.river_step_km, jetty_max_km=a.jetty_max_km, neighbourhoods=a.neighbourhoods, name=a.name, synthetic=a.synthetic), source)
+    extra = {}
+    if a.aliases:
+        with open(a.aliases, encoding="utf-8") as f:
+            extra = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+        source["aliases"] = os.path.basename(a.aliases)
+    city = build_city(xml, Options(merge_km=a.merge_km, river_step_km=a.river_step_km, jetty_max_km=a.jetty_max_km, neighbourhoods=a.neighbourhoods, name=a.name, synthetic=a.synthetic, aliases=extra), source)
     out = os.path.join(ROOT, "data", "geographic", f"{a.out}.city.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(city, f, ensure_ascii=False, indent=1)
