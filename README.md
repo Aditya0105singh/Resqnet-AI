@@ -55,7 +55,7 @@ cd backend && python -m pytest tests -q -p no:asyncio
 cd frontend && npx tsc -b && npx vite build
 ```
 
-The suite has 72 tests: determinism, replay, rerouting, retreat on a closing edge, unreachable requests, double booking, stale state, expired reservations, capacity limits, boat failure, stranded passengers, shelter overflow, triple failure under all three strategies, contradictory and duplicate reports, delayed information, benchmarks, counterfactual sanity checks, policy-change renegotiation, the API, WebSocket resync and PDF export. It also covers message transport: loss, duplicate delivery, timeouts, lease expiry and partitions. Hypothesis property tests check the safety invariants under random failure sequences.
+The suite has 79 tests: determinism, replay, rerouting, retreat on a closing edge, unreachable requests, double booking, stale state, expired reservations, capacity limits, boat failure, stranded passengers, shelter overflow, triple failure under all three strategies, contradictory and duplicate reports, delayed information, benchmarks, counterfactual sanity checks, policy-change renegotiation, the API, WebSocket resync and PDF export. It also covers message transport: loss, duplicate delivery, timeouts, lease expiry and partitions. Hypothesis property tests check the safety invariants under random failure sequences.
 
 ### Reproduce benchmarks
 
@@ -63,7 +63,7 @@ The suite has 72 tests: determinism, replay, rerouting, retreat on a closing edg
 python scripts/run_benchmarks.py 10
 ```
 
-This writes `docs/benchmark_results.md`.
+This runs the optimisation-quality and failure-resilience suites, plus the noise and message-loss sweeps, over 10 paired seeds (about 1 min on 4 cores). It writes raw per-seed CSVs and `summary.json` to `data/evaluation/benchmarks/`, and the tables, with 95% bootstrap CIs, to `docs/benchmark_results.md`. The `/arena` page shows the same published results. See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) for definitions and the honest reading.
 
 ## Pages
 

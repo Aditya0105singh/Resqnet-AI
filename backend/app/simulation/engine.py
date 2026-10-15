@@ -107,6 +107,10 @@ class Engine:
         self.hashes: dict[int, str] = {}
         self.metric_series: list[dict[str, Any]] = []
         self.disruptions: list[dict[str, Any]] = []
+        # network-level failures (coordinator outage, partitions): no commitment is broken,
+        # so recovery is measured on the demand backlog instead (see _update_outages)
+        self.outages: list[dict[str, Any]] = []
+        self.uncovered_series: list[int] = []
         self.route_ghosts: list[dict[str, Any]] = []
         self.counters: dict[str, int] = {
             "reassignments": 0,
@@ -666,6 +670,7 @@ class Engine:
             raise EventError("duration must be an integer from 1 to 300")
         pid = f"P{len(w.partitions) + 1}"
         w.partitions.append({"id": pid, "members": sorted(members), "start": w.tick, "until": w.tick + duration})
+        self._track_outage(ev, w.tick + duration, sorted(members))
         ev.effects.append(
             f"network partition {pid}: {', '.join(sorted(members))} cut off from incident agents, dispatch and other units until t={w.tick + duration}; "
             "committed missions continue, no new commitments across the split"
@@ -765,6 +770,7 @@ class Engine:
         if isinstance(duration, bool) or not isinstance(duration, int) or not 1 <= duration <= 300:
             raise EventError("duration must be an integer from 1 to 300")
         self.world.coordinator_down_until = max(self.world.coordinator_down_until, self.world.tick + duration)
+        self._track_outage(ev, self.world.coordinator_down_until - 1, [])
         ev.effects.append(
             f"Central dispatch unavailable until t={self.world.coordinator_down_until}; "
             "existing missions and local safety continue. Peer communication remains available."
@@ -861,6 +867,7 @@ class Engine:
                 self.safety_log.append({"tick": w.tick, "type": "INVARIANT_VIOLATION", "detail": v})
                 self.audit("safety", f"INVARIANT VIOLATION {v}", {}, "critical")
         self._update_disruptions()
+        self._update_outages()
         self._publish_all()
         w.bump()
         self.compute_ms += (time.perf_counter() - t0) * 1000
@@ -1140,6 +1147,39 @@ class Engine:
                 d["resolved_tick"] = w.tick
                 d["recovery"] = w.tick - d["tick"]
                 self.audit("event", f"Recovered from {d['event']} ({d['type']}) in {d['recovery']} min", {"event": d["event"]}, "ok")
+
+    def uncovered_people(self) -> int:
+        """People in eligible, open requests that no commitment covers yet."""
+        w = self.world
+        return sum(unassigned_people(w, i) for i in w.incidents.values() if common.is_eligible(w, i)[0])
+
+    def _track_outage(self, ev: SimulationEvent, last_tick: int, members: list[str]) -> None:
+        self.outages.append({
+            "event": ev.id, "type": ev.type, "start": self.world.tick, "end": last_tick, "members": members,
+            "baseline": self.uncovered_people(), "peak": self.uncovered_people(), "uncovered_people_minutes": 0,
+            "commitments": 0, "member_commitments": 0, "resolved_tick": None, "backlog_clear": None,
+        })
+
+    def _update_outages(self) -> None:
+        """Per tick: integrate uncovered demand during each outage, count commitments made
+        while it lasted, and after it ends measure how long until the uncovered backlog is
+        back at (or below) its level when the outage began."""
+        w = self.world
+        now = self.uncovered_people()
+        self.uncovered_series.append(now)
+        made = [a for a in w.assignments.values() if a.created_tick == w.tick]
+        for o in self.outages:
+            if o["resolved_tick"] is not None:
+                continue
+            if w.tick <= o["end"]:
+                o["uncovered_people_minutes"] += now
+                o["peak"] = max(o["peak"], now)
+                o["commitments"] += len(made)
+                o["member_commitments"] += sum(1 for a in made if a.resource_id in o["members"])
+            elif now <= o["baseline"]:
+                o["resolved_tick"] = w.tick
+                o["backlog_clear"] = w.tick - o["end"]
+                self.audit("event", f"Backlog from {o['event']} ({o['type']}) cleared {o['backlog_clear']} min after it ended", {"event": o["event"]}, "ok")
 
     # ================================================================ decisions
     def new_decision(self, rnd: NegotiationRound, inc: Incident, cands: list, view: dict[str, Any]) -> dict[str, Any]:
