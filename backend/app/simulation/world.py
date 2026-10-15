@@ -243,6 +243,9 @@ def _build_from_city(cfg: ScenarioConfig, strategy: str, city: dict) -> WorldSta
         "assumptions": city.get("assumptions", []),
         "landmarks": city.get("landmarks", []),
         "geography": cfg.geography,
+        # display only: real road shapes and background layers; the engine routes on the graph
+        "geometry": {e["id"]: e["geometry"] for e in city.get("edges", []) if e.get("geometry")},
+        "basemap": city.get("basemap", {}),
     }
     return WorldState(tick=0, seed=cfg.seed, scenario=cfg.key, strategy=strategy, nodes=nodes, edges=edges, neighbourhoods=nbs, resources=resources, shelters=shelters, meta=meta)
 

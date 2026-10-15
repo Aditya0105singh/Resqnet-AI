@@ -95,6 +95,7 @@ export default function Agents() {
           </>
         }
       />
+      {detail && <RoundStory d={detail} />}
       <div className="grid gap-3 xl:grid-cols-[300px_1fr_420px]">
         <Panel title="negotiation rounds" sub={`${list.length} rounds · ${frame.metrics.negotiation_messages} messages`} right={<label className="flex items-center gap-1 text-xs text-mute"><input type="checkbox" checked={onlyCommits} onChange={(e) => setOnlyCommits(e.target.checked)} />only with results</label>} className={list.length ? "h-[640px]" : "h-[320px]"}>
           <div className="scroll-thin h-full overflow-y-auto">
@@ -107,8 +108,8 @@ export default function Agents() {
                     <span className="mono text-[12px] font-semibold">{r.id}</span>
                     <span className="mono text-[10.5px] text-mute">t={r.tick}</span>
                     <span className="ml-auto flex gap-1">
-                      {r.commits.length > 0 && <Badge tone="ok">{r.commits.length} commit</Badge>}
-                      {r.rejections > 0 && <Badge tone="crit">{r.rejections} rej</Badge>}
+                      {r.commits.length > 0 && <Badge tone="ok">{r.commits.length} agreed</Badge>}
+                      {r.rejections > 0 && <Badge tone="crit">{r.rejections} turned down</Badge>}
                     </span>
                   </div>
                   <div className="mt-0.5 truncate text-[11px] text-mute">
@@ -297,4 +298,47 @@ function buildGraph(d: RoundDetail): { nodes: Node[]; edges: Edge[] } {
     };
   });
   return { nodes, edges };
+}
+
+/** One negotiation round told in plain words, built only from that round's messages. */
+function RoundStory({ d }: { d: RoundDetail }) {
+  const count = (t: string) => d.messages.filter((m) => m.type === t).length;
+  const bids = count("BID") + count("PROPOSE");
+  const rejected = d.messages.filter((m) => ["REJECT", "DECLINE", "REJECT_RESERVATION", "SAFETY_REJECT"].includes(m.type));
+  const reasons = Object.entries(
+    rejected.reduce<Record<string, number>>((acc, m) => {
+      const r = (m.reason || m.type.toLowerCase().replace(/_/g, " ")).split(/[;:(]/)[0].trim();
+      acc[r] = (acc[r] ?? 0) + 1;
+      return acc;
+    }, {}),
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  const deals = d.matching.length ? d.matching : d.commits.map((c) => ({ resource: "", incident: c, cost: 0, pass: 0 }));
+  const safety = count("SAFETY_REJECT");
+  return (
+    <section className="panel mb-3 px-4 py-3.5">
+      <div className="label mb-1.5">
+        round {d.id} at minute {d.tick}, in plain words
+      </div>
+      <p className="text-[14px] leading-relaxed text-ink">
+        {d.incidents.length} rescue request{d.incidents.length === 1 ? " was" : "s were"} offered to {d.resources.length} available unit{d.resources.length === 1 ? "" : "s"}. They made {bids} bid{bids === 1 ? "" : "s"} based on what each one knew about the roads.{" "}
+        {deals.length ? (
+          <>
+            <b className="font-medium">{deals.length} rescue{deals.length === 1 ? " was" : "s were"} agreed</b>
+            {d.matching.length ? <>: {d.matching.map((m) => `${m.resource} → ${m.incident}`).join(", ")}</> : null}, each with shelter space reserved and a safety check passed.{" "}
+          </>
+        ) : (
+          "No rescue was agreed this round. "
+        )}
+        {rejected.length ? (
+          <>
+            {rejected.length} offer{rejected.length === 1 ? " was" : "s were"} turned down
+            {reasons.length ? <> (mostly: {reasons.map(([r, n]) => `${r}${n > 1 ? ` ×${n}` : ""}`).join("; ")})</> : null}.{" "}
+          </>
+        ) : null}
+        {safety ? <span className="text-crit">The safety check blocked {safety} unsafe plan{safety === 1 ? "" : "s"}.</span> : <span className="text-ok">No unsafe plan reached the safety check.</span>}
+      </p>
+    </section>
+  );
 }

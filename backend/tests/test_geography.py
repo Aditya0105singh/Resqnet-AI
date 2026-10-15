@@ -158,3 +158,18 @@ def test_aluva_sos_in_three_languages_finds_real_places_and_never_guesses():
     assert analyse("ആലുവ മാർക്കറ്റിനടുത്ത് 4 പേർ കുടുങ്ങി", gaz).location.matched == ["Aluva Market"]
     assert analyse("stuck near the bus stand", gaz).location.status == "ambiguous", "two bus stands"
     assert analyse("stuck in Aluva, please help", gaz).location.status == "none", "the town name is not a location"
+
+
+@pytest.mark.skipif(not os.path.exists(ALUVA), reason="Aluva city file not built")
+def test_aluva_road_shapes_and_background_are_consistent():
+    city = json.load(open(ALUVA, encoding="utf-8"))
+    nodes = {n["id"]: n for n in city["nodes"]}
+    shaped = [e for e in city["edges"] if e.get("geometry")]
+    assert len(shaped) > 100
+    for e in shaped:  # a road shape starts at u and ends at v
+        (x0, y0), (x1, y1) = e["geometry"][0], e["geometry"][-1]
+        assert abs(x0 - nodes[e["u"]]["x"]) < 1e-3 and abs(y1 - nodes[e["v"]]["y"]) < 1e-3
+    assert len(city["basemap"]["buildings"]) > 300 and all(len(p) >= 3 for p in city["basemap"]["buildings"])
+    # display-only data must not change the engine's world
+    e = Engine(get_preset("normal", seed=1, geography="aluva"), "decentralized", record_frames=False)
+    assert len(e.world.edges) == len(city["edges"])

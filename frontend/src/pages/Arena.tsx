@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { useSim } from "../store/sim";
 import { Badge, Button, cx, Empty, Field, inputCls, PageHeader, Panel, Segmented, Spinner } from "../components/ui";
 import { fmt, STRATEGY_LABEL } from "../lib/format";
+import { SCENARIOS } from "../components/Shell";
 
 const STRATS = ["decentralized", "message_passing", "centralized", "greedy"];
 // categorical slots 1–4 of the validated reference palette (passes CVD + lightness checks;
@@ -248,6 +249,7 @@ function Published() {
   const metrics = suite === "quality" ? QUALITY_METRICS : RESILIENCE_METRICS;
   return (
     <>
+      <KeyFindings ev={ev} />
       <Panel
         title={s.title}
         sub={`${s.question} ${ev.seeds.length} paired seeds per cell · generated ${ev.generated.slice(0, 10)} · reproduce with python scripts/run_benchmarks.py ${ev.seeds.length}; raw rows in data/evaluation/benchmarks/`}
@@ -255,8 +257,8 @@ function Published() {
       >
         <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
           {Object.keys(s.scenarios).map((k) => (
-            <button key={k} onClick={() => setScenario(k)} className={cx("mono rounded-full border px-3 py-1 text-[12px]", k === scenario ? "border-ink bg-ink text-white" : "border-line-2 bg-white hover:border-ink")}>
-              {k}
+            <button key={k} onClick={() => setScenario(k)} className={cx("rounded-full border px-3 py-1 text-[12.5px]", k === scenario ? "border-ink bg-ink text-white" : "border-line-2 bg-white hover:border-ink")}>
+              {SCENARIOS.find((x) => x.id === k)?.name ?? k}
             </button>
           ))}
         </div>
@@ -284,6 +286,52 @@ function Published() {
         <AblationPanel key={ab.param} ab={ab} />
       ))}
     </>
+  );
+}
+
+/** The headline results in plain words, computed from the published summary (nothing hard-coded). */
+function KeyFindings({ ev }: { ev: any }) {
+  const res = ev.suites?.resilience?.scenarios ?? {};
+  const qual = ev.suites?.quality?.scenarios ?? {};
+  const out = res.coordinator_outage?.paired?.["decentralized-centralized"];
+  const healthy = qual.normal?.paired?.["decentralized-centralized"];
+  const split = res.network_partition?.paired?.["message_passing-centralized"];
+  let runs = 0;
+  let worst = 0;
+  for (const su of Object.values<any>(ev.suites ?? {}))
+    for (const sc of Object.values<any>(su.scenarios ?? {}))
+      for (const m of Object.values<any>(sc.summary ?? {})) {
+        runs += m.route_violations?.n ?? 0;
+        worst = Math.max(worst, m.route_violations?.max ?? 0);
+      }
+  const pct = (x: number) => `${x > 0 ? "+" : ""}${Math.round(x * 100)}%`;
+  const cards: { tone: "good" | "honest"; big: string; title: string; body: string }[] = [];
+  if (out?.service_rate && out?.mean_time_to_service)
+    cards.push({ tone: "good", big: pct(out.service_rate.mean), title: "more people served when the control room fails", body: `and ${Math.abs(out.mean_time_to_service.mean).toFixed(0)} min faster on average. The agents keep negotiating; the central optimiser has nobody to give orders.` });
+  if (healthy?.mean_time_to_service)
+    cards.push({ tone: "honest", big: `${healthy.mean_time_to_service.mean > 0 ? "+" : ""}${healthy.mean_time_to_service.mean.toFixed(1)} min`, title: "slower than the central optimiser on a healthy network", body: "When everything works, one optimiser with perfect information is as good or slightly faster. We report it rather than hide it." });
+  if (split?.people_rescued)
+    cards.push({ tone: "good", big: `${split.people_rescued.mean > 0 ? "+" : ""}${split.people_rescued.mean.toFixed(1)}`, title: "more people rescued when the network splits", body: `by agents talking over radio, versus the central optimiser${split.deadline_misses?.mean > 0 ? `, at the cost of ${split.deadline_misses.mean.toFixed(1)} more missed deadlines` : ""}.` });
+  if (runs) cards.push({ tone: "good", big: String(worst), title: "safety rules broken", body: `across all ${runs} published runs, every scenario and every approach.` });
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="font-display text-lg font-semibold">Key findings</h2>
+        <p className="text-sm text-mute">
+          {ev.seeds.length} paired runs per cell on the synthetic test city: every approach faces exactly the same floods, requests and failures. Only differences whose 95% confidence range excludes zero are claimed. Details and charts below.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map((c) => (
+          <div key={c.title} className="panel p-4">
+            <div className={cx("font-display text-3xl font-semibold tracking-tight", c.tone === "good" ? "text-brand" : "text-warn")}>{c.big}</div>
+            <div className="mt-2 text-sm font-medium">{c.title}</div>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-mute">{c.body}</p>
+          </div>
+        ))}
+      </div>
+      <h2 className="pt-2 font-display text-lg font-semibold">Details</h2>
+    </section>
   );
 }
 

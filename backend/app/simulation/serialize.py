@@ -11,6 +11,7 @@ from .state import ACTIVE_ASSIGNMENT, ReservationStatus, WorldState
 
 
 def static_world(world: WorldState) -> dict[str, Any]:
+    geo = world.meta.get("geometry", {})
     return {
         "name": world.meta.get("name", "Riverbend (synthetic)"),
         "disclaimer": world.meta.get("disclaimer", "Synthetic city for research and education. Not real geography or live flood data."),
@@ -18,9 +19,31 @@ def static_world(world: WorldState) -> dict[str, Any]:
         "synthetic": world.meta.get("synthetic", True),
         "assumptions": world.meta.get("assumptions", []),
         "nodes": [{"id": n.id, "x": n.x, "y": n.y, "elevation": n.elevation, "neighbourhood": n.neighbourhood, "kind": n.kind, "label": n.label, "lat": n.lat, "lon": n.lon, "provenance": n.provenance} for n in world.nodes.values()],
-        "edges": [{"id": e.id, "u": e.u, "v": e.v, "kind": e.kind, "length_km": e.length_km, "name": e.name, "clearance": e.clearance if e.clearance < 90 else None} for e in world.edges.values()],
+        "edges": [{"id": e.id, "u": e.u, "v": e.v, "kind": e.kind, "length_km": e.length_km, "name": e.name, "clearance": e.clearance if e.clearance < 90 else None, **({"geometry": geo[e.id]} if e.id in geo else {})} for e in world.edges.values()],
+        "basemap": world.meta.get("basemap", {}),
         "neighbourhoods": [{"id": n.id, "name": n.name, "flood_factor": n.flood_factor} for n in world.neighbourhoods.values()],
     }
+
+
+_SHAPES: dict[int, tuple[dict, dict]] = {}  # geometry dict id -> (that dict, node-pair lookup)
+
+
+def _shape(world: WorldState, u: str, v: str) -> list[list[float]] | None:
+    """Real road shape from u to v, when the city file has one (display only)."""
+    geo = world.meta.get("geometry")
+    if not geo:
+        return None
+    pairs = _SHAPES.get(id(geo))
+    if pairs is None or pairs[0] is not geo:
+        m: dict[tuple[str, str], list[list[float]]] = {}
+        for e in world.edges.values():
+            if e.id in geo:
+                m[(e.u, e.v)] = geo[e.id]
+                m[(e.v, e.u)] = geo[e.id][::-1]
+        if len(_SHAPES) > 64:
+            _SHAPES.clear()
+        pairs = _SHAPES[id(geo)] = (geo, m)
+    return pairs[1].get((u, v))
 
 
 def _pos(world: WorldState, r: Any) -> tuple[float, float]:
@@ -28,6 +51,15 @@ def _pos(world: WorldState, r: Any) -> tuple[float, float]:
     if r.next_node:
         b = world.nodes[r.next_node]
         p = r.edge_progress
+        pts = _shape(world, r.node, r.next_node)
+        if pts:
+            seg = [((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5 for (x1, y1), (x2, y2) in zip(pts, pts[1:])]
+            target = p * sum(seg)
+            for (x1, y1), (x2, y2), d in zip(pts, pts[1:], seg):
+                if target <= d or d == seg[-1]:
+                    f = min(1.0, target / d) if d else 0.0
+                    return (round(x1 + (x2 - x1) * f, 4), round(y1 + (y2 - y1) * f, 4))
+                target -= d
         return (round(a.x + (b.x - a.x) * p, 4), round(a.y + (b.y - a.y) * p, 4))
     return (a.x, a.y)
 
