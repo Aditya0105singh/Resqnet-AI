@@ -12,9 +12,12 @@ from .state import ACTIVE_ASSIGNMENT, ReservationStatus, WorldState
 
 def static_world(world: WorldState) -> dict[str, Any]:
     return {
-        "name": "Riverbend (synthetic)",
-        "disclaimer": "Synthetic city for research and education. Not real geography or live flood data.",
-        "nodes": [{"id": n.id, "x": n.x, "y": n.y, "elevation": n.elevation, "neighbourhood": n.neighbourhood, "kind": n.kind, "label": n.label} for n in world.nodes.values()],
+        "name": world.meta.get("name", "Riverbend (synthetic)"),
+        "disclaimer": world.meta.get("disclaimer", "Synthetic city for research and education. Not real geography or live flood data."),
+        "attribution": world.meta.get("attribution", ""),
+        "synthetic": world.meta.get("synthetic", True),
+        "assumptions": world.meta.get("assumptions", []),
+        "nodes": [{"id": n.id, "x": n.x, "y": n.y, "elevation": n.elevation, "neighbourhood": n.neighbourhood, "kind": n.kind, "label": n.label, "lat": n.lat, "lon": n.lon, "provenance": n.provenance} for n in world.nodes.values()],
         "edges": [{"id": e.id, "u": e.u, "v": e.v, "kind": e.kind, "length_km": e.length_km, "name": e.name, "clearance": e.clearance if e.clearance < 90 else None} for e in world.edges.values()],
         "neighbourhoods": [{"id": n.id, "name": n.name, "flood_factor": n.flood_factor} for n in world.neighbourhoods.values()],
     }

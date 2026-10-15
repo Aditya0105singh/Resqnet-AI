@@ -148,7 +148,21 @@ Each work package lists its files, the change, and its exit test. WP1–WP4 are 
 - **UI:** a "Pending approval" panel in `pages/Command.tsx`.
 - This is the only path through which the AI commander (WP8) and citizen intake (WP6) can change state.
 
-### WP5: Real geography (Aluva / Periyar)
+### WP5: Real geography (Aluva / Periyar) 🟡 pipeline built; data fetch blocked by network policy
+
+> Built:
+> - a dependency-free OSM XML → city converter (no osmnx; it runs in CI);
+> - a `geography` run option with a validated file stem;
+> - a per-run `/api/world?sim=`;
+> - an OSM-landmark gazetteer for SOS;
+> - display scaling on the map, plus OSM attribution.
+>
+> Not built:
+> - **MapLibre basemap:** it needs tile access; the SVG map draws the real graph.
+> - **DEM elevation:** a distance-to-river proxy is used and flagged.
+> - **Copernicus flood layer.**
+>
+> Tested on the fictional `tests/fixtures/testvale.osm`.
 
 - **New `scripts/build_geo.py`** (offline; needs `osmnx`, `shapely`, `geopandas`, and is not added to runtime requirements):
   1. Take a bounding box around Aluva and fetch the OSM drive network plus waterways.

@@ -1048,7 +1048,8 @@ class Engine:
         kind = p.get("kind") or ResourceKind.BOAT
         if kind not in (ResourceKind.BOAT, ResourceKind.GROUND):
             raise EventError("kind must be boat|ground")
-        node = p.get("node") or ("R3" if kind == ResourceKind.BOAT else "N14")
+        default = next((n.id for n in sorted(w.nodes.values(), key=lambda n: n.id) if (n.kind == "river") == (kind == ResourceKind.BOAT)), None)
+        node = p.get("node") or ("R3" if kind == ResourceKind.BOAT and "R3" in w.nodes else "N14" if kind != ResourceKind.BOAT and "N14" in w.nodes else default)
         if node not in w.nodes:
             raise EventError(f"unknown node '{node}'")
         if (w.nodes[node].kind == "river") != (kind == ResourceKind.BOAT):
