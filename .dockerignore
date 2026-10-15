@@ -1,0 +1,12 @@
+.git
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.hypothesis
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+frontend/tsconfig.tsbuildinfo
+backend/*.db
+*.db
+output/
