@@ -40,5 +40,5 @@ Do the three-minute version, then add:
 ## Honest answers to likely questions
 
 - **"Is decentralised better?"** On a healthy network, no: centralised is as good or slightly better. Under a coordinator outage, yes, under the stated assumption that peer communication survives. See `/arena` → Published results.
-- **"Is this real Kerala data?"** No. The city is synthetic. Real OpenStreetMap and Copernicus data are planned but were not available in the build environment; see `/research` → Data provenance.
+- **"Is this real Kerala data?"** The map can be: choose **Aluva, Kerala** in New run for the real OpenStreetMap roads, bridges and Periyar. The flood, incidents, elevation and shelters are still simulated or assumed; real flood-extent and elevation data are next. See `/research` → Data provenance.
 - **"Does the LLM decide anything?"** No. It extracts evidence and answers questions with citations. Urgency, location, safety and approval are deterministic or human.

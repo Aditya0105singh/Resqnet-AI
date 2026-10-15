@@ -46,6 +46,7 @@ class Options:
     road_types: set[str] = field(default_factory=lambda: set(ROAD_TYPES))
     name: str = "OSM city"
     synthetic: bool = False
+    clip: bool = True  # trim to the extract's <bounds>, when present
 
 
 # ---------------------------------------------------------------- parsing
@@ -64,7 +65,36 @@ def parse_osm(xml_text: str) -> tuple[dict[str, tuple[float, float, dict]], list
             refs = [nd.get("ref") for nd in el.findall("nd")]
             ways.append((el.get("id"), refs, tags))
     meta = {"generator": root.get("generator", ""), "timestamp": (root.find("meta").get("osm_base") if root.find("meta") is not None else "")}
+    b = root.find("bounds")
+    if b is not None:
+        meta["bounds"] = tuple(float(b.get(k)) for k in ("minlat", "minlon", "maxlat", "maxlon"))
     return nodes, ways, meta
+
+
+def clip_to_bounds(nodes: dict, ways: list, bounds: tuple[float, float, float, float], margin: float = 0.05) -> tuple[dict, list]:
+    """Drop nodes outside the extract's bounding box (plus a small margin) and split ways at the cut.
+
+    Exports include every node of every way that touches the box, so a river or highway can run
+    tens of kilometres past it. Each way becomes its contiguous runs of inside nodes.
+    """
+    s, w, n, e = bounds
+    dlat, dlon = (n - s) * margin, (e - w) * margin
+    inside = {k: v for k, v in nodes.items() if s - dlat <= v[0] <= n + dlat and w - dlon <= v[1] <= e + dlon}
+    out: list[tuple[str, list[str], dict]] = []
+    for wid, refs, tags in ways:
+        run: list[str] = []
+        part = 0
+        for r in refs + [None]:
+            if r is not None and r in inside:
+                run.append(r)
+                continue
+            if r is not None and r not in nodes:
+                continue  # missing from the extract altogether: not a cut
+            if len(run) >= 2 or (run and len(refs) == 1):
+                out.append((wid if part == 0 else f"{wid}.{part}", run, tags))
+                part += 1
+            run = []
+    return inside, out
 
 
 class Projection:
@@ -277,6 +307,8 @@ def _feature_points(nodes: dict, ways: list, proj: Projection) -> list[tuple[tup
 def build_city(xml_text: str, opt: Optional[Options] = None, source: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     opt = opt or Options()
     nodes, ways, meta = parse_osm(xml_text)
+    if opt.clip and meta.get("bounds"):
+        nodes, ways = clip_to_bounds(nodes, ways, meta["bounds"])
     if not nodes:
         raise ValueError("no nodes in the OSM extract")
     lats = [v[0] for v in nodes.values()]
@@ -301,15 +333,34 @@ def build_city(xml_text: str, opt: Optional[Options] = None, source: Optional[di
     rline = list(river)
     zone_ids = sorted(set(zones.values()))
     dmax = max((_dist_to_line(p, rline) for p in land.values()), default=1.0) or 1.0
+    cent = {}
     for z in zone_ids:
         members = [land[n] for n in land if zones[n] == z]
-        cx, cy = sum(p[0] for p in members) / len(members), sum(p[1] for p in members) / len(members)
-        near = min(places, key=lambda pt: _dist(pt[0], (cx, cy)), default=None)
-        name = near[1]["name"] if near and _dist(near[0], (cx, cy)) < 2.0 else f"Zone {chr(65 + z)}"
+        cent[z] = (sum(p[0] for p in members) / len(members), sum(p[1] for p in members) / len(members))
+    # each OSM place names only the one cluster it lies closest to; the rest are named by direction
+    named: dict[int, str] = {}
+    for pt, tags in sorted(places, key=lambda pt: pt[1]["name"]):
+        z = min(cent, key=lambda k: _dist(pt, cent[k]))
+        if z not in named and tags["name"] not in named.values() and _dist(pt, cent[z]) < 2.0:
+            named[z] = tags["name"]
+    town = opt.name.split(",")[0].strip()
+    mx = sum(c[0] for c in cent.values()) / len(cent)
+    my = sum(c[1] for c in cent.values()) / len(cent)
+    for z in zone_ids:
+        cx, cy = cent[z]
+        name = named.get(z)
+        if not name:
+            dx, dy = cx - mx, cy - my
+            if abs(dx) < 0.2 and abs(dy) < 0.2:
+                d = "Central"
+            else:
+                d = "-".join(x for x in ("North" if dy < -0.2 else "South" if dy > 0.2 else "", "West" if dx < -0.2 else "East" if dx > 0.2 else "") if x)
+            name = f"{town} {d}"
         if any(x["name"] == name for x in nb_list):
-            name = f"{name} ({chr(65 + z)})"  # two clusters nearest the same place: keep names distinct
-        mean_d = sum(_dist_to_line(p, rline) for p in members) / len(members)
-        nb_list.append({"id": f"Z{z + 1}", "name": name, "flood_factor": round(0.8 + 0.4 * (1 - min(1.0, mean_d / dmax)), 3), "name_source": "osm place" if name and not name.startswith("Zone ") else "generated"})
+            name = f"{name} ({chr(65 + z)})"
+        mem = [land[n] for n in land if zones[n] == z]
+        mean_d = sum(_dist_to_line(p, rline) for p in mem) / len(mem)
+        nb_list.append({"id": f"Z{z + 1}", "name": name, "flood_factor": round(0.8 + 0.4 * (1 - min(1.0, mean_d / dmax)), 3), "name_source": "osm place" if z in named else "generated"})
 
     def elevation(p: tuple[float, float]) -> float:
         return round(2.4 + 2.0 * min(_dist_to_line(p, rline), 2.0), 2) if rline else 3.5

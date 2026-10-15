@@ -20,7 +20,7 @@ Each requirement is mapped to the code that implements it and the tests that pro
 
 | Item | Status | Notes |
 |---|---|---|
-| Real geography with source labelling | 🟡 | The OSM → city-file pipeline, the engine, the map and the SOS gazetteer all run on any city, and are tested on a fictional OSM fixture. Every node and edge has a provenance tag and the map shows the attribution. The real Aluva extract is not fetched because the environment's network policy denies OpenStreetMap hosts. See [dataset-provenance.md](dataset-provenance.md). |
+| Real geography with source labelling | ✅ | Real **Aluva, Kerala** map from OpenStreetMap (roads, bridges, Periyar, landmarks), selectable in New run; every scenario × strategy runs on it with 0 violations (`test_aluva_runs_safely_under_triple_failure`). Elevation, shelters and the flood remain assumed or synthetic. Flood-extent and DEM data not yet added. See [dataset-provenance.md](dataset-provenance.md). |
 | Multilingual SOS extraction and verification | ✅ | English, Hindi, Malayalam; never invents a location; 54-case eval. [SOS_INTAKE.md](SOS_INTAKE.md) |
 | Dispatcher approval and override | ✅ | Approval queue with side-effect-free previews; manual directives; dispute resolution |
 | Crew mobile mission lifecycle | ✅ | `/crew/:unit`, validated idempotent crew events, offline outbox (no service worker). [CREW_APP.md](CREW_APP.md) |
