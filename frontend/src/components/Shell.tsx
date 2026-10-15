@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { CircleAlert, CircleCheck, Info, Pause, Play, RotateCcw, SkipForward, TriangleAlert, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSim } from "../store/sim";
 import { clock, STRATEGY_LABEL } from "../lib/format";
 import { Badge, Button, cx, Segmented } from "./ui";
@@ -34,11 +34,14 @@ export function Logo() {
 
 export function TopBar() {
   const conn = useSim((s) => s.conn);
+  const world = useSim((s) => s.world);
   const loc = useLocation();
   return (
     <div className="no-print sticky top-0 z-30">
       <div className="mono bg-gradient-to-r from-[#06b6d4] via-[#22d3ee] to-[#06b6d4] py-1 text-center text-[11px] font-medium tracking-wide text-ink">
-        synthetic simulation · research &amp; education only · not an operational dispatch system
+        {world?.map.real
+          ? `${world.map.name} · real roads & terrain (OpenStreetMap, Copernicus DEM) · floods and incidents simulated · not an operational dispatch system`
+          : "synthetic simulation · research & education only · not an operational dispatch system"}
       </div>
       <header className="border-b border-line bg-paper/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-[1680px] items-center gap-4 px-4">
@@ -132,10 +135,15 @@ export function NewRunMenu() {
   const createSim = useSim((s) => s.createSim);
   const sim = useSim((s) => s.sim);
   const busy = useSim((s) => s.busy.create);
+  const maps = useSim((s) => s.maps);
+  const mapId = useSim((s) => s.mapId);
   const [open, setOpen] = useState(false);
+  const [mapSel, setMapSel] = useState(mapId);
+  useEffect(() => setMapSel(mapId), [mapId]);
   const [scenario, setScenario] = useState(sim?.scenario ?? "normal");
   const [strategy, setStrategy] = useState<Strategy>(sim?.strategy ?? "decentralized");
   const SC = [
+    ["kerala_2018", "Kerala 2018 · real flood replay"],
     ["bridge_dependency", "Across the river"],
     ["coordinator_outage", "Coordinator outage (t=15 to 75)"],
     ["normal", "A · Normal flood"],
@@ -153,6 +161,19 @@ export function NewRunMenu() {
       </Button>
       {open && (
         <div className="panel fade-in absolute right-0 z-40 mt-2 w-80 p-3">
+          {maps.length > 1 && (
+            <>
+              <div className="label mb-1.5">map</div>
+              <div className="mb-3 space-y-1">
+                {maps.map((m) => (
+                  <button key={m.id} onClick={() => setMapSel(m.id)} className={cx("flex w-full flex-col rounded-lg px-2.5 py-1.5 text-left text-sm", mapSel === m.id ? "bg-ink text-white" : "hover:bg-black/[0.04]")}>
+                    <span>{m.name}</span>
+                    <span className={cx("text-[11px]", mapSel === m.id ? "text-white/70" : "text-mute")}>{m.real ? `${m.region} · ${m.population ? `≈${Math.round(m.population / 1000)}k residents` : "real OSM roads"}` : "hand-built grid · tests & benchmarks"}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <div className="label mb-1.5">scenario</div>
           <div className="space-y-1">
             {SC.map(([k, l]) => (
@@ -172,7 +193,12 @@ export function NewRunMenu() {
               variant="solid"
               loading={busy}
               onClick={async () => {
-                await createSim(scenario, strategy).catch(() => {});
+                await createSim(scenario, strategy, {}, mapSel).catch(() => {});
+                try {
+                  localStorage.setItem("resqnet.map", mapSel);
+                } catch {
+                  /* ignore */
+                }
                 setOpen(false);
               }}
             >

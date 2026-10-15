@@ -64,6 +64,42 @@ python scripts/run_benchmarks.py 10
 
 This writes `docs/benchmark_results.md`.
 
+## Real maps (Kerala)
+
+Besides the synthetic Riverbend grid, the simulator runs on real geography: OpenStreetMap roads, bridges and rivers plus the 30 m Copernicus DEM (GLO-30) for terrain. Two snapshots ship in `backend/app/data/maps/`: **Aluva · Periyar River** and **Chengannur · Pamba River**. Pick one under *New run → Map*; Riverbend stays the default for tests and benchmarks.
+
+Snapshots are committed JSON, so runs are deterministic and work offline. To rebuild or add an area (needs network access):
+
+```bash
+python scripts/build_map.py aluva        # areas are defined at the top of the script
+```
+
+The builder simplifies the road graph, samples the river channel, ranks bridges by criticality, picks shelters near people and water, and scales elevation into the simulator's water-level frame. Incidents are weighted by building density. Flood depths remain simulated.
+
+### Kerala 2018 flood replay
+
+The **Kerala 2018 · real flood replay** scenario drives the river level from the real August 2018 river-discharge curve (GloFAS reanalysis) and shapes SOS arrivals with real rainfall (IMD gauge-based daily totals, hourly shape from ERA5), time-compressed onto 180 ticks. Data comes from the free Open-Meteo APIs and is stored as committed snapshots in `backend/app/data/events/`:
+
+```bash
+python scripts/build_flood_event.py kerala_aluva
+```
+
+Discharge and rainfall are real; inundation depths are still produced by the simulator's threshold model, so this is a replay of the flood's timing and intensity, not a reconstruction of observed flood extent. `scripts/validate_flood.py` compares the modelled flood footprint with a Sentinel-1 water mask from 21 Aug 2018; results and caveats are in `docs/flood_validation.md`.
+
+### Demo
+
+**Judge Mode** (`/judge`) tells the Aluva 2018 flood in five chapters, and each chapter drives the live engine:
+
+1. The map opens on 14 Aug.
+2. The river rises (15 Aug).
+3. Three failures hit at the flood peak (16 Aug).
+4. A decision record explains why the agents chose that plan.
+5. The final count (17 Aug).
+
+The camera flies to each failure. The run is seeded, so it ends the same way every time.
+
+**Offline:** a service worker keeps every map tile and font the browser has loaded, so do one full rehearsal on wifi and the demo then works without a connection. It never bulk-downloads tiles, which the OpenStreetMap tile policy forbids. Views you have not opened before stay blank when offline. The backend runs locally and needs no internet.
+
 ## Pages
 
 | Route | Page |

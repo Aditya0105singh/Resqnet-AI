@@ -87,6 +87,10 @@ class GraphNode:
     kind: str  # land | river | shelter | station
     label: str = ""
     depth: float = 0.0  # current synthetic flood depth (m)
+    lat: float = 0.0  # real-geography maps only
+    lng: float = 0.0
+    elev_msl: Optional[float] = None  # DEM elevation above mean sea level (real maps)
+    pop: int = 0  # buildings nearest this node (real maps); weights where people live
 
 
 @dataclass
@@ -105,6 +109,9 @@ class GraphEdge:
     boat_ok: bool = False
     risk: float = 0.0  # 0..1 route-risk attribute
     version: int = 0
+    geometry: list[tuple[float, float]] = field(default_factory=list)  # km polyline u -> v (real maps)
+    gated: bool = False  # jetty that is only usable by boats while its land end is flooded
+    speed: float = 1.0  # ground speed factor from the road class (real maps)
 
 
 # ---------------------------------------------------------------- incidents
@@ -294,6 +301,11 @@ class WorldState:
     truth: dict[str, dict[str, Any]] = field(default_factory=dict)
     # traversability history (tick -> closed edge ids per mode) for delayed agent beliefs
     trav_history: dict[int, dict[str, frozenset]] = field(default_factory=dict)
+    # map source: id of the geography this world was built from, plus its static metadata
+    map_id: str = "riverbend"
+    meta: dict[str, Any] = field(default_factory=dict)
+    # real flood event: normalised river discharge (0..1) per tick; None -> synthetic ramp
+    flood_curve: Optional[list[float]] = None
 
     def next_id(self, prefix: str) -> str:
         n = self.counters.get(prefix, 0) + 1
