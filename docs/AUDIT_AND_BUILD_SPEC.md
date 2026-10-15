@@ -136,7 +136,9 @@ Each work package lists its files, the change, and its exit test. WP1–WP4 are 
 - **`simulation/world.py`:** the report generator emits some forwarded copies so the effect shows up in scenario C.
 - **Tests:** five forwarded copies of one resident report must give the same confidence as a single report.
 
-### WP4: Dispatcher approval queue (needed by WP6/WP8)
+### WP4: Dispatcher approval queue (needed by WP6/WP8) ✅ built
+
+> Built as `Engine.dry_run`, which previews an action by applying it to a lightweight deep copy of the engine. This is stronger than a separate `dry_run_commit` in the shield, because it runs the identical code path, shelter reservation included. Pending previews refresh after every event and every tick. `resource_id: "auto"` makes the recommender pick the cheapest feasible unit. AI sources cannot approve.
 
 - **`simulation/engine.py`:** add a `PROPOSE_ACTION` event, which stores a proposal with the shield's dry-run verdict.
   - `APPROVE_PROPOSAL` / `REJECT_PROPOSAL` events commit it or drop it.

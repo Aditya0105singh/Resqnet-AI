@@ -6,6 +6,7 @@ import { CityMap, MapLegend } from "../components/CityMap";
 import { ChaosButtons } from "../components/Chaos";
 import { ActivityFeed } from "../components/Feed";
 import { SelectionPanel } from "../components/SelectionPanel";
+import { Approvals } from "../components/Approvals";
 import { NewRunMenu, SimControls } from "../components/Shell";
 import { Badge, Button, cx, Empty, inputCls, Panel, Segmented, Spinner, Stat } from "../components/ui";
 import { fmt, INCIDENT_TONE, isOpen, pct, statusLabel, URGENCY_TONE } from "../lib/format";
@@ -14,7 +15,7 @@ export default function Command() {
   const { world, frame, sim, layers, selection, setSelection, toggleLayer, inject, audit } = useSim();
   const [mode, setMode] = useState<"select" | "close-edge" | "new-incident">("select");
   const [filter, setFilter] = useState<"open" | "urgent" | "uncovered" | "all">("open");
-  const [tab, setTab] = useState<"detail" | "feed">("feed");
+  const [tab, setTab] = useState<"detail" | "feed" | "approvals">("feed");
   const [sos, setSos] = useState({ people: 4, urgency: 4 });
   const [showLayers, setShowLayers] = useState(false);
 
@@ -28,6 +29,7 @@ export default function Command() {
   }, [frame, filter]);
 
   if (!world || !frame || !sim) return <Spinner label="Connecting to the simulation engine…" />;
+  const pendingCount = (frame.proposals ?? []).filter((p) => p.status === "PENDING").length;
   const m = frame.metrics;
 
   return (
@@ -158,11 +160,22 @@ export default function Command() {
         {/* right column */}
         <Panel
           className="max-lg:h-[520px]"
-          title={<Segmented size="sm" value={tab} onChange={setTab} options={[{ value: "feed", label: "Agent activity" }, { value: "detail", label: "Inspector" }]} />}
+          title={
+            <Segmented
+              size="sm"
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: "feed", label: "Feed" },
+                { value: "detail", label: "Inspect" },
+                { value: "approvals", label: pendingCount ? `Approve · ${pendingCount}` : "Approve" },
+              ]}
+            />
+          }
           right={<span className="mono text-[10.5px] text-faint">{audit.length} records</span>}
           bodyClass="flex flex-col"
         >
-          <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">{tab === "feed" ? <ActivityFeed /> : <SelectionPanel />}</div>
+          <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">{tab === "feed" ? <ActivityFeed /> : tab === "approvals" ? <Approvals /> : <SelectionPanel />}</div>
         </Panel>
       </div>
 

@@ -471,6 +471,14 @@ def agents(sim_id: str) -> dict[str, Any]:
     return {"strategy": e.strategy, "resources": out_res, "shelters": shelters, "incidents": incidents, "route_agent": route_agent}
 
 
+@app.get("/api/simulations/{sim_id}/proposals")
+def proposals(sim_id: str, status: Optional[str] = None) -> dict[str, Any]:
+    """Approval queue. Create / approve / reject through POST /events with PROPOSE_ACTION,
+    APPROVE_PROPOSAL and REJECT_PROPOSAL so every decision is in the replayable event log."""
+    items = list(get_session(sim_id).engine.proposals.values())
+    return {"proposals": [p for p in items if status is None or p["status"] == status.upper()]}
+
+
 @app.get("/api/simulations/{sim_id}/assignments")
 def assignments(sim_id: str) -> dict[str, Any]:
     return {"assignments": get_session(sim_id).engine.last_frame()["assignments"]}

@@ -85,6 +85,11 @@ export function SelectionPanel() {
             </div>
           </div>
         )}
+        {open && i.unassigned > 0 && (
+          <Button size="sm" variant="info" onClick={() => inject("PROPOSE_ACTION", { action: "MANUAL_ASSIGN", params: { incident_id: i.id, resource_id: "auto" }, source: "recommender" }, `Suggestion for ${i.id} sent to Approvals`)}>
+            Suggest unit (needs approval)
+          </Button>
+        )}
         {open && (
           <div className="flex flex-wrap gap-1.5">
             <Button size="sm" variant="danger" onClick={() => inject("CONTRADICTORY_REPORT", { incident_id: i.id, claim: "NO_VICTIMS", source: "responder" }, `Responder: no victims at ${i.id}`)}>
