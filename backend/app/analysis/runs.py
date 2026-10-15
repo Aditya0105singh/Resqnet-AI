@@ -70,9 +70,9 @@ def compact_frame(f: dict[str, Any]) -> dict[str, Any]:
 def apply_modifications(eng: Engine, mods: dict[str, Any]) -> list[str]:
     notes: list[str] = []
     for _ in range(int(mods.get("extra_boats") or 0)):
-        notes += eng._apply_event("ADD_RESOURCE", {"kind": "boat", "node": mods.get("boat_node") or "R3"}, "counterfactual").effects
+        notes += eng._apply_event("ADD_RESOURCE", {"kind": "boat", "node": mods.get("boat_node") or eng.world.meta.get("default_boat_node")}, "counterfactual").effects
     for _ in range(int(mods.get("extra_ground") or 0)):
-        notes += eng._apply_event("ADD_RESOURCE", {"kind": "ground", "node": mods.get("ground_node") or "N14"}, "counterfactual").effects
+        notes += eng._apply_event("ADD_RESOURCE", {"kind": "ground", "node": mods.get("ground_node") or eng.world.meta.get("default_ground_node")}, "counterfactual").effects
     for eid, state in (mods.get("edges") or {}).items():
         notes += eng._apply_event("OPEN_EDGE" if state == "open" else "CLOSE_EDGE", {"edge_id": eid, "reason": "counterfactual"}, "counterfactual").effects
     for sid, delta in (mods.get("shelter_delta") or {}).items():
@@ -219,9 +219,22 @@ FAILURE_POOL: dict[str, list[tuple[str, dict[str, Any]]]] = {
 }
 
 
+def failure_pool(cfg: ScenarioConfig) -> dict[str, list[tuple[str, dict[str, Any]]]]:
+    """FAILURE_POOL with the bridges and shelters of the configured map (BR1..BRn, S1..Sn)."""
+    from ..simulation.world import build_world
+
+    w = build_world(cfg, "decentralized")
+    pool = dict(FAILURE_POOL)
+    bridges = sorted(e.id for e in w.edges.values() if e.kind == "bridge")
+    pool["bridge"] = [("CLOSE_EDGE", {"edge_id": b, "reason": "adversarial: bridge failure"}) for b in bridges]
+    pool["shelter"] = [("SHELTER_CAPACITY", {"shelter_id": s, "capacity": "occupancy", "reason": "adversarial: overflow"}) for s in sorted(w.shelters)]
+    return pool
+
+
 def adversarial(cfg: ScenarioConfig, strategy: str, n_failures: int, categories: list[str], trials: int, seed: int, progress: Optional[Callable[[float], None]] = None) -> dict[str, Any]:
     rng = random.Random(seed)
-    pool = [(cat, t, p) for cat in categories for t, p in FAILURE_POOL.get(cat, [])]
+    fpool = failure_pool(cfg)
+    pool = [(cat, t, p) for cat in categories for t, p in fpool.get(cat, [])]
     if not pool:
         raise ValueError("no failure categories selected")
     baseline = run_one(cfg, strategy)

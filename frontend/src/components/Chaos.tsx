@@ -6,10 +6,13 @@ import { Button } from "./ui";
  * targets for the triple failure are chosen by the backend from live state. */
 export function ChaosButtons({ layout = "row" }: { layout?: "row" | "grid" }) {
   const frame = useSim((s) => s.frame);
+  const world = useSim((s) => s.world);
   const inject = useSim((s) => s.inject);
   const busy = useSim((s) => s.busy);
-  if (!frame) return null;
-  const openBridge = ["BR2", "BR1", "BR3"].find((b) => frame.edges[b] && !frame.edges[b][2]);
+  if (!frame || !world) return null;
+  const critical = world.map.critical_bridge;
+  const bridgeIds = world.edges.filter((e) => e.kind === "bridge").map((e) => e.id).sort((a, b) => (a === critical ? -1 : b === critical ? 1 : 0));
+  const openBridge = bridgeIds.find((b) => frame.edges[b] && !frame.edges[b][2]);
   const boat = frame.resources.find((r) => r.kind === "boat" && r.status !== "DISABLED" && r.assignment_id) ?? frame.resources.find((r) => r.kind === "boat" && r.status !== "DISABLED");
   const shelter = [...frame.shelters].sort((a, b) => b.reserved - a.reserved)[0];
   const blackout = frame.resources.find((r) => r.status !== "DISABLED" && r.assignment_id && !r.blackout_until);

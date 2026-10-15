@@ -8,13 +8,31 @@ from ..analysis.runs import rebuild
 from ..metrics.metrics import SUMMARY_KEYS, compute_metrics
 from ..simulation.engine import Engine
 
-LIMITATIONS = [
-    "Riverbend is a synthetic city; geography, people counts and reports are generated from a seed.",
+COMMON_LIMITATIONS = [
     "The flood model is a simplified threshold model, not hydraulic forecasting.",
     "Report confidence is a noisy-OR heuristic over source reliability metadata, not a calibrated probability.",
     "Cost weights are proposed starting values, not trained or validated parameters.",
     "Results describe this simulator only and must not be used for operational emergency dispatch.",
 ]
+
+
+def limitations_for(world: Any) -> list[str]:
+    """What is real and what is simulated, for the map this run used."""
+    ev = world.meta.get("flood_event")
+    if world.meta.get("real"):
+        return [
+            f"Road, bridge and river geometry for {world.meta.get('name', 'this area')} come from OpenStreetMap contributors and were simplified to a coarse junction graph; "
+            "OSM may be incomplete or out of date.",
+            "Terrain is sampled from a 90 m Copernicus DEM and mapped monotonically into the simulator's water-level frame; node elevations are not survey-grade.",
+            "Bridge deck clearances, shelter capacities, unit positions, people counts and SOS reports are assumed or generated from a seed, not observed.",
+            (
+                f"River discharge replays the {ev['name']} GloFAS reanalysis, time-compressed ({ev['real_hours_per_tick']:.2f} real hours per tick); rainfall shapes SOS arrivals. "
+                "Inundation depths are still produced by the simulator's threshold model and are not observed flood extent."
+                if ev
+                else "Flood depths come from a synthetic rise and are not calibrated to any historical event."
+            ),
+        ] + COMMON_LIMITATIONS
+    return ["Riverbend is a synthetic city; geography, people counts and reports are generated from a seed."] + COMMON_LIMITATIONS
 
 
 def build_report(engine: Engine, sim_id: str, compare: bool = True) -> dict[str, Any]:
@@ -81,7 +99,7 @@ def build_report(engine: Engine, sim_id: str, compare: bool = True) -> dict[str,
     return {
         "simulation_id": sim_id,
         "title": f"After-Action Report — {engine.cfg.name}",
-        "disclaimer": "Research and educational simulation. Synthetic data. Not an operational emergency-dispatch system.",
+        "disclaimer": "Research and educational simulation. Real map data with simulated floods and incidents. Not an operational emergency-dispatch system." if w.meta.get("real") else "Research and educational simulation. Synthetic data. Not an operational emergency-dispatch system.",
         "scenario": {"key": engine.cfg.key, "name": engine.cfg.name, "description": engine.cfg.description, "seed": engine.cfg.seed, "strategy": engine.strategy, "policy": engine.cfg.policy, "weights": engine.cfg.weights, "comm_delay": engine.cfg.comm_delay, "duration": engine.cfg.duration, "ticks_run": w.tick},
         "metrics": m,
         "critical_timeline": critical[:80],
@@ -94,7 +112,7 @@ def build_report(engine: Engine, sim_id: str, compare: bool = True) -> dict[str,
         "strategy_comparison": comparison,
         "injected_events": engine.injected,
         "lessons": lessons,
-        "limitations": LIMITATIONS,
+        "limitations": limitations_for(w),
     }
 
 

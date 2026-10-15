@@ -8,6 +8,11 @@ export interface WorldNode {
   neighbourhood: string;
   kind: "land" | "river" | "shelter" | "station";
   label: string;
+  /** real-geography maps only */
+  lat?: number;
+  lng?: number;
+  elev_msl?: number | null;
+  pop?: number;
 }
 export interface WorldEdge {
   id: string;
@@ -17,12 +22,53 @@ export interface WorldEdge {
   length_km: number;
   name: string;
   clearance: number | null;
+  /** km polyline u → v (real-geography maps only) */
+  geometry?: [number, number][];
+  /** flood-access link: only drawn (and usable by boats) while the land end is flooded */
+  gated?: boolean;
+}
+export interface MapInfo {
+  id: string;
+  name: string;
+  region: string;
+  real: boolean;
+  note: string;
+  source?: Record<string, string>;
+  origin?: [number, number] | null;
+  bbox?: [number, number, number, number] | null;
+  projection?: { lat0: number; lon0: number; kx: number; ky: number } | null;
+  critical_bridge?: string | null;
+}
+export interface FloodEvent {
+  id: string;
+  name: string;
+  note: string;
+  source: Record<string, string>;
+  start: string;
+  hours: number;
+  real_hours_per_tick: number;
+  baseline_m3s: number;
+  peak_m3s: number;
+  peak_time: string;
+  rain_total_mm: number | null;
+  /** IMD gauge-based daily totals, keyed by ISO date */
+  rain_daily_mm?: Record<string, number> | null;
+  discharge: number[];
+  time_at: string[];
+}
+export interface MapListing extends MapInfo {
+  nodes?: number;
+  bridges?: number;
+  shelters?: number;
+  population?: number | null;
 }
 export interface StaticWorld {
+  map: MapInfo;
   name: string;
   disclaimer: string;
   nodes: WorldNode[];
   edges: WorldEdge[];
+  shelters: { id: string; name: string; node: string; amenity: string }[];
   neighbourhoods: { id: string; name: string; flood_factor: number }[];
 }
 
@@ -152,6 +198,8 @@ export interface Frame {
   finished: boolean;
   duration: number;
   river_level: number;
+  flood_real_time?: string | null;
+  flood_discharge?: number | null;
   flood_offset: number;
   resources: Resource[];
   incidents: Incident[];
@@ -240,6 +288,7 @@ export interface ScenarioConfig {
   key: string;
   name: string;
   description: string;
+  map?: string;
   seed: number;
   duration: number;
   flood_severity: number;
@@ -273,6 +322,9 @@ export interface SimSummary {
   duration: number;
   version: number;
   seed: number;
+  map?: string;
+  map_name?: string;
+  flood_event?: FloodEvent | null;
   config: ScenarioConfig;
   injected: { tick: number; seq: number; type: string; params: Record<string, unknown>; source: string }[];
 }

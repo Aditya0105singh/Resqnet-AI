@@ -112,18 +112,21 @@ export default function DecisionLab() {
             </div>
             <div>
               <div className="label mb-1.5">bridges</div>
-              {["BR1", "BR2", "BR3"].map((b) => (
-                <div key={b} className="mb-1 flex items-center justify-between text-sm">
-                  <span>{world.edges.find((e) => e.id === b)?.name}</span>
-                  <Segmented size="sm" value={mods.edges[b] ?? "as-is"} onChange={(v) => { const e = { ...mods.edges }; if (v === "as-is") delete e[b]; else e[b] = v; setMods({ ...mods, edges: e }); }} options={[{ value: "as-is", label: "as is" }, { value: "open", label: "open" }, { value: "closed", label: "closed" }]} />
+              {world.edges.filter((e) => e.kind === "bridge").map((e) => e.id).map((b) => (
+                <div key={b} className="mb-1 flex items-center justify-between gap-2 text-sm">
+                  <span className="min-w-0 flex-1 truncate" title={world.edges.find((e) => e.id === b)?.name}>
+                    <span className="mono mr-1.5 text-[11px] text-mute">{b}</span>
+                    {world.edges.find((e) => e.id === b)?.name}
+                  </span>
+<span className="shrink-0 whitespace-nowrap">                  <Segmented size="sm" value={mods.edges[b] ?? "as-is"} onChange={(v) => { const e = { ...mods.edges }; if (v === "as-is") delete e[b]; else e[b] = v; setMods({ ...mods, edges: e }); }} options={[{ value: "as-is", label: "as is" }, { value: "open", label: "open" }, { value: "closed", label: "closed" }]} /></span>
                 </div>
               ))}
             </div>
             <div>
               <div className="label mb-1.5">shelter capacity change</div>
-              {["S1", "S2", "S3"].map((s) => (
-                <Field key={s} label={s} hint={`${mods.shelter_delta[s] > 0 ? "+" : ""}${mods.shelter_delta[s]}`}>
-                  <input type="range" className="w-full accent-[#0a0a0a]" min={-30} max={60} step={5} value={mods.shelter_delta[s]} onChange={(e) => setMods({ ...mods, shelter_delta: { ...mods.shelter_delta, [s]: Number(e.target.value) } })} />
+              {world.shelters.map((x) => x.id).map((s) => (
+                <Field key={s} label={s} hint={`${(mods.shelter_delta[s] ?? 0) > 0 ? "+" : ""}${mods.shelter_delta[s] ?? 0}`}>
+                  <input type="range" className="w-full accent-[#0a0a0a]" min={-30} max={60} step={5} value={mods.shelter_delta[s] ?? 0} onChange={(e) => setMods({ ...mods, shelter_delta: { ...mods.shelter_delta, [s]: Number(e.target.value) } })} />
                 </Field>
               ))}
             </div>

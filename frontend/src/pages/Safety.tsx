@@ -25,7 +25,7 @@ export default function Safety() {
 
   const run = async () => {
     try {
-      const j = await api.post<any>("/api/adversarial", form);
+      const j = await api.post<any>("/api/adversarial", { ...form, map: useSim.getState().mapId });
       setJob(j);
       clearInterval(poll.current);
       poll.current = setInterval(async () => {
@@ -38,7 +38,7 @@ export default function Safety() {
     }
   };
   const openScenario = async (w: any) => {
-    await createSim(job.request.scenario, job.request.strategy, { schedule: w.failures.map((f: any) => ({ tick: f.tick, type: f.type, params: f.params })) }).catch(() => {});
+    await createSim(job.request.scenario, job.request.strategy, { schedule: w.failures.map((f: any) => ({ tick: f.tick, type: f.type, params: f.params })) }, job.request.map ?? undefined).catch(() => {});
     nav("/command");
   };
 

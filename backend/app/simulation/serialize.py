@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from typing import Any
 
 from ..negotiation.common import unassigned_people
@@ -11,13 +12,61 @@ from .state import ACTIVE_ASSIGNMENT, ReservationStatus, WorldState
 
 
 def static_world(world: WorldState) -> dict[str, Any]:
-    return {
-        "name": "Riverbend (synthetic)",
-        "disclaimer": "Synthetic city for research and education. Not real geography or live flood data.",
-        "nodes": [{"id": n.id, "x": n.x, "y": n.y, "elevation": n.elevation, "neighbourhood": n.neighbourhood, "kind": n.kind, "label": n.label} for n in world.nodes.values()],
-        "edges": [{"id": e.id, "u": e.u, "v": e.v, "kind": e.kind, "length_km": e.length_km, "name": e.name, "clearance": e.clearance if e.clearance < 90 else None} for e in world.edges.values()],
+    meta = world.meta
+    real = bool(meta.get("real"))
+    nodes = []
+    for n in world.nodes.values():
+        d: dict[str, Any] = {"id": n.id, "x": n.x, "y": n.y, "elevation": n.elevation, "neighbourhood": n.neighbourhood, "kind": n.kind, "label": n.label}
+        if real:
+            d.update(lat=n.lat, lng=n.lng, elev_msl=n.elev_msl, pop=n.pop)
+        nodes.append(d)
+    edges = []
+    for e in world.edges.values():
+        d = {"id": e.id, "u": e.u, "v": e.v, "kind": e.kind, "length_km": e.length_km, "name": e.name, "clearance": e.clearance if e.clearance < 90 else None}
+        if e.geometry:
+            d["geometry"] = [[p[0], p[1]] for p in e.geometry]
+        if e.gated:
+            d["gated"] = True
+        edges.append(d)
+    shelters = [{"id": s.id, "name": s.name, "node": s.node, "amenity": meta.get("shelter_amenity", {}).get(s.id, "")} for s in world.shelters.values()]
+    out: dict[str, Any] = {
+        "map": {
+            "id": meta.get("id", world.map_id),
+            "name": meta.get("name", "Riverbend (synthetic)"),
+            "region": meta.get("region", ""),
+            "real": real,
+            "note": meta.get("note", ""),
+            "source": meta.get("source", {}),
+            "origin": meta.get("origin"),
+            "bbox": meta.get("bbox"),
+            "projection": meta.get("projection"),
+            "critical_bridge": meta.get("critical_bridge"),
+        },
+        "name": meta.get("name", "Riverbend (synthetic)"),
+        "disclaimer": meta.get("disclaimer", ""),
+        "nodes": nodes,
+        "edges": edges,
+        "shelters": shelters,
         "neighbourhoods": [{"id": n.id, "name": n.name, "flood_factor": n.flood_factor} for n in world.neighbourhoods.values()],
     }
+    return out
+
+
+def _along(pts: list[tuple[float, float]], p: float) -> tuple[float, float]:
+    """Point at fraction p of the way along a polyline."""
+    if p <= 0:
+        return pts[0]
+    seg = [math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts, pts[1:])]
+    total = sum(seg)
+    if total <= 0 or p >= 1:
+        return pts[-1]
+    target, acc = p * total, 0.0
+    for (a, b), ln in zip(zip(pts, pts[1:]), seg):
+        if acc + ln >= target:
+            f = (target - acc) / ln if ln else 0.0
+            return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
+        acc += ln
+    return pts[-1]
 
 
 def _pos(world: WorldState, r: Any) -> tuple[float, float]:
@@ -25,6 +74,11 @@ def _pos(world: WorldState, r: Any) -> tuple[float, float]:
     if r.next_node:
         b = world.nodes[r.next_node]
         p = r.edge_progress
+        e = world.edges.get(r.edge_id) if r.edge_id else None
+        if e is not None and len(e.geometry) > 2:  # follow the real road/river shape
+            pts = e.geometry if e.u == r.node else e.geometry[::-1]
+            x, y = _along(pts, p)
+            return (round(x, 4), round(y, 4))
         return (round(a.x + (b.x - a.x) * p, 4), round(a.y + (b.y - a.y) * p, 4))
     return (a.x, a.y)
 
@@ -128,6 +182,8 @@ def frame(engine: Any) -> dict[str, Any]:
         "finished": engine.finished,
         "duration": engine.cfg.duration,
         "river_level": round(river_level(w, engine.cfg.flood_severity, engine.cfg.flood_peak_tick), 2),
+        "flood_real_time": (w.meta.get("flood_event") or {}).get("time_at", [None])[min(w.tick, len((w.meta.get("flood_event") or {}).get("time_at", [None])) - 1)],
+        "flood_discharge": (w.meta.get("flood_event") or {}).get("discharge", [None])[min(w.tick, len((w.meta.get("flood_event") or {}).get("discharge", [None])) - 1)],
         "flood_offset": w.flood_offset,
         "coordinator": {"available": w.tick >= w.coordinator_down_until, "restores_at": w.coordinator_down_until},
         "route_ghosts": [g for g in engine.route_ghosts if w.tick - g["tick"] <= 15],

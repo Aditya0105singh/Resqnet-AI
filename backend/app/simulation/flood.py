@@ -23,13 +23,22 @@ def ramp(tick: int, peak_tick: int) -> float:
     return min(1.0, 0.35 + 0.65 * tick / max(1, peak_tick))
 
 
+def current_ramp(world: WorldState, peak_tick: int) -> float:
+    """0.35..1.0: the replayed discharge curve when the run carries a real event, else the
+    synthetic linear rise."""
+    c = world.flood_curve
+    if c:
+        return 0.35 + 0.65 * c[min(max(world.tick, 0), len(c) - 1)]
+    return ramp(world.tick, peak_tick)
+
+
 def water_level(world: WorldState, nbhd: str, severity: float, peak_tick: int) -> float:
     f = world.neighbourhoods[nbhd].flood_factor if nbhd in world.neighbourhoods else 1.0
-    return BASE_LEVEL + severity * 2.2 * ramp(world.tick, peak_tick) * f + world.flood_offset
+    return BASE_LEVEL + severity * 2.2 * current_ramp(world, peak_tick) * f + world.flood_offset
 
 
 def river_level(world: WorldState, severity: float, peak_tick: int) -> float:
-    return 1.0 + severity * 2.0 * ramp(world.tick, peak_tick) + world.flood_offset
+    return 1.0 + severity * 2.0 * current_ramp(world, peak_tick) + world.flood_offset
 
 
 def update_flood(world: WorldState, severity: float, peak_tick: int) -> list[tuple[str, str, bool, bool]]:
@@ -56,7 +65,11 @@ def update_flood(world: WorldState, severity: float, peak_tick: int) -> list[tup
             e.depth = 0.0
             ground, boat = False, True
             cause = "channel"
-            e.risk = round(min(1.0, 0.1 + 0.25 * ramp(world.tick, peak_tick) * severity + world.flood_offset * 0.2), 3)
+            if e.gated:  # flood access: open only while the land end is under boat-navigable water
+                e.depth = round(max(nu.depth, nv.depth), 3)
+                boat = e.depth >= BOAT_MIN_DEPTH
+                cause = "flood access"
+            e.risk = round(min(1.0, 0.1 + 0.25 * current_ramp(world, peak_tick) * severity + world.flood_offset * 0.2), 3)
         if e.manual_closed:
             ground, boat = False, False
             cause = e.closed_reason or "closed"
