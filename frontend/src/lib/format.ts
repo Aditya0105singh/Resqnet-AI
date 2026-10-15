@@ -14,6 +14,7 @@ export const URGENCY_COLOR = (u: number) => (u >= 5 ? "#dc2626" : u >= 4 ? "#d97
 export const INCIDENT_TONE: Record<string, string> = {
   UNVERIFIED: "neutral",
   SUSPECTED: "warn",
+  DISPUTED: "crit",
   VERIFIED: "info",
   ASSIGNED: "ink",
   RESCUED: "ok",

@@ -36,6 +36,8 @@ class ScenarioConfig:
     delayed_report_rate: float = 0.10
     false_alarm_rate: float = 0.0
     contradiction_rate: float = 0.0
+    forward_rate: float = 0.0  # chance a resident SOS is forwarded verbatim 2–5 more times
+    fusion_dedup: bool = True  # count verbatim forwards once (False = ablation: every copy is a witness)
     comm_delay: int = 1  # ticks before a decentralised agent hears a broadcast
     # agent message transport (message_passing strategy only)
     msg_latency: int = 0  # ticks per hop; 0 = delivered within the same minute
@@ -133,6 +135,16 @@ PRESETS: dict[str, ScenarioConfig] = {
         name="Network Partition",
         description="At t=20 three boats and Riverside Civic Arena are split from the rest of the network for 40 minutes. Committed missions continue; no new commitments cross the split.",
         schedule=[{"tick": 20, "type": "NETWORK_PARTITION", "params": {"members": ["B1", "B2", "B3", "S2"], "duration": 40}}],
+    ),
+    "viral_sos": _preset(
+        key="viral_sos",
+        name="Forwarded SOS Cascade",
+        description="Half of resident SOS messages are forwarded verbatim 2–5 more times, including rumours of victims who do not exist. Forwards share a content fingerprint and count once; credible conflicting reports are held for dispatcher review.",
+        report_noise=0.3,
+        duplicate_rate=0.2,
+        false_alarm_rate=0.25,
+        contradiction_rate=0.15,
+        forward_rate=0.5,
     ),
     "triple_failure": _preset(
         key="triple_failure",

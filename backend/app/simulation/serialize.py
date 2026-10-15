@@ -5,7 +5,7 @@ import hashlib
 import json
 from typing import Any
 
-from ..negotiation.common import unassigned_people
+from ..negotiation.common import DISPUTE_REVIEW, DISPUTE_REVIEW_URGENT, unassigned_people
 from .flood import river_level
 from .state import ACTIVE_ASSIGNMENT, ReservationStatus, WorldState
 
@@ -87,6 +87,10 @@ def frame(engine: Any) -> dict[str, Any]:
                 "reports": list(i.report_ids),
                 "version": i.version,
                 "visited": i.visited,
+                "evidence": i.evidence,
+                "disputed_since": i.disputed_since,
+                "review_due": (i.disputed_since + (DISPUTE_REVIEW_URGENT if i.urgency >= 4 else DISPUTE_REVIEW)) if i.disputed_since is not None else None,
+                "verdict": i.verdict,
                 "assigned": sorted(a.resource_id for a in w.assignments.values() if a.incident_id == i.id and a.status in ACTIVE_ASSIGNMENT),
             }
         )

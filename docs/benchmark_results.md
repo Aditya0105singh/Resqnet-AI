@@ -68,12 +68,25 @@ Noisy, duplicated, delayed and contradictory SOS reports, including false alarms
 
 | strategy | service rate | mean TTS (min) | urgent misses | unmet people | fairness (Jain) | route violations | messages |
 |---|---|---|---|---|---|---|---|
-| decentralized | 0.864 [0.829, 0.895] | 24.0 [21.3, 27.0] | 2.4 [1.7, 3.2] | 14.4 [10.9, 18.2] | 0.776 [0.730, 0.823] | 0 [0, 0] | 1329 [1204, 1464] |
-| message_passing | 0.859 [0.817, 0.900] | 20.9 [18.6, 23.3] | 3.2 [2.2, 4.2] | 14.8 [10.5, 19.5] | 0.771 [0.733, 0.808] | 0 [0, 0] | 1730 [1592, 1867] |
-| centralized | 0.895 [0.858, 0.935] | 20.8 [18.6, 23.1] | 2.4 [1.6, 3.2] | 10.9 [6.6, 15.3] | 0.750 [0.713, 0.793] | 0 [0, 0] | 1705 [1444, 1898] |
-| greedy | 0.846 [0.820, 0.876] | 24.6 [21.4, 28.0] | 2.0 [1.3, 2.9] | 16.2 [13.0, 19.2] | 0.828 [0.782, 0.871] | 0 [0, 0] | 1735 [1538, 1927] |
+| decentralized | 0.862 [0.830, 0.894] | 23.6 [21.7, 25.3] | 2.5 [1.7, 3.4] | 14.6 [11.1, 18.0] | 0.797 [0.742, 0.850] | 0 [0, 0] | 1351 [1219, 1491] |
+| message_passing | 0.852 [0.799, 0.901] | 21.0 [18.8, 23.4] | 2.7 [1.7, 3.7] | 15.7 [10.5, 21.6] | 0.747 [0.716, 0.784] | 0 [0, 0] | 1773 [1652, 1910] |
+| centralized | 0.865 [0.834, 0.895] | 21.8 [19.0, 24.7] | 2.4 [1.6, 3.2] | 14.3 [10.8, 18.1] | 0.767 [0.725, 0.813] | 0 [0, 0] | 1752 [1560, 1917] |
+| greedy | 0.842 [0.810, 0.875] | 23.8 [20.7, 27.2] | 2.0 [1.3, 2.9] | 16.7 [13.0, 20.5] | 0.800 [0.753, 0.848] | 0 [0, 0] | 1830 [1623, 2008] |
 
-Significant paired differences: decentralized − centralized on mean_time_to_service: +3.2 [+1.38, +5.36]; decentralized − centralized on unmet_people: +3.5 [+0.2, +6.7]; message_passing − centralized on service_rate: -0.036 [-0.059, -0.012]; message_passing − centralized on unmet_people: +3.9 [+1.4, +6.6]; message_passing − decentralized on mean_time_to_service: -3.1 [-5.49, -0.975]
+Significant paired differences: message_passing − decentralized on mean_time_to_service: -2.6 [-4.47, -0.891]
+
+### viral_sos
+
+Half of resident SOS messages are forwarded verbatim 2–5 more times, including rumours of victims who do not exist. Forwards share a content fingerprint and count once; credible conflicting reports are held for dispatcher review.
+
+| strategy | service rate | mean TTS (min) | urgent misses | unmet people | fairness (Jain) | route violations | messages |
+|---|---|---|---|---|---|---|---|
+| decentralized | 0.856 [0.812, 0.904] | 25.7 [22.8, 29.0] | 2.1 [1.2, 3.0] | 15.2 [9.8, 20.1] | 0.827 [0.786, 0.868] | 0 [0, 0] | 1284 [1136, 1416] |
+| message_passing | 0.841 [0.796, 0.889] | 24.3 [21.1, 28.1] | 1.8 [0.9, 2.6] | 16.7 [11.4, 21.6] | 0.841 [0.805, 0.873] | 0 [0, 0] | 1792 [1686, 1902] |
+| centralized | 0.863 [0.827, 0.898] | 24.2 [21.3, 27.3] | 2.0 [1.2, 2.9] | 14.5 [10.7, 18.2] | 0.803 [0.758, 0.852] | 0 [0, 0] | 1635 [1379, 1846] |
+| greedy | 0.855 [0.812, 0.898] | 28.3 [24.8, 31.9] | 1.5 [0.9, 2.2] | 15.2 [10.5, 19.7] | 0.834 [0.789, 0.880] | 0 [0, 0] | 1804 [1515, 2058] |
+
+Significant paired differences: decentralized − centralized on mean_time_to_service: +1.51 [+0.078, +2.88]; message_passing − decentralized on service_rate: -0.014 [-0.028, -0.002]; message_passing − decentralized on mean_time_to_service: -1.37 [-2.33, -0.481]; message_passing − decentralized on unmet_people: +1.5 [+0.2, +3]
 
 ## Failure resilience
 
@@ -171,4 +184,15 @@ _How much service does the message-passing protocol lose as the radio network dr
 | 0.3 | 0.681 [0.633, 0.732] |
 
 Cells: service rate (people delivered ÷ people who needed rescue), mean [95% CI].
+
+## Ablation: counting forwarded SOS copies once
+
+_Does grouping verbatim forwards into one source reduce wasted trips to rumoured victims, without costing service?_ Base scenario `viral_sos`; same seeds, only `fusion_dedup` changes.
+
+| strategy | false_alarm_visits: off → on (paired Δ [95% CI]) | service_rate: off → on (paired Δ [95% CI]) | mean_time_to_service: off → on (paired Δ [95% CI]) | deadline_misses: off → on (paired Δ [95% CI]) |
+|---|---|---|---|---|
+| decentralized | 2.5 → 1.7 (-0.8 [-1.3, -0.3], significant) | 0.848 → 0.856 (+0.007 [-0.008, +0.023]) | 25.4 → 25.7 (+0.219 [-1.57, +2.13]) | 2.3 → 2.1 (-0.2 [-0.8, +0.4]) |
+| message_passing | 2.4 → 1.9 (-0.5 [-0.9, -0.1], significant) | 0.846 → 0.841 (-0.005 [-0.017, +0.007]) | 24.6 → 24.3 (-0.329 [-1.12, +0.384]) | 1.7 → 1.8 (+0.1 [-0.2, +0.4]) |
+| centralized | 2.2 → 1.7 (-0.5 [-0.9, -0.1], significant) | 0.86 → 0.863 (+0.003 [-0.002, +0.008]) | 24.2 → 24.2 (-0.025 [-0.754, +0.67]) | 2 → 2 (+0 [+0, +0]) |
+| greedy | 2.3 → 1.8 (-0.5 [-1, -0.1], significant) | 0.849 → 0.855 (+0.006 [-0.006, +0.02]) | 29 → 28.3 (-0.743 [-1.46, -0.114], significant) | 1.6 → 1.5 (-0.1 [-0.3, +0]) |
 

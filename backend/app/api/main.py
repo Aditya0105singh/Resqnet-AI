@@ -225,7 +225,7 @@ class AdversarialIn(BaseModel):
 
 ALLOWED_OVERRIDES = {
     "seed", "duration", "flood_severity", "flood_peak_tick", "initial_incidents", "arrival_incidents", "arrival_window", "boats", "ground_units",
-    "shelter_capacity", "shelter_occupancy", "report_noise", "duplicate_rate", "delayed_report_rate", "false_alarm_rate", "contradiction_rate",
+    "shelter_capacity", "shelter_occupancy", "report_noise", "duplicate_rate", "delayed_report_rate", "false_alarm_rate", "contradiction_rate", "forward_rate", "fusion_dedup",
     "comm_delay", "msg_latency", "msg_loss", "msg_duplicate", "policy", "weights", "neighbourhood_priority", "schedule", "name",
 }
 
@@ -249,7 +249,8 @@ def make_config(scenario: str, seed: Optional[int], overrides: dict[str, Any]) -
         (0 <= cfg.comm_delay <= 20, "comm_delay must be 0..20"),
         (isinstance(cfg.msg_latency, int) and 0 <= cfg.msg_latency <= 10, "msg_latency must be an integer 0..10"),
         (0 <= cfg.msg_loss <= 0.5 and 0 <= cfg.msg_duplicate <= 0.5, "msg_loss and msg_duplicate must be 0..0.5"),
-        (all(0 <= x <= 1 for x in (cfg.report_noise, cfg.duplicate_rate, cfg.delayed_report_rate, cfg.false_alarm_rate, cfg.contradiction_rate)), "rates must be 0..1"),
+        (all(0 <= x <= 1 for x in (cfg.report_noise, cfg.duplicate_rate, cfg.delayed_report_rate, cfg.false_alarm_rate, cfg.contradiction_rate, cfg.forward_rate)), "rates must be 0..1"),
+        (isinstance(cfg.fusion_dedup, bool), "fusion_dedup must be true or false"),
         (cfg.policy in POLICIES, f"policy must be one of {list(POLICIES)}"),
         (set(cfg.weights) >= {"T", "R", "U", "F"} and all(0 <= float(v) <= 1 for v in cfg.weights.values()), "weights need T,R,U,F in 0..1"),
         (len(cfg.shelter_capacity) == 3 and all(0 <= int(c) <= 500 for c in cfg.shelter_capacity), "shelter_capacity needs 3 values 0..500"),

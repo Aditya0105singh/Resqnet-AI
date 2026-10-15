@@ -26,7 +26,7 @@ Everything is deterministic given the seed except `wall_ms` and `compute_ms`, wh
   - `greedy`: most-urgent request first, nearest feasible unit.
 - **Paired design.** For each seed, every strategy sees identical incident arrivals, reports and noise, flood and scheduled failures. All strategies use the same cost weights, shelter agents and safety shield. Only information access and the coordination mechanism differ. Nothing in the code favours a strategy.
 - **Two questions, kept apart:**
-  1. **Optimisation quality (healthy network)**: `normal`, `flash_flood`, `resource_shortage`, `shelter_overflow`, `contradictory`. Communications and the coordinator work.
+  1. **Optimisation quality (healthy network)**: `normal`, `flash_flood`, `resource_shortage`, `shelter_overflow`, `contradictory`, `viral_sos`. Communications and the coordinator work.
   2. **Failure resilience**: `triple_failure`, `bridge_closure`, `coordinator_outage`, `network_partition`, `lossy_network`.
 - **Sweeps** vary one parameter on the `normal` scenario:
   - SOS report noise, for every strategy;
@@ -89,6 +89,12 @@ See [`benchmark_results.md`](benchmark_results.md) for every cell with its CI. R
 
 - **Report noise** (0 → 0.6) barely moves service rate for any strategy, and every CI overlaps. Report reconciliation (noisy-OR merging, reliability-weighted location, physical verification on arrival) absorbs count and urgency noise. Location noise, false alarms and contradictions are tested separately in `contradictory`.
 - **Message loss** (0 → 0.3, message-passing) is flat up to about 10% loss, then service falls to 0.74 at 20% loss and 0.68 at 30% loss. Timeouts and leases keep the system safe throughout, but recovery costs time.
+
+### SOS fusion: counting forwards once
+
+On `viral_sos`, half of resident SOS messages are forwarded 2–5 more times, including rumours of victims who do not exist. Turning on forward grouping (`fusion_dedup`), with the same seeds, **significantly reduces trips to non-existent victims for all four strategies**: from about 2.3–2.5 down to 1.7–1.9 per run, with every paired CI excluding zero. Service rate does not change significantly. The remaining trips are deliberate, because a single credible SOS still gets a provisional dispatch (rule E2).
+
+**Trade-off of abstaining.** Disputed incidents now wait for a dispatcher, or for the review window. The automated benchmark has no dispatcher, so it always waits the full 5–10 min. In `contradictory` that cost the centralised optimiser about 3 points of service rate compared with the previous rule, which blended conflicting evidence into a low confidence and dispatched by urgency (0.895 → 0.865). The agent strategies were essentially unchanged. With a dispatcher answering, the review window is an upper bound, not the typical delay.
 
 ### The defensible claim
 

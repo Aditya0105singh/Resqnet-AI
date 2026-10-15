@@ -42,6 +42,8 @@ from ..simulation.state import (
 PROVISIONAL_THRESHOLD = 0.5
 VERIFIED_THRESHOLD = 0.8
 UNVERIFIED_WAIT_RULE = 20  # ticks before an unverified report gets a verification visit
+DISPUTE_REVIEW = 10  # ticks a disputed incident waits for a dispatcher decision
+DISPUTE_REVIEW_URGENT = 5  # ... when any report says urgency >= 4
 RESERVATION_SLACK = 20
 
 
@@ -154,6 +156,14 @@ def unassigned_people(world: WorldState, inc: Incident) -> int:
 def is_eligible(world: WorldState, inc: Incident) -> tuple[bool, str]:
     if inc.status in (IncidentStatus.RESCUED, IncidentStatus.FALSE_ALARM):
         return False, inc.status
+    if inc.disputed_since is not None and not inc.visited:
+        ev = inc.evidence
+        if inc.verdict == "verify":
+            return True, "E5 disputed — dispatcher ordered a verification visit"
+        due = inc.disputed_since + (DISPUTE_REVIEW_URGENT if inc.urgency >= 4 else DISPUTE_REVIEW)
+        if world.tick >= due:
+            return True, f"E5 disputed — no dispatcher decision by t={due}: verification visit"
+        return False, f"disputed: credible reports conflict (for {ev.get('cp', 0):.2f} / against {ev.get('cn', 0):.2f}) — awaiting dispatcher review until t={due}"
     if inc.confidence >= VERIFIED_THRESHOLD or inc.visited:
         return True, "E1 verified"
     if inc.confidence >= PROVISIONAL_THRESHOLD:

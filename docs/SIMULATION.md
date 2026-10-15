@@ -37,10 +37,17 @@ Node depth is `level − elevation`, and edge depth is the mean of its two endpo
 
 - Reports come from three sources with reliability metadata: resident 0.6, sensor 0.75, responder 0.9. A report may be noisy, missing fields, delayed, duplicated, contradictory, or a false alarm.
 - **Matching:** a report is merged into an existing incident if it falls within max(location uncertainty) + 50 m and arrives within 45 minutes.
-- **Confidence (heuristic, uncalibrated):** cp = 1 − Π(1 − r) over PRESENT reports. cn is computed the same way over NO_VICTIMS reports. confidence = cp, or cp²/(cp + cn) when the reports contradict.
-- **Status:** VERIFIED at ≥ 0.8, SUSPECTED at ≥ 0.5, otherwise UNVERIFIED. An incident becomes FALSE_ALARM when cn ≥ 0.85 and cn > cp + 0.2, or when a unit on scene finds nobody.
+- **Independent sources:** verbatim forwards of one message share an observable content fingerprint, and are grouped into one source with the best reliability in the group. Copying a message does not make it more true, so forwards count once. The hidden `derived_from` link is used only for evaluation; fusion never reads it. `fusion_dedup: false` turns grouping off, for the on/off comparison.
+- **Confidence (heuristic, uncalibrated):** cp = 1 − Π(1 − r) over independent PRESENT sources. cn is computed the same way over NO_VICTIMS sources. confidence = cp, or cp²/(cp + cn) when the reports contradict.
+- **Status:** VERIFIED at ≥ 0.8, SUSPECTED at ≥ 0.5, otherwise UNVERIFIED. An incident becomes FALSE_ALARM when cn ≥ 0.85 and cn > cp + 0.2, when a dispatcher dismisses it, or when a unit on scene finds nobody.
+- **Abstain (DISPUTED):** when cp ≥ 0.5 and cn ≥ 0.5 but neither false-alarm rule fires, the system does not pick a side and does not auto-dispatch. A dispatcher resolves it with `RESOLVE_DISPUTE`:
+  - `confirm`: overrule the negative reports and treat as verified;
+  - `dismiss`: false alarm, allowed only if nobody has been picked up;
+  - `verify`: send one unit now.
+
+  Without a decision, rule E5 sends a verification visit after 10 minutes, or 5 if any report says urgency ≥ 4. A unit on scene settles the dispute.
 - **Conservative merge:** people = maximum reported (assume 4 if missing), urgency = maximum (assume 3), location = most reliable and most precise report.
-- **Dispatch rules:** E1 verified. E2 suspected → provisional. E3 unverified but urgency ≥ 4 → provisional (life safety). E4 unverified for 20+ minutes → verification visit. All provisional dispatches still pass the shield.
+- **Dispatch rules:** E1 verified. E2 suspected → provisional. E3 unverified but urgency ≥ 4 → provisional (life safety). E4 unverified for 20+ minutes → verification visit. E5 disputed → verification visit after the review window or on dispatcher order. All provisional dispatches still pass the shield.
 - **On scene** the true count is revealed. If there are more people than capacity, the incident stays open for the remainder. If the count is lower, other commitments are cancelled. If nobody is there, the incident is marked a confirmed false alarm. If a loaded unit fails, its passengers become a new urgency-5 incident.
 
 ## Safety invariants (`safety/shield.py`)

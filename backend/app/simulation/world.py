@@ -5,6 +5,7 @@ changes incidents, reports and their noise. Nothing here is real-world data.
 """
 from __future__ import annotations
 
+import dataclasses
 import math
 import random
 
@@ -202,6 +203,7 @@ def generate_reports(world: WorldState, cfg: ScenarioConfig) -> list[IncidentRep
         return rng.choice(sorted(nbrs)) if nbrs else nid
 
     reports: list[IncidentReport] = []
+    forwards: list[tuple[IncidentReport, IncidentReport]] = []  # (copy, original)
 
     def mk(t: dict, tick: int, source: str, claim: str = "PRESENT", note: str = "") -> IncidentReport:
         noise = cfg.report_noise
@@ -239,7 +241,15 @@ def generate_reports(world: WorldState, cfg: ScenarioConfig) -> list[IncidentRep
         tick = t["tick"]
         if rng.random() < cfg.delayed_report_rate:
             tick += rng.randint(8, 22)
-        reports.append(mk(t, tick, src, note="initial SOS" if tick == t["tick"] else "delayed SOS"))
+        first = mk(t, tick, src, note="initial SOS" if tick == t["tick"] else "delayed SOS")
+        reports.append(first)
+        # verbatim forwards (only drawn when enabled, so other scenarios' random streams are unchanged)
+        if cfg.forward_rate > 0 and src == "resident" and rng.random() < cfg.forward_rate:
+            first.fingerprint = f"FP-{t['id']}"
+            for _ in range(rng.randint(2, 5)):
+                copy = dataclasses.replace(first, tick=tick + rng.randint(1, 15), note="forwarded copy of an earlier SOS")
+                reports.append(copy)
+                forwards.append((copy, first))
         if rng.random() < cfg.duplicate_rate:
             reports.append(mk(t, tick + rng.randint(2, 12), rng.choice(["resident", "sensor", "responder"]), note="duplicate report"))
         if not t["exists"] and rng.random() < 0.75:
@@ -250,6 +260,8 @@ def generate_reports(world: WorldState, cfg: ScenarioConfig) -> list[IncidentRep
     reports.sort(key=lambda r: (r.tick, r.truth_id, r.source, r.claim))
     for i, r in enumerate(reports):
         r.id = f"RPT-{i + 1:03d}"
+    for copy, original in forwards:
+        copy.derived_from = original.id
     world.counters["RPT"] = len(reports)
     world.truth = {t["id"]: dict(t, remaining=t["people"] if t["exists"] else 0) for t in truths}
     return reports
