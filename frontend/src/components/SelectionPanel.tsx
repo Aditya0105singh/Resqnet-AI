@@ -156,6 +156,9 @@ export function SelectionPanel() {
               Request reassignment
             </Button>
           )}
+          <a href={`/crew/${r.id}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center rounded-lg border border-line-2 bg-white px-3 text-[12.5px] hover:border-ink">
+            Open crew app ↗
+          </a>
           {r.status !== "DISABLED" && r.blackout_until === null && (
             <Button size="sm" onClick={() => inject("COMM_BLACKOUT", { resource_id: r.id, duration: 15 }, `${r.id} comms blackout`)}>
               Comms blackout 15′
