@@ -112,7 +112,7 @@ export default function Safety() {
           </Field>
           <Field label="strategy">
             <select className={cx(inputCls, "w-40")} value={form.strategy} onChange={(e) => setForm({ ...form, strategy: e.target.value })}>
-              {["decentralized", "centralized", "greedy"].map((s) => (
+              {["decentralized", "message_passing", "centralized", "greedy"].map((s) => (
                 <option key={s} value={s}>
                   {STRATEGY_LABEL[s]}
                 </option>

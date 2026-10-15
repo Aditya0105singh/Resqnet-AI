@@ -207,7 +207,7 @@ class ForkIn(BaseModel):
 
 class BenchmarkIn(BaseModel):
     scenario: str = "triple_failure"
-    strategies: list[str] = Field(default_factory=lambda: ["decentralized", "centralized", "greedy"])
+    strategies: list[str] = Field(default_factory=lambda: ["decentralized", "message_passing", "centralized", "greedy"])
     seeds: list[int] = Field(default_factory=lambda: [1, 2, 3, 4, 5])
     overrides: dict[str, Any] = Field(default_factory=dict)
 
@@ -225,7 +225,7 @@ class AdversarialIn(BaseModel):
 ALLOWED_OVERRIDES = {
     "seed", "duration", "flood_severity", "flood_peak_tick", "initial_incidents", "arrival_incidents", "arrival_window", "boats", "ground_units",
     "shelter_capacity", "shelter_occupancy", "report_noise", "duplicate_rate", "delayed_report_rate", "false_alarm_rate", "contradiction_rate",
-    "comm_delay", "policy", "weights", "neighbourhood_priority", "schedule", "name",
+    "comm_delay", "msg_latency", "msg_loss", "msg_duplicate", "policy", "weights", "neighbourhood_priority", "schedule", "name",
 }
 
 
@@ -246,6 +246,8 @@ def make_config(scenario: str, seed: Optional[int], overrides: dict[str, Any]) -
         (0 <= cfg.ground_units <= 6, "ground_units must be 0..6"),
         (0 <= cfg.initial_incidents <= 40 and 0 <= cfg.arrival_incidents <= 60, "incident counts out of range"),
         (0 <= cfg.comm_delay <= 20, "comm_delay must be 0..20"),
+        (isinstance(cfg.msg_latency, int) and 0 <= cfg.msg_latency <= 10, "msg_latency must be an integer 0..10"),
+        (0 <= cfg.msg_loss <= 0.5 and 0 <= cfg.msg_duplicate <= 0.5, "msg_loss and msg_duplicate must be 0..0.5"),
         (all(0 <= x <= 1 for x in (cfg.report_noise, cfg.duplicate_rate, cfg.delayed_report_rate, cfg.false_alarm_rate, cfg.contradiction_rate)), "rates must be 0..1"),
         (cfg.policy in POLICIES, f"policy must be one of {list(POLICIES)}"),
         (set(cfg.weights) >= {"T", "R", "U", "F"} and all(0 <= float(v) <= 1 for v in cfg.weights.values()), "weights need T,R,U,F in 0..1"),
@@ -411,7 +413,14 @@ def agents(sim_id: str) -> dict[str, Any]:
                 "status": r.status,
                 "capacity": r.capacity,
                 "load": r.load,
-                "information": "own state exact; incident + network broadcasts delayed by %d tick(s); closures discovered physically" % e.cfg.comm_delay if e.is_decentralized() else "centralised: coordinator holds complete, instant state",
+                "information": (
+                    f"message-passing agent: knows requests and shelter offers only from messages received (latency {e.cfg.msg_latency} tick/hop, loss {e.cfg.msg_loss:.0%}); network view delayed by {e.cfg.comm_delay} tick(s); closures discovered physically"
+                    if e.strategy == "message_passing"
+                    else "own state exact; incident + network broadcasts delayed by %d tick(s); closures discovered physically" % e.cfg.comm_delay
+                    if e.is_decentralized()
+                    else "centralised: coordinator holds complete, instant state"
+                ),
+                "partition": w.partition_of(r.id),
                 "belief_mismatch_edges": relevant_stale[:20],
                 "discovered_closures": sorted(r.known_closed),
                 "blackout_until": r.blackout_until if r.blackout_until >= w.tick else None,

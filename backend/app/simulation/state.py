@@ -198,6 +198,9 @@ class CapacityReservation:
     expires_tick: int
     status: str = ReservationStatus.ACTIVE
     version: int = 1
+    # message-passing negotiation: a reservation granted before the commitment exists
+    # is held as a short lease until this tick (-1 = must be bound to an assignment)
+    pending_until: int = -1
 
 
 @dataclass
@@ -294,6 +297,31 @@ class WorldState:
     truth: dict[str, dict[str, Any]] = field(default_factory=dict)
     # traversability history (tick -> closed edge ids per mode) for delayed agent beliefs
     trav_history: dict[int, dict[str, frozenset]] = field(default_factory=dict)
+    # network partitions: [{id, members: [agent ids], start, until}] — members can only
+    # talk to each other; everyone else (incident agents, other units, shelters) is cut off
+    partitions: list[dict[str, Any]] = field(default_factory=list)
+
+    def partition_of(self, agent_id: str) -> Optional[str]:
+        for p in self.partitions:
+            if p["start"] <= self.tick <= p["until"] and agent_id in p["members"]:
+                return p["id"]
+        return None
+
+    def reachable(self, a: str, b: str) -> bool:
+        """Can agent `a` exchange messages with agent `b` right now? Comms blackouts
+        isolate a unit completely; partitions split the network into islands."""
+        for x in (a, b):
+            r = self.resources.get(x)
+            if r is not None and r.blackout_until >= self.tick:
+                return a == b
+        return self.partition_of(a) == self.partition_of(b)
+
+    def isolated(self, agent_id: str) -> bool:
+        """Cut off from the main network (incident agents, coordinator, dispatch)."""
+        r = self.resources.get(agent_id)
+        if r is not None and r.blackout_until >= self.tick:
+            return True
+        return self.partition_of(agent_id) is not None
 
     def next_id(self, prefix: str) -> str:
         n = self.counters.get(prefix, 0) + 1

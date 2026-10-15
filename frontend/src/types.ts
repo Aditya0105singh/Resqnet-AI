@@ -1,4 +1,4 @@
-export type Strategy = "decentralized" | "centralized" | "greedy";
+export type Strategy = "decentralized" | "message_passing" | "centralized" | "greedy";
 
 export interface WorldNode {
   id: string;
@@ -43,6 +43,7 @@ export interface Resource {
   shelter_id: string | null;
   eta: number | null;
   blackout_until: number | null;
+  partition?: string | null;
   version: number;
   distance_km: number;
   busy_ticks: number;
@@ -145,6 +146,7 @@ export interface Metrics {
 }
 export interface Frame {
   coordinator?: {available: boolean; restores_at: number};
+  network?: {partitions: {id: string; members: string[]; start: number; until: number}[]; transport: Record<string, number> | null; latency: number; loss: number};
   tick: number;
   version: number;
   strategy: Strategy;

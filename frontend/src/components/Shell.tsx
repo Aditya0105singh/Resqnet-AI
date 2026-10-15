@@ -162,7 +162,7 @@ export function NewRunMenu() {
             ))}
           </div>
           <div className="label mt-3 mb-1.5">coordination strategy</div>
-          <Segmented size="sm" value={strategy} onChange={setStrategy} options={(["decentralized", "centralized", "greedy"] as Strategy[]).map((s) => ({ value: s, label: STRATEGY_LABEL[s] }))} />
+          <Segmented size="sm" value={strategy} onChange={setStrategy} options={(["decentralized", "message_passing", "centralized", "greedy"] as Strategy[]).map((s) => ({ value: s, label: STRATEGY_LABEL[s] }))} />
           <div className="mt-3 flex justify-end gap-2">
             <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
               Cancel

@@ -6,8 +6,8 @@ import { useSim } from "../store/sim";
 import { Badge, Button, cx, Empty, Field, inputCls, PageHeader, Panel } from "../components/ui";
 import { fmt, STRATEGY_LABEL } from "../lib/format";
 
-const STRATS = ["decentralized", "centralized", "greedy"];
-const COLORS: Record<string, string> = { decentralized: "#0891b2", centralized: "#0a0a0a", greedy: "#a1a1aa" };
+const STRATS = ["decentralized", "message_passing", "centralized", "greedy"];
+const COLORS: Record<string, string> = { decentralized: "#0891b2", message_passing: "#7c3aed", centralized: "#0a0a0a", greedy: "#a1a1aa" };
 const METRICS: { k: string; label: string; better: "lower" | "higher"; d?: number }[] = [
   { k: "mean_time_to_service", label: "Mean time to service (min)", better: "lower" },
   { k: "deadline_misses", label: "Urgent deadline misses", better: "lower" },

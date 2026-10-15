@@ -12,6 +12,7 @@ Most emergency dashboards show you where the crisis is. resqnet shows how autono
 | | |
 |---|---|
 | **Deterministic digital twin** | Tick-based engine (1 tick = 1 simulated minute). Riverbend has 56 nodes, 92 road/river/bridge/jetty edges, 5 neighbourhoods, 3 bridges, 3 shelters, 5 boats and 4 ground teams. The flood rises and closes roads as it goes. |
+| **Message-passing agents** | A fourth strategy runs each agent as a separate handler that only reads its own inbox. Messages travel over a simulated network with latency, loss, duplicates and partitions, and are recovered by proposal timeouts, reservation leases and idempotent handlers. See [docs/MESSAGE_PASSING.md](docs/MESSAGE_PASSING.md). |
 | **Real multi-agent negotiation** | Incident, rescue, shelter and route agents work through contract-net bidding and deferred acceptance (Gale–Shapley). The protocol runs REQUEST → BID → PROVISIONAL_ACCEPT → RESERVE → SAFETY → COMMIT. Every message is logged. |
 | **Partial information** | Decentralised agents get broadcasts after a comms delay and plan on their own, possibly stale, view of the network. They find closures physically and can lose comms completely during a blackout. |
 | **Safety shield** | An independent validator checks every commit and every move against the true world state. It enforces invariants S1–S7: double booking, shelter capacity, prohibited edges, transport capacity, stale versions, reservation validity and operational status. |
@@ -54,7 +55,7 @@ cd backend && python -m pytest tests -q -p no:asyncio
 cd frontend && npx tsc -b && npx vite build
 ```
 
-The suite has 42 tests: determinism, replay, rerouting, retreat on a closing edge, unreachable requests, double booking, stale state, expired reservations, capacity limits, boat failure, stranded passengers, shelter overflow, triple failure under all three strategies, contradictory and duplicate reports, delayed information, benchmarks, counterfactual sanity checks, policy-change renegotiation, the API, WebSocket resync and PDF export. Hypothesis property tests check the safety invariants under random failure sequences.
+The suite has 72 tests: determinism, replay, rerouting, retreat on a closing edge, unreachable requests, double booking, stale state, expired reservations, capacity limits, boat failure, stranded passengers, shelter overflow, triple failure under all three strategies, contradictory and duplicate reports, delayed information, benchmarks, counterfactual sanity checks, policy-change renegotiation, the API, WebSocket resync and PDF export. It also covers message transport: loss, duplicate delivery, timeouts, lease expiry and partitions. Hypothesis property tests check the safety invariants under random failure sequences.
 
 ### Reproduce benchmarks
 
@@ -84,6 +85,7 @@ This writes `docs/benchmark_results.md`.
 - [docs/AGENTS.md](docs/AGENTS.md): agents, negotiation protocol, tie-breaking, information model
 - [docs/SIMULATION.md](docs/SIMULATION.md): tick pipeline, flood model, reconciliation, safety, fairness, metrics
 - [docs/BENCHMARKS.md](docs/BENCHMARKS.md): methodology and measured results
+- [docs/MESSAGE_PASSING.md](docs/MESSAGE_PASSING.md): message-passing agents, network faults and their measured cost
 - [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): 5-minute judge demo
 
 ## Repository layout

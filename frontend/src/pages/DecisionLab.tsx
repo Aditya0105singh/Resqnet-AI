@@ -147,7 +147,7 @@ export default function DecisionLab() {
               <Field label="strategy">
                 <select className={inputCls} value={mods.strategy} onChange={(e) => setMods({ ...mods, strategy: e.target.value })}>
                   <option value="">same</option>
-                  {["decentralized", "centralized", "greedy"].map((p) => (
+                  {["decentralized", "message_passing", "centralized", "greedy"].map((p) => (
                     <option key={p} value={p}>
                       {STRATEGY_LABEL[p]}
                     </option>

@@ -9,7 +9,7 @@ import { cx } from "./ui";
 export interface MapFrame {
   route_ghosts?: {resource: string; tick: number; edge: string; path: string[]}[];
   tick: number;
-  resources: { id: string; kind: string; x: number; y: number; status: string; load: number; incident_id: string | null; route: string[]; blackout_until?: number | null }[];
+  resources: { id: string; kind: string; x: number; y: number; status: string; load: number; incident_id: string | null; route: string[]; blackout_until?: number | null; partition?: string | null }[];
   incidents: { id: string; x: number; y: number; status: string; urgency: number; people: number; unassigned: number; confidence?: number; provisional?: boolean }[];
   shelters: { id: string; x: number; y: number; capacity: number; occupancy: number; reserved: number; name?: string }[];
   edges: Record<string, number[]>;
@@ -338,7 +338,7 @@ export function CityMap({ world, frame, layers: layerProp, selection, onSelect, 
               const hot = sel("resource", r.id);
               const dis = r.status === "DISABLED";
               const hold = r.status === "HOLDING";
-              const black = r.blackout_until !== null && r.blackout_until !== undefined;
+              const black = (r.blackout_until !== null && r.blackout_until !== undefined) || !!r.partition;
               return (
                 <g
                   key={r.id}
@@ -346,7 +346,7 @@ export function CityMap({ world, frame, layers: layerProp, selection, onSelect, 
                   style={{ transform: `translate(${r.x}px, ${r.y}px)`, transitionDuration: `${transitionMs}ms` }}
                   onClick={() => clicked() && onSelect?.({ type: "resource", id: r.id })}
                 >
-                  <title>{`${r.id} · ${r.kind} · ${r.status}${r.load ? ` · ${r.load} aboard` : ""}${black ? " · COMMS DOWN" : ""}`}</title>
+                  <title>{`${r.id} · ${r.kind} · ${r.status}${r.load ? ` · ${r.load} aboard` : ""}${black ? (r.partition ? ` · PARTITIONED (${r.partition})` : " · COMMS DOWN") : ""}`}</title>
                   {hot && <circle r={0.3} fill="#22d3ee" opacity={0.18} />}
                   {hold && <circle r={0.26} fill="none" stroke="#dc2626" strokeWidth={sw(2)} className="pulse" />}
                   {r.kind === "boat" ? (

@@ -82,7 +82,9 @@ The blueprint's own rule is: "migrate only when a requirement justifies it". App
 
 Each work package lists its files, the change, and its exit test. WP1–WP4 are the highest value per effort. WP5 onward are product surface.
 
-### WP1: Real message transport for agents (strengthens "real multi-agent")
+### WP1: Real message transport for agents (strengthens "real multi-agent") ✅ built
+
+> Implemented as a new `message_passing` strategy rather than replacing `decentralized`, so existing results stay comparable. The existing strategies are verified hash-identical on 30 runs. Details and results are in [MESSAGE_PASSING.md](MESSAGE_PASSING.md).
 
 **Why first:** this is the claim a technical judge will probe ("is it really decentralised, or one function?"). Everything in blueprint §5 depends on it.
 

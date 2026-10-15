@@ -1,4 +1,4 @@
-import { Bomb, Construction, Radio, Ship, Tent, Waves, Zap } from "lucide-react";
+import { Bomb, Construction, Radio, Ship, Split, Tent, Waves, Zap } from "lucide-react";
 import { useSim } from "../store/sim";
 import { Button } from "./ui";
 
@@ -13,6 +13,9 @@ export function ChaosButtons({ layout = "row" }: { layout?: "row" | "grid" }) {
   const boat = frame.resources.find((r) => r.kind === "boat" && r.status !== "DISABLED" && r.assignment_id) ?? frame.resources.find((r) => r.kind === "boat" && r.status !== "DISABLED");
   const shelter = [...frame.shelters].sort((a, b) => b.reserved - a.reserved)[0];
   const blackout = frame.resources.find((r) => r.status !== "DISABLED" && r.assignment_id && !r.blackout_until);
+  const partitioned = (frame.network?.partitions.length ?? 0) > 0;
+  const boats = frame.resources.filter((r) => r.kind === "boat" && r.status !== "DISABLED" && !r.blackout_until);
+  const cut = [...boats.filter((r) => r.assignment_id), ...boats.filter((r) => !r.assignment_id)].slice(0, 3).map((r) => r.id);
   return (
     <div className={layout === "grid" ? "grid grid-cols-2 gap-2" : "flex flex-wrap gap-1.5"}>
       <Button variant="danger" size="sm" icon={<Bomb className="size-3.5" />} loading={busy.TRIPLE_FAILURE} onClick={() => inject("TRIPLE_FAILURE", {}, "Triple failure injected")}>
@@ -32,6 +35,9 @@ export function ChaosButtons({ layout = "row" }: { layout?: "row" | "grid" }) {
       </Button>
       <Button size="sm" icon={<Radio className="size-3.5" />} disabled={!blackout} loading={busy.COMM_BLACKOUT} onClick={() => blackout && inject("COMM_BLACKOUT", { resource_id: blackout.id, duration: 15 }, `${blackout.id} comms blackout`)}>
         Blackout {blackout?.id ?? ""}
+      </Button>
+      <Button size="sm" icon={<Split className="size-3.5" />} disabled={partitioned || cut.length === 0} loading={busy.NETWORK_PARTITION} onClick={() => inject("NETWORK_PARTITION", { members: [...cut, shelter.id], duration: 30 }, `Partition ${[...cut, shelter.id].join(", ")}`)}>
+        Partition
       </Button>
       {layout === "grid" && (
         <Button size="sm" variant="info" icon={<Zap className="size-3.5" />} onClick={() => {

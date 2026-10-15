@@ -12,7 +12,7 @@ POLICIES: dict[str, dict[str, float]] = {
     "equity": {"T": 0.25, "R": 0.15, "U": 0.20, "F": 0.40},
 }
 
-STRATEGIES = ("decentralized", "centralized", "greedy")
+STRATEGIES = ("decentralized", "message_passing", "centralized", "greedy")
 
 
 @dataclass
@@ -37,6 +37,10 @@ class ScenarioConfig:
     false_alarm_rate: float = 0.0
     contradiction_rate: float = 0.0
     comm_delay: int = 1  # ticks before a decentralised agent hears a broadcast
+    # agent message transport (message_passing strategy only)
+    msg_latency: int = 0  # ticks per hop; 0 = delivered within the same minute
+    msg_loss: float = 0.0  # independent drop probability per message
+    msg_duplicate: float = 0.0  # probability a message is delivered twice (at-least-once)
     policy: str = "balanced"
     weights: dict[str, float] = field(default_factory=lambda: dict(POLICIES["balanced"]))
     neighbourhood_priority: dict[str, float] = field(default_factory=dict)
@@ -115,6 +119,20 @@ PRESETS: dict[str, ScenarioConfig] = {
         false_alarm_rate=0.18,
         contradiction_rate=0.2,
         comm_delay=3,
+    ),
+    "lossy_network": _preset(
+        key="lossy_network",
+        name="Degraded Radio Network",
+        description="Agent messages take 1 minute per hop and 15% are lost or duplicated. Affects the message-passing strategy; agents recover through timeouts and idempotent handling.",
+        msg_latency=1,
+        msg_loss=0.15,
+        msg_duplicate=0.1,
+    ),
+    "network_partition": _preset(
+        key="network_partition",
+        name="Network Partition",
+        description="At t=20 three boats and Riverside Civic Arena are split from the rest of the network for 40 minutes. Committed missions continue; no new commitments cross the split.",
+        schedule=[{"tick": 20, "type": "NETWORK_PARTITION", "params": {"members": ["B1", "B2", "B3", "S2"], "duration": 40}}],
     ),
     "triple_failure": _preset(
         key="triple_failure",

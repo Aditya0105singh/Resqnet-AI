@@ -68,7 +68,7 @@ def compute_metrics(engine: Any) -> dict[str, Any]:
     jain = (sum(xs) ** 2 / (len(xs) * sum(x * x for x in xs))) if xs and sum(x * x for x in xs) > 0 else 1.0
 
     rounds = engine.rounds
-    msgs = sum(len(r.messages) for r in rounds)
+    msgs = sum(1 for r in rounds for m in r.messages if m.type != "LOST")
     rec = [d["recovery"] for d in engine.disruptions if d["recovery"] is not None]
     return {
         "tick": now,
@@ -103,6 +103,8 @@ def compute_metrics(engine: Any) -> dict[str, Any]:
         "provisional_dispatches": engine.counters["provisional_dispatches"],
         "negotiation_rounds": len(rounds),
         "negotiation_messages": msgs,
+        "messages_lost": (engine.mas.bus.stats["lost"] + engine.mas.bus.stats["partitioned"]) if getattr(engine, "mas", None) else 0,
+        "transport": dict(engine.mas.bus.stats) if getattr(engine, "mas", None) else None,
         "compute_ms": round(sum(r.duration_ms for r in rounds), 2),
         "disruptions": len(engine.disruptions),
         "mean_recovery_time": round(statistics.fmean(rec), 2) if rec else None,
@@ -128,6 +130,7 @@ SUMMARY_KEYS = [
     "reassignments",
     "reroutes",
     "negotiation_messages",
+    "messages_lost",
     "compute_ms",
     "mean_recovery_time",
     "unresolved_disruptions",
