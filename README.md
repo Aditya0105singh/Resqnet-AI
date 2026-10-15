@@ -84,6 +84,12 @@ docker compose up --build        # → http://localhost:8000 (app, API and WebSo
 
 The image builds the frontend and serves it from FastAPI. Runs are kept in a volume, so they survive restarts. Claude features stay off unless `RESQNET_SOS_LLM=on` / `RESQNET_COMMANDER_LLM=on` and `ANTHROPIC_API_KEY` are set. Without Docker, `cd frontend && npx vite build` and then starting the backend serves the built app on port 8000.
 
+### Put it online (Render)
+
+The app is one container, so any host that runs a Docker container works. `render.yaml` is a ready blueprint for [Render](https://render.com): sign in with GitHub, choose **New → Blueprint**, pick this repository and apply. The first build takes several minutes; the site is then at `https://resqnet-ai.onrender.com` (or the name you give it). The free plan sleeps after about 15 minutes idle and takes up to a minute to wake, so open it a few minutes before a demo, or use the *starter* plan for always-on. Runs are kept in a SQLite file that resets on each deploy on the free plan.
+
+**Not Vercel:** simulations live in server memory and stream over a WebSocket. Vercel's serverless functions are stateless, short-lived and have no WebSocket support, so the app would lose its runs and its live updates there. The Docker image itself has not been built in the development environment (no Docker daemon); the same steps (`npm ci`, `vite build`, then `uvicorn` serving `frontend/dist`) were run directly and pass the browser tests.
+
 ## Real maps (Kerala)
 
 Besides the synthetic Riverbend grid, the simulator runs on real geography: OpenStreetMap roads, bridges and rivers plus the 30 m Copernicus DEM (GLO-30) for terrain. Two snapshots ship in `backend/app/data/maps/`: **Aluva · Periyar River** and **Chengannur · Pamba River**. Pick one under *New run → Map*. The app opens on Aluva; Riverbend is used by the tests and benchmarks.

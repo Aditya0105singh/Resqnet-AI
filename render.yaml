@@ -1,0 +1,22 @@
+# One-click deploy on Render: New -> Blueprint -> pick this repository.
+# Runs the single container from the Dockerfile: the FastAPI server serves the API, the WebSocket
+# and the built website on one port. (Not suited to Vercel: simulations live in server memory and
+# stream over a WebSocket, which serverless functions do not support.)
+services:
+  - type: web
+    name: resqnet-ai
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore          # closest Render region to India
+    plan: free                 # sleeps after ~15 min idle; use "starter" for always-on
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: RESQNET_SOS_LLM          # optional Claude features, off by default
+        value: "off"
+      - key: RESQNET_COMMANDER_LLM
+        value: "off"
+      - key: ANTHROPIC_API_KEY        # only needed if the two switches above are turned on
+        sync: false
