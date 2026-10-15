@@ -38,6 +38,7 @@ class ResourceStatus:
 class IncidentStatus:
     UNVERIFIED = "UNVERIFIED"  # evidence below provisional threshold
     SUSPECTED = "SUSPECTED"  # provisional dispatch allowed
+    DISPUTED = "DISPUTED"  # credible evidence on both sides: dispatcher review, then verification visit
     VERIFIED = "VERIFIED"
     ASSIGNED = "ASSIGNED"  # all reported people covered by commitments
     RESCUED = "RESCUED"
@@ -63,6 +64,7 @@ ACTIVE_ASSIGNMENT = (AssignmentStatus.COMMITTED, AssignmentStatus.LOADED)
 OPEN_INCIDENT = (
     IncidentStatus.UNVERIFIED,
     IncidentStatus.SUSPECTED,
+    IncidentStatus.DISPUTED,
     IncidentStatus.VERIFIED,
     IncidentStatus.ASSIGNED,
 )
@@ -124,6 +126,11 @@ class IncidentReport:
     truth_id: str = ""  # hidden ground-truth link (never read by agents)
     incident_id: str = ""  # incident it was reconciled into
     note: str = ""
+    # observable content signature: verbatim forwards of one message share it, so the
+    # fusion counts them once (a forward is not an independent witness)
+    fingerprint: str = ""
+    # hidden ground truth: the report this one was copied from (evaluation only, never read by fusion)
+    derived_from: str = ""
 
 
 @dataclass
@@ -149,6 +156,10 @@ class Incident:
     visited: bool = False
     # publication log for decentralised agents with communication delay
     publications: list[dict[str, Any]] = field(default_factory=list)
+    # evidence fusion: independent-source summary, dispute tracking and dispatcher verdict
+    evidence: dict[str, Any] = field(default_factory=dict)
+    disputed_since: Optional[int] = None
+    verdict: str = ""  # "" | confirmed | dismissed | verify (set by a dispatcher RESOLVE_DISPUTE)
 
 
 # ---------------------------------------------------------------- resources

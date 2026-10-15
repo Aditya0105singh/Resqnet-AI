@@ -293,7 +293,7 @@ export function CityMap({ world, frame, layers: layerProp, selection, onSelect, 
             frame.incidents.map((i) => {
               const done = i.status === "RESCUED";
               const fa = i.status === "FALSE_ALARM";
-              const uncertain = i.status === "UNVERIFIED" || i.status === "SUSPECTED";
+              const uncertain = i.status === "UNVERIFIED" || i.status === "SUSPECTED" || i.status === "DISPUTED";
               if (uncertain && !layers.uncertain) return null;
               const c = URGENCY_COLOR(i.urgency);
               const r = 0.1 + Math.min(0.12, i.people * 0.012);

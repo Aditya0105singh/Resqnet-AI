@@ -141,6 +141,7 @@ SUMMARY_KEYS = [
     "mean_recovery_time",
     "unresolved_disruptions",
     "service_rate",
+    "false_alarm_visits",
     "outage_uncovered_people_minutes",
     "commitments_during_outage",
     "mean_outage_backlog_clear",

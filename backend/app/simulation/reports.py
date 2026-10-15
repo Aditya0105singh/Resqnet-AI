@@ -4,13 +4,20 @@ Reports are matched to an existing incident when they fall within the larger of
 the two location uncertainties (plus 50 m) and arrive within 45 minutes.
 
 Evidence aggregation (heuristic, NOT a calibrated probability):
-    cp = 1 - Π(1 - r_i)   over PRESENT reports (r = source reliability metadata)
-    cn = 1 - Π(1 - r_j)   over NO_VICTIMS reports
+    Reports are first grouped into *independent sources*: verbatim forwards of one
+    message share a content fingerprint and form one group whose reliability is the
+    best in the group (copying a message does not make it more true).
+    cp = 1 - Π(1 - r_g)   over independent PRESENT groups (r = source reliability metadata)
+    cn = 1 - Π(1 - r_g)   over independent NO_VICTIMS groups
     confidence = cp                     if no contradicting reports
                = cp * cp / (cp + cn)    otherwise
 Status: VERIFIED >= 0.80, SUSPECTED >= 0.50, else UNVERIFIED.
 FALSE_ALARM when cn >= 0.85 and cn > cp + 0.2 (and nobody has been picked up),
-or when a unit on scene finds nobody.
+when a dispatcher dismisses it, or when a unit on scene finds nobody.
+DISPUTED (abstain) when both cp >= 0.5 and cn >= 0.5 but neither rule above fires:
+the system does not pick a side. It waits for a dispatcher decision
+(RESOLVE_DISPUTE confirm / dismiss / verify) and, failing one, sends a single
+verification visit after a review window (rule E5).
 
 Conflicting fields are resolved conservatively: people = max reported (missing
 -> assume 4), urgency = max reported (missing -> 3), location = most reliable,
@@ -27,6 +34,21 @@ from .world import DEADLINE_BY_URGENCY, nearest_land_nbhd
 MATCH_WINDOW = 45
 ASSUMED_PEOPLE = 4
 ASSUMED_URGENCY = 3
+DISPUTE_THRESHOLD = 0.5
+
+
+def independent_groups(reports: list[IncidentReport], dedup: bool = True) -> list[list[IncidentReport]]:
+    """Group reports by observable content fingerprint. Reports without one, or with
+    dedup disabled (ablation), are each their own source."""
+    groups: dict[str, list[IncidentReport]] = {}
+    for r in reports:
+        key = r.fingerprint if (dedup and r.fingerprint) else r.id
+        groups.setdefault(key, []).append(r)
+    return [groups[k] for k in sorted(groups)]
+
+
+def _combine(groups: list[list[IncidentReport]]) -> float:
+    return 1 - math.prod(1 - max(r.reliability for r in g) for g in groups) if groups else 0.0
 
 
 def _dist(world: Any, a: str, b: str) -> float:
@@ -86,11 +108,26 @@ def recompute(engine: Any, inc: Incident) -> None:
     reps = [world.reports[r] for r in inc.report_ids]
     present = [r for r in reps if r.claim == "PRESENT"]
     negative = [r for r in reps if r.claim == "NO_VICTIMS"]
-    cp = 1 - math.prod(1 - r.reliability for r in present) if present else 0.0
-    cn = 1 - math.prod(1 - r.reliability for r in negative) if negative else 0.0
+    dedup = bool(getattr(engine.cfg, "fusion_dedup", True))
+    pg, ng = independent_groups(present, dedup), independent_groups(negative, dedup)
+    cp, cn = _combine(pg), _combine(ng)
+    if inc.verdict == "confirmed":
+        negative, cn = [], 0.0  # the dispatcher overruled the negative reports
+    inc.evidence = {
+        "cp": round(cp, 3),
+        "cn": round(cn, 3),
+        "present_reports": len(present),
+        "present_sources": len(pg),
+        "negative_reports": len([r for r in reps if r.claim == "NO_VICTIMS"]),
+        "negative_sources": len(ng),
+        "forwarded_copies": sum(len(g) - 1 for g in pg + ng),
+        "verdict": inc.verdict,
+    }
     before = (inc.node, inc.urgency, inc.people_estimate, inc.status, round(inc.confidence, 3))
     if inc.visited:
         conf = 1.0
+    elif inc.verdict == "confirmed":
+        conf = max(cp, 0.8)  # dispatcher confirmation (e.g. a call-back) counts as verification
     else:
         conf = cp if not negative else (cp * cp / (cp + cn) if cp + cn > 0 else 0.0)
     inc.confidence = round(conf, 3)
@@ -108,10 +145,19 @@ def recompute(engine: Any, inc: Incident) -> None:
     if urg and max(urg) > inc.urgency:
         inc.urgency = max(urg)
         inc.deadline_tick = inc.reported_tick + DEADLINE_BY_URGENCY[inc.urgency]
-    false_alarm = (not inc.visited and negative and cn >= 0.85 and cn > cp + 0.2 and inc.first_pickup_tick is None)
+    dismissed = inc.verdict == "dismissed"
+    false_alarm = not inc.visited and inc.first_pickup_tick is None and (dismissed or (bool(negative) and cn >= 0.85 and cn > cp + 0.2))
+    disputed = not inc.visited and not false_alarm and inc.verdict not in ("confirmed", "dismissed") and cp >= DISPUTE_THRESHOLD and cn >= DISPUTE_THRESHOLD
+    if disputed and inc.disputed_since is None:
+        inc.disputed_since = world.tick
+        engine.audit("incident", f"{inc.id} DISPUTED: {len(pg)} independent source(s) for (cp={cp:.2f}) vs {len(ng)} against (cn={cn:.2f}) — no automatic dispatch; awaiting dispatcher review", {"incident": inc.id}, "warn")
+    elif not disputed and inc.disputed_since is not None:
+        inc.disputed_since = None
+        why = "verified on scene" if inc.visited else f"dispatcher verdict: {inc.verdict}" if inc.verdict else "new evidence settled it"
+        engine.audit("incident", f"{inc.id} dispute resolved ({why})", {"incident": inc.id}, "info")
     if false_alarm and inc.status != IncidentStatus.FALSE_ALARM:
         inc.status = IncidentStatus.FALSE_ALARM
-        engine.on_false_alarm(inc, f"responder evidence (cn={cn:.2f}) outweighs SOS evidence (cp={cp:.2f})")
+        engine.on_false_alarm(inc, "dismissed by dispatcher" if dismissed else f"responder evidence (cn={cn:.2f}) outweighs SOS evidence (cp={cp:.2f})")
     elif not false_alarm and inc.status == IncidentStatus.FALSE_ALARM and not inc.visited:
         engine.audit("incident", f"{inc.id} re-opened: new evidence contradicts the false-alarm classification", {"incident": inc.id}, "warn")
         inc.status = IncidentStatus.UNVERIFIED

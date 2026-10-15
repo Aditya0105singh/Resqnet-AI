@@ -173,6 +173,63 @@ function SweepChart({ sw }: { sw: any }) {
   );
 }
 
+const ABLATION_LABEL: Record<string, MetricDef> = {
+  false_alarm_visits: { k: "false_alarm_visits", label: "Trips to non-existent victims", better: "lower", d: 1 },
+  service_rate: { k: "service_rate", label: "Service rate", better: "higher", d: 3 },
+  mean_time_to_service: { k: "mean_time_to_service", label: "Mean time to service (min)", better: "lower", d: 1 },
+  deadline_misses: { k: "deadline_misses", label: "Urgent misses", better: "lower", d: 1 },
+};
+
+function AblationPanel({ ab }: { ab: any }) {
+  const [[off], [on]] = ab.variants;
+  return (
+    <Panel title={ab.title} sub={`${ab.question} Base scenario ${ab.base}; same seeds, only ${ab.param} changes. Cells: ${off} → ${on}, paired Δ with 95% CI.`}>
+      <div className="scroll-thin overflow-x-auto">
+        <table className="w-full text-[12px]">
+          <thead className="label">
+            <tr className="border-b border-line">
+              <th className="px-3 py-2 text-left font-normal">strategy</th>
+              {ab.keys.map((k: string) => (
+                <th key={k} className="px-3 py-2 text-left font-normal">
+                  {ABLATION_LABEL[k]?.label ?? k} <span className="normal-case text-mute">({ABLATION_LABEL[k]?.better} is better)</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ab.strategies.map((st: string) => (
+              <tr key={st} className="mono border-b border-line/60">
+                <td className="whitespace-nowrap px-3 py-2">
+                  <span className="mr-1.5 inline-block size-2 rounded-full" style={{ background: COLORS[st] }} />
+                  {STRATEGY_LABEL[st]}
+                </td>
+                {ab.keys.map((k: string) => {
+                  const m = ABLATION_LABEL[k] ?? { k, label: k, better: "lower", d: 2 };
+                  const a = ab.results[st].summary[off][k];
+                  const b = ab.results[st].summary[on][k];
+                  const d: Agg = ab.results[st].paired[k];
+                  const good = d.mean != null && (m.better === "lower" ? d.mean < 0 : d.mean > 0);
+                  return (
+                    <td key={k} className="whitespace-nowrap px-3 py-2">
+                      {fmt(a.mean, m.d)} → {fmt(b.mean, m.d)}
+                      <div className="flex items-center gap-1.5 text-[10.5px] text-mute">
+                        Δ {d.mean != null && d.mean > 0 ? "+" : ""}
+                        {fmt(d.mean, m.d)}
+                        {d.ci_low != null && ` [${fmt(d.ci_low, m.d)}, ${fmt(d.ci_high!, m.d)}]`}
+                        {d.significant && <Badge tone={good ? "ok" : "warn"}>{good ? "better" : "worse"}</Badge>}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+  );
+}
+
 function Published() {
   const [ev, setEv] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -223,6 +280,9 @@ function Published() {
           <SweepChart key={sw.param} sw={sw} />
         ))}
       </div>
+      {Object.values(ev.ablations ?? {}).map((ab: any) => (
+        <AblationPanel key={ab.param} ab={ab} />
+      ))}
     </>
   );
 }

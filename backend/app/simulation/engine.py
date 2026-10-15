@@ -79,6 +79,7 @@ EVENT_TYPES = (
     "ADD_RESOURCE",
     "SET_POLICY",
     "NETWORK_PARTITION",
+    "RESOLVE_DISPUTE",
 )
 
 RELIABILITY = {"resident": 0.6, "sensor": 0.75, "responder": 0.9}
@@ -202,6 +203,8 @@ class Engine:
             return
         if active and unassigned_people(w, inc) == 0:
             inc.status = IncidentStatus.ASSIGNED
+        elif inc.disputed_since is not None and not inc.visited:
+            inc.status = IncidentStatus.DISPUTED
         elif inc.visited or inc.confidence >= common.VERIFIED_THRESHOLD:
             inc.status = IncidentStatus.VERIFIED
         elif inc.confidence >= common.PROVISIONAL_THRESHOLD:
@@ -676,6 +679,24 @@ class Engine:
             "committed missions continue, no new commitments across the split"
         )
 
+    def _ev_resolve_dispute(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
+        """Dispatcher decision on an incident with conflicting evidence."""
+        inc: Incident = self._need(p, "incident_id", self.world.incidents, "incident")
+        decision = p.get("decision")
+        if decision not in ("confirm", "dismiss", "verify"):
+            raise EventError("decision must be confirm, dismiss or verify")
+        if inc.status in (IncidentStatus.RESCUED, IncidentStatus.FALSE_ALARM) or inc.visited:
+            raise EventError(f"{inc.id} is {inc.status.lower()}{' and already verified on scene' if inc.visited else ''}; nothing to decide")
+        if decision == "dismiss" and (inc.first_pickup_tick is not None or self.people_taken(inc.id)):
+            raise EventError(f"{inc.id}: people have already been picked up here; it cannot be dismissed")
+        inc.verdict = {"confirm": "confirmed", "dismiss": "dismissed", "verify": "verify"}[decision]
+        report_mod.recompute(self, inc)
+        ev.effects.append({
+            "confirm": f"{inc.id} confirmed by dispatcher: negative reports overruled, confidence {inc.confidence:.2f}",
+            "dismiss": f"{inc.id} dismissed by dispatcher as a false alarm",
+            "verify": f"{inc.id}: dispatcher ordered a verification visit",
+        }[decision])
+
     def _ev_manual_assign(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
         w = self.world
         res: RescueResource = self._need(p, "resource_id", w.resources, "resource")
@@ -1011,6 +1032,7 @@ class Engine:
         truths = [w.truth[t] for t in inc.truth_ids if t in w.truth and w.truth[t]["exists"]]
         available = sum(t["remaining"] for t in truths)
         inc.visited = True
+        inc.disputed_since = None  # on-scene observation settles any dispute
         if available <= 0:
             if not truths:
                 self.counters["false_alarm_visits"] += 1
@@ -1222,7 +1244,7 @@ class Engine:
                 "eligibility": rule,
             },
             "evidence": [
-                {"id": r.id, "source": r.source, "reliability": r.reliability, "claim": r.claim, "people": r.people, "urgency": r.urgency, "tick": r.tick, "node": r.node, "note": r.note}
+                {"id": r.id, "source": r.source, "reliability": r.reliability, "claim": r.claim, "people": r.people, "urgency": r.urgency, "tick": r.tick, "node": r.node, "note": r.note, "fingerprint": r.fingerprint}
                 for r in (w.reports[x] for x in inc.report_ids)
             ],
             "candidates": [c.to_dict() for c in sorted(cands, key=lambda c: (not c.feasible, c.cost if c.feasible else 9, c.resource_id))] + others,

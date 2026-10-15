@@ -72,6 +72,10 @@ export interface Incident {
   version: number;
   visited: boolean;
   assigned: string[];
+  evidence?: { cp: number; cn: number; present_reports: number; present_sources: number; negative_reports: number; negative_sources: number; forwarded_copies: number; verdict: string };
+  disputed_since?: number | null;
+  review_due?: number | null;
+  verdict?: string;
 }
 export interface Shelter {
   id: string;

@@ -26,13 +26,13 @@ from typing import Any, Callable, Iterable, Optional
 
 from ..metrics.metrics import SUMMARY_KEYS
 from ..simulation.scenarios import STRATEGIES, ScenarioConfig, get_preset
-from .runs import aggregate, run_one, summarise
+from .runs import aggregate, paired_difference, run_one, summarise
 
 SUITES: dict[str, dict[str, Any]] = {
     "quality": {
         "title": "Optimisation quality (healthy network)",
         "question": "With working communications and a working coordinator, how well does each strategy dispatch?",
-        "scenarios": ["normal", "flash_flood", "resource_shortage", "shelter_overflow", "contradictory"],
+        "scenarios": ["normal", "flash_flood", "resource_shortage", "shelter_overflow", "contradictory", "viral_sos"],
     },
     "resilience": {
         "title": "Failure resilience",
@@ -59,6 +59,18 @@ SWEEPS: dict[str, dict[str, Any]] = {
         "values": [0.0, 0.05, 0.1, 0.2, 0.3],
         "strategies": ["message_passing"],
         "fixed": {"msg_latency": 1},
+    },
+}
+
+ABLATIONS: dict[str, dict[str, Any]] = {
+    "fusion_dedup": {
+        "title": "Ablation: counting forwarded SOS copies once",
+        "question": "Does grouping verbatim forwards into one source reduce wasted trips to rumoured victims, without costing service?",
+        "base": "viral_sos",
+        "param": "fusion_dedup",
+        "variants": [["off", False], ["on", True]],
+        "strategies": list(STRATEGIES),
+        "keys": ["false_alarm_visits", "service_rate", "mean_time_to_service", "deadline_misses"],
     },
 }
 
@@ -103,6 +115,30 @@ def run_suite(name: str, seeds: list[int], strategies: Iterable[str] = STRATEGIE
         results[sc] = summarise(sc, strategies, seeds, rows[i * per:(i + 1) * per])
         results[sc]["description"] = get_preset(sc).description
     return {"title": spec["title"], "question": spec["question"], "scenarios": results}
+
+
+def run_ablation(name: str, seeds: list[int], workers: int = 1, progress: Optional[Callable[[int, int], None]] = None) -> dict[str, Any]:
+    """Same seeds, same strategy, one switch flipped: per-strategy paired difference (on − off)."""
+    spec = ABLATIONS[name]
+    jobs, tags = [], []
+    for label, value in spec["variants"]:
+        cfg = get_preset(spec["base"], **{spec["param"]: value})
+        for seed in seeds:
+            for st in spec["strategies"]:
+                jobs.append((cfg.to_dict(), st, seed))
+                tags.append(label)
+    rows = _run_all(jobs, workers, progress)
+    for r, label in zip(rows, tags):
+        r["variant"] = label
+    (off, _), (on, _) = spec["variants"]
+    per_strategy = {}
+    for st in spec["strategies"]:
+        rs = [dict(r, strategy=r["variant"]) for r in rows if r["strategy"] == st]
+        per_strategy[st] = {
+            "summary": {v: {k: aggregate([r.get(k) for r in rs if r["strategy"] == v]) for k in spec["keys"]} for v, _ in spec["variants"]},
+            "paired": {k: paired_difference(rs, on, off, k, seeds) for k in spec["keys"]},
+        }
+    return {**{k: spec[k] for k in ("title", "question", "base", "param", "variants", "strategies", "keys")}, "results": per_strategy, "runs": rows}
 
 
 def run_sweep(name: str, seeds: list[int], workers: int = 1, progress: Optional[Callable[[int, int], None]] = None) -> dict[str, Any]:
@@ -202,6 +238,22 @@ def to_markdown(report: dict[str, Any]) -> str:
                 cells.append(_fmt_ci(p["service_rate"], 3))
             out.append(f"| {v} | " + " | ".join(cells) + " |")
         out += ["", "Cells: service rate (people delivered ÷ people who needed rescue), mean [95% CI].", ""]
+    for ab in report.get("ablations", {}).values():
+        (off, _), (on, _) = ab["variants"]
+        out += [f"## {ab['title']}", "", f"_{ab['question']}_ Base scenario `{ab['base']}`; same seeds, only `{ab['param']}` changes.", ""]
+        out += ["| strategy | " + " | ".join(f"{k}: {off} → {on} (paired Δ [95% CI])" for k in ab["keys"]) + " |", "|---|" + "---|" * len(ab["keys"])]
+        for st in ab["strategies"]:
+            res = ab["results"][st]
+            cells = []
+            for k in ab["keys"]:
+                a, b, d = res["summary"][off][k], res["summary"][on][k], res["paired"][k]
+                if a["mean"] is None or b["mean"] is None:
+                    cells.append("—")
+                    continue
+                ci = f" [{d['ci_low']:+.3g}, {d['ci_high']:+.3g}]" if d.get("ci_low") is not None else ""
+                cells.append(f"{a['mean']:.3g} → {b['mean']:.3g} ({d['mean']:+.3g}{ci}{', significant' if d.get('significant') else ''})")
+            out.append(f"| {st} | " + " | ".join(cells) + " |")
+        out.append("")
     return "\n".join(out) + "\n"
 
 
@@ -220,12 +272,18 @@ def run_all(seeds: list[int], root: str, workers: int = 1, log: Callable[[str], 
         sw = run_sweep(name, seeds, workers=workers)
         write_csv(os.path.join(out_dir, "sweeps", f"{name}.csv"), sw["runs"], extra=[spec["param"]])
         report["sweeps"][name] = sw
+    report["ablations"] = {}
+    for name, spec in ABLATIONS.items():
+        log(f"ablation {name} …")
+        ab = run_ablation(name, seeds, workers=workers)
+        write_csv(os.path.join(out_dir, "ablations", f"{name}.csv"), ab["runs"], extra=["variant"])
+        report["ablations"][name] = ab
     report["elapsed_s"] = round(time.time() - t0, 1)
     slim = copy.deepcopy(report)
     for suite in slim["suites"].values():
         for res in suite["scenarios"].values():
             res.pop("runs", None)  # raw rows live in the CSVs
-    for sw in slim["sweeps"].values():
+    for sw in list(slim["sweeps"].values()) + list(slim["ablations"].values()):
         sw.pop("runs", None)
     with open(os.path.join(out_dir, "summary.json"), "w", encoding="utf-8") as f:
         json.dump(slim, f, indent=1, default=float)

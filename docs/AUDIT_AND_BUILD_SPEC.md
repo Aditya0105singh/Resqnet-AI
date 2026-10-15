@@ -122,7 +122,9 @@ Each work package lists its files, the change, and its exit test. WP1–WP4 are 
 - **`frontend/src/pages/Arena.tsx`:** show CI bars and the two suites as separate tabs.
 - **Research curve:** sweep report noise and message loss, then plot service rate against noise per strategy. This answers blueprint §10's first research question with data.
 
-### WP3: Incident fusion hardening
+### WP3: Incident fusion hardening ✅ built
+
+> Forwards are detected by an *observable* content fingerprint rather than the hidden `derived_from` link, which is kept for evaluation only. DISPUTED is the abstain state. Dispatcher resolution is the `RESOLVE_DISPUTE` event and Inspector buttons, ahead of the general WP4 approval queue. The evidence is the `fusion_dedup` on/off comparison in [BENCHMARKS.md](BENCHMARKS.md).
 
 - **`simulation/state.py`:** `IncidentReport` gains:
   - `text: str = ""`;

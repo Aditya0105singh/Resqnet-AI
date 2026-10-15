@@ -53,7 +53,38 @@ export function SelectionPanel() {
           <KV k="First pickup" v={i.first_pickup_tick ?? "—"} />
           <KV k="Assigned units" v={i.assigned.join(", ") || "—"} />
           <KV k="Reports" v={i.reports.length} />
+          {i.evidence && (
+            <>
+              <KV k="Evidence for" v={`${fmt(i.evidence.cp, 2)} · ${i.evidence.present_sources} independent of ${i.evidence.present_reports} report(s)`} />
+              <KV k="Evidence against" v={i.evidence.negative_reports ? `${fmt(i.evidence.cn, 2)} · ${i.evidence.negative_sources} independent of ${i.evidence.negative_reports}` : "none"} />
+              {i.evidence.forwarded_copies > 0 && <KV k="Forwarded copies" v={`${i.evidence.forwarded_copies} (counted once)`} />}
+              {i.verdict && <KV k="Dispatcher verdict" v={i.verdict} />}
+            </>
+          )}
         </div>
+        {i.status === "DISPUTED" && (
+          <div className="rounded-lg border border-crit/30 bg-crit/[0.04] p-3">
+            <div className="text-[13px] font-medium">{i.verdict === "verify" ? "Verification visit ordered" : "Credible reports conflict: dispatcher decision needed"}</div>
+            <p className="mt-1 text-[12px] leading-relaxed text-mute">
+              {i.verdict === "verify"
+                ? "One unit is being dispatched to check on scene. You can still confirm or dismiss if new information arrives."
+                : `The system does not pick a side automatically. Without a decision, one unit is sent at t=${i.review_due} to verify on scene.`}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Button size="sm" variant="solid" onClick={() => inject("RESOLVE_DISPUTE", { incident_id: i.id, decision: "confirm" }, `${i.id} confirmed`)}>
+                Confirm victims
+              </Button>
+              {i.verdict !== "verify" && (
+                <Button size="sm" variant="info" onClick={() => inject("RESOLVE_DISPUTE", { incident_id: i.id, decision: "verify" }, `${i.id}: verify now`)}>
+                  Verify now
+                </Button>
+              )}
+              <Button size="sm" variant="danger" onClick={() => inject("RESOLVE_DISPUTE", { incident_id: i.id, decision: "dismiss" }, `${i.id} dismissed`)}>
+                Dismiss as false alarm
+              </Button>
+            </div>
+          </div>
+        )}
         {open && (
           <div className="flex flex-wrap gap-1.5">
             <Button size="sm" variant="danger" onClick={() => inject("CONTRADICTORY_REPORT", { incident_id: i.id, claim: "NO_VICTIMS", source: "responder" }, `Responder: no victims at ${i.id}`)}>
