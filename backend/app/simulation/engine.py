@@ -84,7 +84,22 @@ EVENT_TYPES = (
     "APPROVE_PROPOSAL",
     "REJECT_PROPOSAL",
     "SOS_REPORT",
+    "CREW_MODE",
+    "CREW_UPDATE",
 )
+
+CREW_ACK_TIMEOUT = 5  # minutes a crew-driven unit has to acknowledge a new mission
+CREW_MOVING = ("en_route", "en_route_shelter")
+# action → (states it is valid from, human description)
+CREW_ACTIONS = {
+    "ACK": (("awaiting_ack",), "accept the mission"),
+    "DEPART": (("acked", "boarded"), "depart"),
+    "ARRIVED": (("en_route", "en_route_shelter"), "report arrival"),
+    "BOARDED": (("on_scene",), "report people on board"),
+    "COMPLETE": (("at_shelter",), "complete the hand-over"),
+    "UNSAFE_LANDING": (("en_route", "en_route_shelter", "on_scene", "acked"), "report an unsafe segment"),
+    "CANNOT_CONTINUE": (("awaiting_ack", "acked", "en_route", "on_scene", "boarded", "en_route_shelter", "at_shelter"), "abort the mission"),
+}
 
 # actions that may be proposed for human approval (by the recommender, SOS intake, AI commander)
 PROPOSABLE = ("MANUAL_ASSIGN", "CANCEL_ASSIGNMENT", "REQUEST_REASSIGN", "RESOLVE_DISPUTE", "SOS_REPORT")
@@ -145,6 +160,7 @@ class Engine:
         self.compute_ms = 0.0
         self.mas: Any = None  # message-passing agent state (created on first use)
         self.proposals: dict[str, dict[str, Any]] = {}  # human-approval queue
+        self.crew_seen: dict[str, str] = {}  # crew event uuid → outcome (idempotent offline replay)
         # initial state (tick 0): flood picture + reports already known at t=0
         update_flood(self.world, cfg.flood_severity, cfg.flood_peak_tick)
         snapshot_traversability(self.world)
@@ -271,6 +287,10 @@ class Engine:
     def _advance(self, res: RescueResource) -> None:
         if res.status in (ResourceStatus.DISABLED, ResourceStatus.LOADING, ResourceStatus.UNLOADING):
             return
+        if res.crew_driven and res.assignment_id:
+            a = self.world.assignments.get(res.assignment_id)
+            if a and a.crew_state and a.crew_state not in CREW_MOVING:
+                return  # the crew has not departed yet
         w = self.world
         budget = 1.0
         guard = 0
@@ -874,6 +894,113 @@ class Engine:
         inc = report_mod.ingest(self, rep)
         ev.effects.append(f"citizen SOS {rep.id} at {node.id} ({people or '?'} people, urgency {urgency}, {claim.lower().replace('_', ' ')}) → {inc.id + ' ' + inc.status.lower() if inc else 'logged, no matching incident'}")
 
+    # ================================================================ crew app
+    def _ev_crew_mode(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
+        r: RescueResource = self._need(p, "resource_id", self.world.resources, "resource")
+        on = bool(p.get("on", True))
+        a = self.world.assignments.get(r.assignment_id or "")
+        if not on and a and a.crew_state:
+            a.crew_state = ""  # hand the running mission back to automatic execution
+        if on and a and a.status in ACTIVE_ASSIGNMENT and not a.crew_state:
+            # take over a running mission at the matching step
+            a.crew_state = {ResourceStatus.EN_ROUTE_PICKUP: "en_route", ResourceStatus.LOADING: "boarded", ResourceStatus.EN_ROUTE_SHELTER: "en_route_shelter",
+                            ResourceStatus.UNLOADING: "at_shelter", ResourceStatus.HOLDING: "en_route_shelter"}.get(r.status, "en_route")
+        r.crew_driven = on
+        r.version += 1
+        ev.effects.append(f"{r.id} is now {'crew-driven: mission steps wait for crew updates' if on else 'automatic'}")
+
+    def _ev_crew_update(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
+        """One crew action from the crew app. Idempotent by event_uuid; applied only if the
+        mission it refers to is still the unit's live mission and the step is valid now."""
+        w = self.world
+        uid = str(p.get("event_uuid") or "")[:64]
+        if not uid:
+            raise EventError("event_uuid required")
+        if uid in self.crew_seen:
+            ev.effects.append(f"duplicate crew update {uid[:8]} ignored (already {self.crew_seen[uid]})")
+            return
+        r: RescueResource = self._need(p, "resource_id", w.resources, "resource")
+        action = p.get("action")
+        if action not in CREW_ACTIONS:
+            raise EventError(f"action must be one of {list(CREW_ACTIONS)}")
+        if not r.crew_driven:
+            raise EventError(f"{r.id} is not crew-driven")
+        a = w.assignments.get(str(p.get("assignment_id") or ""))
+        if a is None or a.resource_id != r.id:
+            raise EventError("unknown mission for this unit")
+        if r.assignment_id != a.id or a.status not in ACTIVE_ASSIGNMENT:
+            why = f": {a.cancel_reason}" if a.cancel_reason else ""
+            raise EventError(f"mission {a.id} is {a.status.lower()}{why}; your {action.lower()} update was not applied")
+        valid, what = CREW_ACTIONS[action]
+        if a.crew_state not in valid:
+            raise EventError(f"cannot {what} now: mission {a.id} is at step '{a.crew_state.replace('_', ' ')}'")
+        inc, sh = w.incidents[a.incident_id], w.shelters[a.shelter_id]
+        note = f" (sent t={p['client_tick']})" if isinstance(p.get("client_tick"), int) and p["client_tick"] != w.tick else ""
+        if action == "ACK":
+            a.crew_state = "acked"
+            ev.effects.append(f"{r.id} crew accepted {a.id} → {inc.id}{note}")
+        elif action == "DEPART":
+            if a.crew_state == "boarded":
+                self._depart_to_shelter(r, a)
+                if a.status in ACTIVE_ASSIGNMENT:
+                    a.crew_state = "en_route_shelter"
+                ev.effects.append(f"{r.id} departed {inc.id} with {r.load} aboard for {a.shelter_id}{note}")
+            else:
+                a.crew_state = "en_route"
+                ev.effects.append(f"{r.id} departed for {inc.id}{note}")
+        elif action == "ARRIVED":
+            target = inc.node if a.crew_state == "en_route" else sh.node
+            if r.next_node or r.node != target:
+                raise EventError(f"{r.id} is at {r.node}{' (moving)' if r.next_node else ''}, not at {target}; arrival not recorded")
+            if a.crew_state == "en_route":
+                a.crew_state = "on_scene"
+                ev.effects.append(f"{r.id} on scene at {inc.id}{note}")
+            else:
+                a.crew_state = "at_shelter"
+                r.status = ResourceStatus.UNLOADING
+                ev.effects.append(f"{r.id} at {sh.name}{note}")
+        elif action == "BOARDED":
+            count = p.get("count")
+            if isinstance(count, bool) or not isinstance(count, int) or not 0 <= count <= 60:
+                raise EventError("count must be an integer 0..60")
+            if count > r.capacity:
+                raise EventError(f"{count} exceeds {r.id}'s capacity of {r.capacity}")
+            truths = [w.truth[t] for t in inc.truth_ids if t in w.truth and w.truth[t]["exists"]]
+            available = sum(t["remaining"] for t in truths)
+            if count == 0 or available == 0:
+                self._pickup(r, a)  # nobody here: the on-scene path closes the incident
+                ev.effects.append(f"{r.id} crew found nobody to board at {inc.id}{note}")
+                return
+            # the crew's count caps the load (someone may refuse to leave); people left behind keep waiting
+            self._pickup(r, a, max_load=count)
+            if a.status == AssignmentStatus.LOADED:
+                a.crew_state = "boarded"
+                r.timer = 0
+            ev.effects.append(f"{r.id} crew reports {count} boarded at {inc.id}; {r.load} on board recorded{note}")
+        elif action == "COMPLETE":
+            self._unload(r, a)
+            ev.effects.append(f"{r.id} handed over at {sh.name}{note}")
+        elif action == "UNSAFE_LANDING":
+            path = self.remaining_path(r)
+            edge = p.get("edge_id") or (r.edge_id if r.next_node else None)
+            if not edge and len(path) > 1:
+                e = edge_between(w, path[0], path[1])
+                edge = e.id if e else None
+            if not edge or edge not in w.edges:
+                raise EventError("no route segment to report: pass edge_id")
+            sub = self._apply_event("CLOSE_EDGE", {"edge_id": edge, "reason": f"crew {r.id}: unsafe ({str(p.get('reason') or 'unsafe landing')[:80]})"}, f"crew:{r.id}")
+            ev.effects.append(f"{r.id} crew reported {edge} unsafe; " + "; ".join(sub.effects))
+        elif action == "CANNOT_CONTINUE":
+            sub = self._apply_event("RESOURCE_FAILURE", {"resource_id": r.id, "reason": f"crew cannot continue: {str(p.get('reason') or 'unspecified')[:80]}"}, f"crew:{r.id}")
+            ev.effects.append("; ".join(sub.effects))
+        self.crew_seen[uid] = action.lower()
+
+    def _crew_timeouts(self) -> None:
+        w = self.world
+        for a in sorted(w.assignments.values(), key=lambda x: x.id):
+            if a.status == AssignmentStatus.COMMITTED and a.crew_state == "awaiting_ack" and w.tick > a.created_tick + CREW_ACK_TIMEOUT:
+                self.cancel_assignment(a, f"crew of {a.resource_id} did not acknowledge within {CREW_ACK_TIMEOUT} min")
+
     def _ev_manual_assign(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
         w = self.world
         res: RescueResource = self._need(p, "resource_id", w.resources, "resource")
@@ -1067,6 +1194,7 @@ class Engine:
         self._update_disruptions()
         self._update_outages()
         self._refresh_proposals()
+        self._crew_timeouts()
         self._publish_all()
         w.bump()
         self.compute_ms += (time.perf_counter() - t0) * 1000
@@ -1186,6 +1314,8 @@ class Engine:
         w = self.world
         for res in sorted(w.resources.values(), key=lambda r: r.id):
             a = w.assignments.get(res.assignment_id or "")
+            if res.crew_driven and a and a.crew_state:
+                continue  # crew-driven: arrival, boarding, departure and hand-over come from crew events
             if res.status == ResourceStatus.LOADING:
                 res.timer -= 1
                 if res.timer <= 0 and a:
@@ -1204,7 +1334,7 @@ class Engine:
                 res.status = ResourceStatus.UNLOADING
                 res.timer = 1
 
-    def _pickup(self, res: RescueResource, a: Assignment) -> None:
+    def _pickup(self, res: RescueResource, a: Assignment, max_load: Optional[int] = None) -> None:
         w = self.world
         inc = w.incidents[a.incident_id]
         truths = [w.truth[t] for t in inc.truth_ids if t in w.truth and w.truth[t]["exists"]]
@@ -1228,7 +1358,7 @@ class Engine:
             inc.version += 1
             self.refresh_incident_status(inc)
             return
-        load = min(available, res.capacity)
+        load = min(available, res.capacity, max_load if max_load is not None else res.capacity)
         rsv = w.reservations.get(a.reservation_id)
         if rsv and rsv.status == ReservationStatus.ACTIVE:
             if load > rsv.people:

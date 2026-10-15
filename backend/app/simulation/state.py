@@ -194,6 +194,7 @@ class RescueResource:
     distance_km: float = 0.0
     timer: int = 0  # loading / unloading countdown
     retreat_edge: Optional[str] = None  # edge it is permitted to back out of after closure
+    crew_driven: bool = False  # mission steps wait for crew events instead of auto-advancing
 
 
 # ---------------------------------------------------------------- shelters
@@ -260,6 +261,9 @@ class Assignment:
     reroutes: int = 0
     version: int = 1
     loaded_people: int = 0
+    # crew-driven units only: awaiting_ack → acked → en_route → on_scene → boarded →
+    # en_route_shelter → at_shelter (→ COMPLETED). Empty for automatic units.
+    crew_state: str = ""
 
 
 @dataclass

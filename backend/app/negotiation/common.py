@@ -391,6 +391,7 @@ def commit_reserved(engine: Any, cand: Candidate, rsv: CapacityReservation, dpat
         eta_dropoff_tick=eta_drop_tick,
         pickup_route=list(cand.pickup_path),
         dropoff_route=list(dpath),
+        crew_state="awaiting_ack" if res.crew_driven else "",
     )
     world.assignments[aid] = a
     rsv.pending_until = -1  # lease now bound to the commitment

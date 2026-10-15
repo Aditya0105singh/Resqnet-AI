@@ -583,6 +583,54 @@ async def ask_commander(sim_id: str, body: AskIn) -> dict[str, Any]:
     return out
 
 
+@app.get("/api/simulations/{sim_id}/crew/{resource_id}")
+def crew_view(sim_id: str, resource_id: str) -> dict[str, Any]:
+    """Everything the crew app needs for one unit: the mission, the route with blocked
+    segments, what to expect on scene, and which actions are valid right now. Crew
+    actions are sent through POST /events as CREW_UPDATE {resource_id, assignment_id,
+    action, event_uuid, client_tick, ...}; they are idempotent by event_uuid."""
+    from ..routing.router import edge_between, truly_traversable
+    from ..simulation.engine import CREW_ACTIONS
+
+    e = get_session(sim_id).engine
+    w = e.world
+    r = w.resources.get(resource_id)
+    if r is None:
+        raise err(404, "NOT_FOUND", f"unknown unit {resource_id}")
+    a = w.assignments.get(r.assignment_id or "")
+    unit = {"id": r.id, "name": r.name, "kind": r.kind, "status": r.status, "node": r.node, "next_node": r.next_node, "load": r.load, "capacity": r.capacity,
+            "crew_driven": r.crew_driven, "comms": "blackout" if r.blackout_until >= w.tick else ("partitioned" if w.partition_of(r.id) else "up")}
+    recent = [{"tick": x.tick, "message": x.message, "severity": x.severity} for x in e.audit_log if x.refs.get("resource") == r.id][-6:]
+    if a is None:
+        return {"tick": w.tick, "unit": unit, "mission": None, "allowed_actions": [], "recent": recent}
+    inc, sh = w.incidents[a.incident_id], w.shelters[a.shelter_id]
+    path = e.remaining_path(r)
+    edges = []
+    for x, y in zip(path, path[1:]):
+        ed = edge_between(w, x, y)
+        if ed:
+            edges.append({"id": ed.id, "name": ed.name, "kind": ed.kind, "from": x, "to": y, "ok": truly_traversable(ed, r.kind), "closed_reason": ed.closed_reason})
+    reports = [w.reports[x] for x in inc.report_ids][-3:]
+    target = inc.node if a.crew_state in ("", "awaiting_ack", "acked", "en_route", "on_scene") else sh.node
+    at_target = not r.next_node and r.node == target
+    allowed = [k for k, (valid, _what) in CREW_ACTIONS.items() if a.crew_state in valid and (k != "ARRIVED" or at_target)]
+    return {
+        "tick": w.tick,
+        "unit": unit,
+        "mission": {
+            "assignment": a.id, "status": a.status, "step": a.crew_state or "automatic", "created_tick": a.created_tick,
+            "incident": {"id": inc.id, "node": inc.node, "urgency": inc.urgency, "people_expected": a.people, "people_waiting": inc.people_estimate, "status": inc.status,
+                         "neighbourhood": w.neighbourhoods[inc.neighbourhood].name, "messages": [{"source": rp.source, "text": rp.text or rp.note, "lang": rp.lang, "tick": rp.tick} for rp in reports]},
+            "shelter": {"id": sh.id, "name": sh.name, "node": sh.node, "free": sh.effective_free(w)},
+            "eta_pickup": a.eta_pickup_tick, "eta_dropoff": a.eta_dropoff_tick, "heading_to": target, "at_target": at_target,
+            "route": {"nodes": [{"id": n, "x": w.nodes[n].x, "y": w.nodes[n].y} for n in path], "edges": edges, "blocked": [x for x in edges if not x["ok"]]},
+            "ack_deadline": a.created_tick + 5 if a.crew_state == "awaiting_ack" else None,
+        },
+        "allowed_actions": allowed,
+        "recent": recent,
+    }
+
+
 @app.get("/api/simulations/{sim_id}/proposals")
 def proposals(sim_id: str, status: Optional[str] = None) -> dict[str, Any]:
     """Approval queue. Create / approve / reject through POST /events with PROPOSE_ACTION,
