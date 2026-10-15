@@ -31,16 +31,32 @@ export const UNIT_TONE: Record<string, string> = {
   DISABLED: "crit",
 };
 
-export const statusLabel = (s: string) => s.replace(/_/g, " ").toLowerCase();
+const STATUS_TEXT: Record<string, string> = {
+  UNVERIFIED: "unconfirmed",
+  SUSPECTED: "needs check",
+  DISPUTED: "disputed",
+  VERIFIED: "confirmed",
+  ASSIGNED: "unit assigned",
+  RESCUED: "rescued",
+  FALSE_ALARM: "false alarm",
+  IDLE: "available",
+  EN_ROUTE_PICKUP: "going to people",
+  LOADING: "loading people",
+  EN_ROUTE_SHELTER: "going to shelter",
+  UNLOADING: "unloading",
+  HOLDING: "holding",
+  DISABLED: "out of service",
+};
+export const statusLabel = (s: string) => STATUS_TEXT[s] ?? s.replace(/_/g, " ").toLowerCase();
 
 export const isOpen = (i: Incident) => i.status !== "RESCUED" && i.status !== "FALSE_ALARM";
 export const unitLabel = (r: Resource) => `${r.id} · ${r.name}`;
 
 export const STRATEGY_LABEL: Record<string, string> = {
   decentralized: "Multi-agent",
-  message_passing: "Message-passing",
-  centralized: "Centralised",
-  greedy: "Greedy",
+  message_passing: "Agents over radio",
+  centralized: "Central optimiser",
+  greedy: "Nearest unit",
 };
 
 export const NB_COLOR: Record<string, string> = {

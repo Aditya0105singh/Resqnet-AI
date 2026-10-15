@@ -51,9 +51,9 @@ export default function Reports() {
     <div className="space-y-3 p-3">
       <div className="no-print">
         <PageHeader
-          eyebrow="after-action report"
-          title="What happened, what it cost, what to change"
-          sub="Generated only from this run's events and metrics. The strategy comparison replays the same seed and the same injected events under each strategy."
+          eyebrow="Results"
+          title="After-action report"
+          sub="A summary of this run built only from what actually happened: who was rescued, what failed, and how other approaches would have done."
           right={
             <>
               <Button size="sm" icon={<RefreshCw className="size-3.5" />} loading={loading} onClick={load}>

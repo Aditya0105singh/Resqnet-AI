@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Rocket, Trash2 } from "lucide-react";
 import { api } from "../lib/api";
 import { useSim } from "../store/sim";
-import { ChaosButtons } from "../components/Chaos";
+import { ChaosItems } from "../components/Chaos";
 import { SimControls } from "../components/Shell";
 import { Badge, Button, cx, Empty, Field, inputCls, PageHeader, Panel, Segmented } from "../components/ui";
 import type { ScenarioConfig, Strategy } from "../types";
@@ -92,9 +92,9 @@ export default function Scenarios() {
   return (
     <div className="space-y-3 p-3">
       <SimControls />
-      <PageHeader eyebrow="scenario & chaos lab" title="Design the storm. Then break the plan." sub="Configure a reproducible scenario (all values are seeded and synthetic), or inject failures into the live run at any tick. Each injected failure is tracked until every affected request is covered again." />
+      <PageHeader eyebrow="Labs" title="Scenario & failure lab" sub="Design your own flood, or break the current run: close bridges, crash boats, fill shelters and cut the network. Each failure is tracked until everyone affected is covered again." />
       <div className="grid gap-3 xl:grid-cols-[1fr_440px]">
-        <Panel title="scenario editor" sub="Launching creates a new seeded run with these exact parameters" right={<Segmented size="sm" value={strategy} onChange={setStrategy} options={(["decentralized", "message_passing", "centralized", "greedy"] as Strategy[]).map((s) => ({ value: s, label: STRATEGY_LABEL[s] }))} />}>
+        <Panel title="design a scenario" sub="Start from a preset, adjust anything, then launch a new run" right={<Segmented size="sm" value={strategy} onChange={setStrategy} options={(["decentralized", "message_passing", "centralized", "greedy"] as Strategy[]).map((s) => ({ value: s, label: STRATEGY_LABEL[s] }))} />}>
           {!cfg ? (
             <Empty title="Loading presets…" />
           ) : (
@@ -182,11 +182,13 @@ export default function Scenarios() {
         </Panel>
 
         <div className="space-y-3">
-          <Panel title="live fault injection" sub={sim ? `into ${sim.scenario_name} at t=${frame?.tick}` : undefined}>
+          <Panel title="break the live run" sub={sim ? `Affects the current run at minute ${frame?.tick}` : undefined}>
             <div className="space-y-4 p-4">
-              <ChaosButtons layout="grid" />
+              <div className="-mx-2 -mt-2">
+                <ChaosItems extra />
+              </div>
               <div className="rounded-xl border border-line bg-wash p-3">
-                <div className="label mb-2">targeted injection</div>
+                <div className="label mb-2">or pick an exact target</div>
                 <div className="flex gap-1.5">
                   <select className={cx(inputCls, "flex-1")} value={manual.type} onChange={(e) => setManual({ type: e.target.value, target: targets[e.target.value]?.[0] ?? "" })}>
                     {Object.keys(targets).map((t) => (
@@ -205,7 +207,7 @@ export default function Scenarios() {
               </div>
             </div>
           </Panel>
-          <Panel title="disruptions & recovery" sub="Recovery = ticks until every affected request is covered again">
+          <Panel title="failures & recovery" sub="Recovery time = minutes until everyone affected has a unit again">
             <div className="scroll-thin max-h-[420px] overflow-y-auto">
               {disruptions.length === 0 ? (
                 <Empty title="No disruptions yet" body="Inject a failure; affected commitments and recovery time appear here." />

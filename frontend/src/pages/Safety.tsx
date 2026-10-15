@@ -9,6 +9,16 @@ import { fmt, STRATEGY_LABEL } from "../lib/format";
 
 const CATS = ["bridge", "boat", "ground", "shelter", "surge", "blackout"];
 
+const RULE_TEXT: Record<string, string> = {
+  S1: "No unit is sent to two places at once",
+  S2: "No shelter takes more people than it has space for",
+  S3: "Boats stay on water, teams stay on dry roads, closed roads are never used",
+  S4: "No unit carries more people than its seats",
+  S5: "No decision is made on out-of-date information",
+  S6: "Shelter space must be reserved before people are sent",
+  S7: "Only working, reachable units get missions",
+};
+
 export default function Safety() {
   const { sim, frame, createSim, toast } = useSim();
   const nav = useNavigate();
@@ -47,16 +57,16 @@ export default function Safety() {
   return (
     <div className="space-y-3 p-3">
       <PageHeader
-        eyebrow="safety shield & adversarial testing"
-        title="Unsafe actions are rejected — and we go looking for where we fail"
-        sub="The shield independently re-validates every commitment and every movement against the authoritative world state. The adversarial explorer runs a bounded, seeded search over failure combinations and ranks the worst outcomes, instead of showing only the scenarios where the system looks good."
+        eyebrow="Results"
+        title="Safety tests"
+        sub="Every plan and every move is checked against seven safety rules before it happens. Below, a stress test hunts for the failure combinations that hurt most."
       />
       <div className="grid gap-3 lg:grid-cols-4">
         {[
-          ["route violations", m?.route_violations ?? 0, "moves along a prohibited edge"],
-          ["invariant violations", m?.invariant_violations ?? 0, "S1–S4 global sweep each tick"],
-          ["commits rejected", m?.safety_rejections ?? 0, "proposals blocked by the shield"],
-          ["moves blocked", m?.blocked_moves ?? 0, "movement gate stopped a unit"],
+          ["unsafe moves made", m?.route_violations ?? 0, "a unit travelled where it must not"],
+          ["safety rules broken", m?.invariant_violations ?? 0, "checked across the whole city every minute"],
+          ["unsafe plans blocked", m?.safety_rejections ?? 0, "plans stopped before they happened"],
+          ["moves stopped", m?.blocked_moves ?? 0, "a unit found a closed road and halted"],
         ].map(([k, v, h]) => (
           <div key={k as string} className="panel px-4 py-3">
             <div className="label">{k}</div>
@@ -66,18 +76,20 @@ export default function Safety() {
         ))}
       </div>
       <div className="grid gap-3 xl:grid-cols-[360px_1fr]">
-        <Panel title="enforced invariants">
+        <Panel title="the seven safety rules">
           <ul className="space-y-2 p-4 text-sm">
             {(log?.invariants ?? []).map((i: string) => (
-              <li key={i} className="flex items-center gap-2">
-                <ShieldCheck className="size-4 text-ok" />
-                {i}
+              <li key={i} className="flex items-start gap-2">
+                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-ok" />
+                <span>
+                  {RULE_TEXT[i.slice(0, 2)] ?? i} <span className="mono text-[11px] text-faint">{i.slice(0, 2)}</span>
+                </span>
               </li>
             ))}
           </ul>
-          <p className="px-4 pb-4 text-xs leading-relaxed text-mute">Checked at commit time (S1–S7), before every edge entry (S3), and as a global sweep every tick. The same shield guards decentralised, centralised and greedy strategies.</p>
+          <p className="px-4 pb-4 text-xs leading-relaxed text-mute">Checked before every plan is accepted, before every unit enters a road, and across the whole city every minute. The same checks apply to every coordination approach.</p>
         </Panel>
-        <Panel title="shield log" sub="Rejected unsafe actions, newest first">
+        <Panel title="blocked actions" sub="Unsafe plans and moves that were stopped, newest first">
           <div className="scroll-thin max-h-[360px] overflow-y-auto">
             {!log?.log?.length ? (
               <Empty icon={<ShieldCheck className="size-5" />} title="Nothing rejected yet" body="Inject a bridge closure or flood surge — units that discover a closed edge are stopped by the movement gate and logged here." />
@@ -101,7 +113,7 @@ export default function Safety() {
         </Panel>
       </div>
 
-      <Panel title="adversarial scenario explorer" sub="Find weakest scenario — bounded seeded search, not exhaustive verification">
+      <Panel title="stress test" sub="Tries many random combinations of failures and ranks the ones that hurt most. A search, not a proof.">
         <div className="flex flex-wrap items-end gap-4 border-b border-line p-4">
           <Field label="scenario">
             <select className={cx(inputCls, "w-44")} value={form.scenario} onChange={(e) => setForm({ ...form, scenario: e.target.value })}>

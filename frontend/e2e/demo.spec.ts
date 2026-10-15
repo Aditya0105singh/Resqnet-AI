@@ -32,7 +32,7 @@ test("citizen SOS is placed and approved by a dispatcher in the UI", async ({ br
 
   const dispatcher = await ctx.newPage();
   await dispatcher.goto("/command");
-  await dispatcher.getByRole("button", { name: /Approve ·/ }).click();
+  await dispatcher.getByRole("button", { name: /Approvals ·/ }).click();
   await expect(dispatcher.getByText("Open citizen SOS at N44")).toBeVisible();
   await dispatcher.getByRole("button", { name: "Place & approve" }).click();
   await expect(dispatcher.getByText(/approved by dispatcher/).first()).toBeVisible();
@@ -72,4 +72,24 @@ test("evidence page renders the committed compliance matrix", async ({ page }) =
   await expect(page.getByRole("cell", { name: "Simultaneous triple failure" })).toBeVisible();
   await page.getByRole("navigation", { name: "Documents" }).getByRole("link", { name: "Assumptions" }).click();
   await expect(page.getByRole("heading", { name: "Modelling assumptions and limitations" })).toBeVisible();
+});
+
+test("home page, navigation menus, new-run dialog and failure menu work", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: /rescue keeps going/ })).toBeVisible();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("button", { name: "Results" }).click();
+  await page.getByRole("menuitem", { name: /Benchmarks/ }).click();
+  await expect(page).toHaveURL(/\/arena$/);
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Live console" }).click();
+  await page.getByRole("button", { name: "New run" }).click();
+  await expect(page.getByRole("dialog", { name: "Start a new run" })).toBeVisible();
+  await page.getByRole("button", { name: /Aluva, Kerala/ }).click();
+  await page.getByRole("button", { name: "Launch" }).click();
+  await expect(page.getByText(/Aluva, Kerala · Multi-agent/)).toBeVisible();
+  await page.getByRole("button", { name: "Simulate failure" }).click();
+  await page.getByRole("menuitem", { name: /Flood surge/ }).click();
+  await expect(page.getByText(/Flood surge \+0.5 m/).first()).toBeVisible();
+  expect(errors).toEqual([]);
 });

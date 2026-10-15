@@ -86,21 +86,26 @@ The image builds the frontend and serves it from FastAPI. Runs are kept in a vol
 
 ## Pages
 
-| Route | Page |
-|---|---|
-| `/demo` | Guided demonstration: 8 live steps with the engine's actual results |
-| `/research` | Evidence: PS 27 compliance, benchmarks, assumptions, data provenance (rendered from `docs/`) |
-| `/command` | Live Command Center: map, incident queue, agent activity, inspector, approval queue, KPIs, one-click chaos |
-| `/crew/:unit` | Rescue crew app (phone): mission, route, escalation, offline outbox |
-| `/sos` | Citizen SOS (simulation): multilingual message, what the system understood, live status |
-| `/dispatch` | Fleet & Dispatch: unit cards, manual directives (validated by the shield), assignment log |
-| `/agents` | Negotiation Lab: message graph per round, full message trace, agent knowledge, policy changes |
-| `/scenarios` | Scenario & Chaos Lab: scenario editor, presets, scheduled events, targeted injection, recovery tracking |
-| `/decision-lab` | Counterfactual Decision Lab: fork, change, run both futures, synchronised maps, measured deltas |
-| `/arena` | Strategy Arena: multi-seed paired benchmarks with mean ± sd and per-seed runs |
-| `/replay` | Mission Replay & Audit: timeline scrubber, before/after diffs, event filters, replay verification |
-| `/safety` | Safety Shield log and Adversarial Explorer |
-| `/reports` | After-Action Report, JSON/PDF export, run comparison |
+The top menu has **Live console**, **Citizen SOS** and **Crew app**, plus two dropdowns, **Labs** and **Results**. **Watch demo** sits on the right. On phones the menu collapses into a hamburger.
+
+| Route | Menu | Page |
+|---|---|---|
+| `/` | Home | Product overview: the problem, how it works, measured results, links to everything |
+| `/demo` | Watch demo | Guided demonstration: 8 live steps with the engine's actual results |
+| `/command` | Live console | Map, rescue requests, activity, details, approvals, key numbers, "Simulate failure" menu, "New run" dialog |
+| `/sos` | Citizen SOS | Multilingual SOS (simulation): what the system understood, live status |
+| `/crew/:unit` | Crew app | Phone app for a rescue crew: mission, route, escalation, offline outbox |
+| `/chaos` | Labs | Scenario & failure lab: scenario editor, presets, scheduled events, live failures, recovery tracking |
+| `/decision-lab` | Labs | What-if lab: fork, change one decision, run both futures, measured differences |
+| `/agents` | Labs | Agent negotiation: message graph per round, full message trace, agent knowledge |
+| `/dispatch` | Labs | Rescue fleet: unit cards, manual orders (safety-checked), mission log |
+| `/arena` | Results | Benchmarks: published paired results with 95% CIs, or run your own |
+| `/safety` | Results | Safety tests: the seven rules, blocked actions, stress-test search |
+| `/audit` | Results | Mission replay: timeline scrubber, diffs, event filters, replay verification |
+| `/reports` | Results | After-action report, JSON/PDF export, strategy comparison |
+| `/research` | Results | Evidence: PS 27 compliance, benchmarks, assumptions, data provenance (rendered from `docs/`) |
+
+Old addresses redirect: `/judge` → `/demo`, `/scenarios` → `/chaos`, `/replay` → `/audit`.
 
 ## Documentation
 

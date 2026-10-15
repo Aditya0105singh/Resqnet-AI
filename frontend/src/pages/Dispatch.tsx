@@ -23,16 +23,16 @@ export default function Dispatch() {
   return (
     <div className="space-y-3 p-3">
       <SimControls />
-      <PageHeader eyebrow="rescue fleet & dispatch" title="Every unit, its commitment and why it holds it" sub="Status, capacity, route and ETA come straight from the engine. Manual actions are events: the safety shield validates them exactly as it validates agent proposals." />
+      <PageHeader eyebrow="Labs" title="Rescue fleet" sub="Every boat and ground team: what it is doing, how many people it carries, and where it is going. Manual orders go through the same safety checks as automatic ones." />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {frame.resources.map((r) => (
           <UnitCard key={r.id} r={r} a={frame.assignments.find((a) => a.id === r.assignment_id)} history={frame.assignments.filter((a) => a.resource_id === r.id)} onInspect={() => setSelection({ type: "resource", id: r.id })} />
         ))}
       </div>
       <div className="grid gap-3 xl:grid-cols-[380px_1fr]">
-        <Panel title="manual directive" sub="Operator override — validated by the shield">
+        <Panel title="send a unit manually" sub="Your order still goes through the safety checks">
           <div className="space-y-3 p-4">
-            <Field label="idle unit">
+            <Field label="available unit">
               <select className={inputCls} value={unit} onChange={(e) => setUnit(e.target.value)}>
                 <option value="">Select…</option>
                 {idle.map((r) => (
@@ -42,7 +42,7 @@ export default function Dispatch() {
                 ))}
               </select>
             </Field>
-            <Field label="open request">
+            <Field label="rescue request">
               <select className={inputCls} value={inc} onChange={(e) => setInc(e.target.value)}>
                 <option value="">Select…</option>
                 {open.map((i) => (
@@ -55,11 +55,11 @@ export default function Dispatch() {
             <Button variant="solid" disabled={!unit || !inc} onClick={() => inject("MANUAL_ASSIGN", { resource_id: unit, incident_id: inc }, `Directed ${unit} → ${inc}`).then((ok) => ok && (setUnit(""), setInc("")))}>
               Assign mission
             </Button>
-            {idle.length === 0 && <p className="text-xs text-mute">No idle units right now — every operational unit holds a commitment.</p>}
+            {idle.length === 0 && <p className="text-xs text-mute">No unit is free right now. Every working unit already has a mission.</p>}
             <p className="text-xs leading-relaxed text-mute">An infeasible directive (no route for that unit type, no shelter capacity, stale state) is rejected with the shield's reason; nothing is animated unless the engine commits it.</p>
           </div>
         </Panel>
-        <Panel title="assignment log" right={<Segmented size="sm" value={filter} onChange={setFilter} options={[{ value: "active", label: "Active" }, { value: "cancelled", label: "Cancelled" }, { value: "all", label: "All" }]} />}>
+        <Panel title="missions" right={<Segmented size="sm" value={filter} onChange={setFilter} options={[{ value: "active", label: "Active" }, { value: "cancelled", label: "Cancelled" }, { value: "all", label: "All" }]} />}>
           <div className="scroll-thin max-h-[420px] overflow-auto">
             {assignments.length === 0 ? (
               <Empty title="No assignments in this view" />
@@ -158,7 +158,7 @@ function UnitCard({ r, a, history, onInspect }: { r: Resource; a?: Assignment; h
           </Button>
         ) : (
           <Button size="sm" variant="danger" onClick={() => inject("RESOURCE_FAILURE", { resource_id: r.id, reason: "operator: unavailable" }, `${r.id} unavailable`)}>
-            Unavailable
+            Take out of service
           </Button>
         )}
         {a?.status === "COMMITTED" && (
