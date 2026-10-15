@@ -73,7 +73,7 @@ def validate_commit(
         return ShieldResult(False, [Check("entities exist", False, "unknown resource or incident")], "unknown entity", "UNKNOWN")
 
     add("S7 resource operational", res.status != ResourceStatus.DISABLED, f"{res.id} status {res.status}", "RESOURCE_DISABLED")
-    add("S7 resource connected", res.blackout_until < world.tick, f"{res.id} comms {'down' if res.blackout_until >= world.tick else 'up'}", "RESOURCE_DISCONNECTED")
+    add("S7 resource connected", not world.isolated(res.id), f"{res.id} comms {'down' if res.blackout_until >= world.tick else 'partitioned (' + str(world.partition_of(res.id)) + ')' if world.isolated(res.id) else 'up'}", "RESOURCE_DISCONNECTED")
     busy = [a.id for a in world.assignments.values() if a.resource_id == res.id and a.status in ACTIVE_ASSIGNMENT]
     add("S1 no double booking", not busy, f"active commitments: {busy or 'none'}", "DOUBLE_BOOKING")
     add("S5 resource version", res.version == resource_version, f"bid v{resource_version} / current v{res.version}", "STALE_STATE")

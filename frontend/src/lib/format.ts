@@ -37,6 +37,7 @@ export const unitLabel = (r: Resource) => `${r.id} · ${r.name}`;
 
 export const STRATEGY_LABEL: Record<string, string> = {
   decentralized: "Multi-agent",
+  message_passing: "Message-passing",
   centralized: "Centralised",
   greedy: "Greedy",
 };

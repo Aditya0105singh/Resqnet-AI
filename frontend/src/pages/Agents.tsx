@@ -23,6 +23,13 @@ const TYPE_STYLE: Record<string, { color: string; tone: string; width?: number; 
   SAFETY_REJECT: { color: "#dc2626", tone: "crit", width: 2.5 },
   COMMIT: { color: "#15803d", tone: "ok", width: 2.6 },
   RENEGOTIATE: { color: "#d97706", tone: "warn" },
+  PROPOSE: { color: "#0891b2", tone: "info" },
+  CONFIRM: { color: "#15803d", tone: "ok", width: 1.6 },
+  DECLINE: { color: "#dc2626", tone: "crit", dash: "2 3" },
+  EXPIRE: { color: "#d97706", tone: "warn", dash: "2 3" },
+  WITHDRAW: { color: "#a1a1aa", tone: "neutral", dash: "3 3" },
+  CANCEL_RESERVATION: { color: "#a1a1aa", tone: "neutral", dash: "3 3" },
+  LOST: { color: "#dc2626", tone: "crit", dash: "1 4" },
 };
 
 interface RoundDetail extends RoundSummary {

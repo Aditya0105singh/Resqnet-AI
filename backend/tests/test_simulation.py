@@ -23,7 +23,7 @@ from app.simulation.state import (
     ResourceStatus,
 )
 
-STRATS = ["decentralized", "centralized", "greedy"]
+STRATS = ["decentralized", "message_passing", "centralized", "greedy"]
 
 
 def run(eng: Engine, n: int) -> Engine:
@@ -403,19 +403,22 @@ def test_metrics_consistency():
     events=st.lists(
         st.tuples(
             st.integers(1, 50),
-            st.sampled_from(["BR1", "BR2", "BR3", "B1", "B2", "G1", "S1", "S2", "S3", "SURGE"]),
+            st.sampled_from(["BR1", "BR2", "BR3", "B1", "B2", "G1", "S1", "S2", "S3", "SURGE", "PART"]),
         ),
         max_size=4,
     ),
+    loss=st.sampled_from([0.0, 0.25]),
 )
-def test_property_safety_invariants_hold_under_random_failures(seed, strategy, events):
-    e = Engine(get_preset("normal", seed=seed, duration=70), strategy, record_frames=False)
+def test_property_safety_invariants_hold_under_random_failures(seed, strategy, events, loss):
+    e = Engine(get_preset("normal", seed=seed, duration=70, msg_loss=loss, msg_duplicate=loss, msg_latency=1 if loss else 0), strategy, record_frames=False)
     plan = sorted(events)
     while not e.finished:
         e.step()
         for t, target in [p for p in plan if p[0] == e.world.tick]:
             try:
-                if target.startswith("BR"):
+                if target == "PART":
+                    e.inject("NETWORK_PARTITION", {"members": ["B1", "G1", "S1"], "duration": 15})
+                elif target.startswith("BR"):
                     e.inject("CLOSE_EDGE", {"edge_id": target})
                 elif target[0] in "BG":
                     e.inject("RESOURCE_FAILURE", {"resource_id": target})

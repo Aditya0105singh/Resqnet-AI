@@ -39,6 +39,10 @@ later: CANCEL · RENEGOTIATE · EXPIRE
 - `COMM_BLACKOUT`: the agent cannot bid, cannot renew reservations and does not hear about closures. It keeps executing its last valid commitment and its reservation may expire. When it reconnects, it reconciles.
 - Closures nobody has told the agent about are found at the edge by the movement gate. The agent records the edge and replans.
 
+## Message-passing protocol (`negotiation/message_passing.py`)
+
+The instant protocol above runs every agent inside one function. The `message_passing` strategy instead runs each agent as a separate handler with its own state. Agents talk only through a simulated network with latency, loss, duplicate delivery and partitions. Rescue agents commit only while holding a shelter lease granted for that proposal id, and only after the safety shield passes. Lost messages are recovered by proposal timeouts and lease expiry. The full protocol, fault handling and measured results are in [MESSAGE_PASSING.md](MESSAGE_PASSING.md).
+
 ## Centralised baseline (`optimization/centralized.py`)
 
 A coordinator with instant, complete state builds the cost matrix (idle units × open requests) using the *same* `evaluate()` function. It solves the matrix with the Hungarian algorithm (`scipy.optimize.linear_sum_assignment`), then reserves and commits through the same shelter agents and shield. If a commit fails, the solver reruns without that pair, up to 3 passes. The **greedy** baseline handles requests in priority order and gives each the idle unit with the smallest pickup ETA.

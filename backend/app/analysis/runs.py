@@ -86,7 +86,7 @@ def apply_modifications(eng: Engine, mods: dict[str, Any]) -> list[str]:
     if mods.get("comm_delay") is not None and mods.get("comm_delay") != "":
         eng.cfg.comm_delay = int(mods["comm_delay"])
         notes.append(f"communication delay → {eng.cfg.comm_delay} ticks")
-    if mods.get("strategy") in ("decentralized", "centralized", "greedy"):
+    if mods.get("strategy") in ("decentralized", "message_passing", "centralized", "greedy"):
         eng.strategy = mods["strategy"]
         eng.world.strategy = mods["strategy"]
         notes.append(f"strategy → {mods['strategy']}")

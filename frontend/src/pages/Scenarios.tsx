@@ -94,7 +94,7 @@ export default function Scenarios() {
       <SimControls />
       <PageHeader eyebrow="scenario & chaos lab" title="Design the storm. Then break the plan." sub="Configure a reproducible scenario (all values are seeded and synthetic), or inject failures into the live run at any tick. Each injected failure is tracked until every affected request is covered again." />
       <div className="grid gap-3 xl:grid-cols-[1fr_440px]">
-        <Panel title="scenario editor" sub="Launching creates a new seeded run with these exact parameters" right={<Segmented size="sm" value={strategy} onChange={setStrategy} options={(["decentralized", "centralized", "greedy"] as Strategy[]).map((s) => ({ value: s, label: STRATEGY_LABEL[s] }))} />}>
+        <Panel title="scenario editor" sub="Launching creates a new seeded run with these exact parameters" right={<Segmented size="sm" value={strategy} onChange={setStrategy} options={(["decentralized", "message_passing", "centralized", "greedy"] as Strategy[]).map((s) => ({ value: s, label: STRATEGY_LABEL[s] }))} />}>
           {!cfg ? (
             <Empty title="Loading presets…" />
           ) : (

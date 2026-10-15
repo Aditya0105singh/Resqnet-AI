@@ -182,7 +182,7 @@ def priority_key(inc: Incident) -> tuple:
 
 def available_resources(world: WorldState) -> list[RescueResource]:
     return sorted(
-        (r for r in world.resources.values() if r.status == ResourceStatus.IDLE and r.blackout_until < world.tick and r.load == 0),
+        (r for r in world.resources.values() if r.status == ResourceStatus.IDLE and not world.isolated(r.id) and r.load == 0),
         key=lambda r: r.id,
     )
 
@@ -198,7 +198,7 @@ def neighbourhood_waits(world: WorldState) -> dict[str, float]:
 
 
 def shelter_offers(world: WorldState) -> dict[str, int]:
-    return {s.id: max(0, s.effective_free(world)) for s in sorted(world.shelters.values(), key=lambda s: s.id)}
+    return {s.id: max(0, s.effective_free(world)) for s in sorted(world.shelters.values(), key=lambda s: s.id) if not world.isolated(s.id)}
 
 
 # ---------------------------------------------------------------- evaluation
@@ -331,62 +331,72 @@ def try_commit(engine: Any, cand: Candidate, rnd: NegotiationRound, decision: di
             continue
         rnd.msg("ACCEPT_RESERVATION", sid, res.id, inc.id, reservation=rsv.id, expires=rsv.expires_tick, reason=why)
         shelter_log.append({"shelter": sid, "accepted": True, "reason": why, "reservation": rsv.id})
-        verdict = validate_commit(
-            world,
-            resource_id=res.id,
-            incident_id=inc.id,
-            people=cand.people,
-            pickup_path=cand.pickup_path,
-            dropoff_path=dpath,
-            reservation_id=rsv.id,
-            resource_version=cand.res_version,
-            incident_version=cand.inc_version,
-        )
-        decision["safety_checks"] = [c.to_dict() for c in verdict.checks]
         decision["shelter_log"] = shelter_log
-        if not verdict.ok:
-            release_reservation(world, rsv.id)
-            rnd.msg("SAFETY_REJECT", "safety-shield", res.id, inc.id, reason=verdict.reason, code=verdict.code)
-            engine.record_safety_rejection(res.id, inc.id, verdict, rnd.id)
-            if verdict.bad_edge and verdict.bad_edge in world.edges:
-                res.known_closed[verdict.bad_edge] = world.tick  # agent learns from the rejection
-            decision["outcome"] = "SAFETY_REJECTED"
-            decision["rejection_code"] = verdict.code
-            return None
-        a = Assignment(
-            id=aid,
-            resource_id=res.id,
-            incident_id=inc.id,
-            shelter_id=sid,
-            reservation_id=rsv.id,
-            people=cand.people,
-            created_tick=world.tick,
-            strategy=world.strategy,
-            round_id=rnd.id,
-            decision_id=decision["id"],
-            eta_pickup_tick=world.tick + int(math.ceil(cand.eta_pickup)),
-            eta_dropoff_tick=eta_drop_tick,
-            pickup_route=list(cand.pickup_path),
-            dropoff_route=list(dpath),
-        )
-        world.assignments[aid] = a
-        res.assignment_id = aid
-        res.status = ResourceStatus.EN_ROUTE_PICKUP
-        res.version += 1
-        engine.set_route(res, cand.pickup_path)
-        inc.version += 1
-        engine.refresh_incident_status(inc)
-        rnd.msg("COMMIT", "coordination", res.id, inc.id, assignment=aid, shelter=sid, people=cand.people, eta_pickup=a.eta_pickup_tick, eta_dropoff=a.eta_dropoff_tick)
-        rnd.commits.append(aid)
-        decision["outcome"] = "COMMITTED"
-        decision["assignment_id"] = aid
-        decision["shelter"] = sid
-        engine.audit("assignment", f"{res.id} committed to {inc.id} ({cand.people} people) → {sid}; ETA pickup t={a.eta_pickup_tick}, dropoff t={a.eta_dropoff_tick}", {"assignment": aid, "resource": res.id, "incident": inc.id, "shelter": sid, "round": rnd.id, "decision": decision["id"]}, "ok")
-        return a
+        return commit_reserved(engine, cand, rsv, dpath, eta_drop_tick, aid, rnd, decision)
     decision["shelter_log"] = shelter_log
     decision["outcome"] = "NO_SHELTER"
     rnd.msg("REJECT", "coordination", res.id, inc.id, reason="no shelter accepted a reservation")
     return None
+
+
+def commit_reserved(engine: Any, cand: Candidate, rsv: CapacityReservation, dpath: list[str], eta_drop_tick: int, aid: str, rnd: NegotiationRound, decision: dict[str, Any], committer: str = "coordination") -> Optional[Assignment]:
+    """Safety validation -> atomic commit, for a candidate that already holds a shelter
+    reservation. On rejection the reservation is released and the agent learns."""
+    world: WorldState = engine.world
+    res = world.resources[cand.resource_id]
+    inc = world.incidents[cand.incident_id]
+    verdict = validate_commit(
+        world,
+        resource_id=res.id,
+        incident_id=inc.id,
+        people=cand.people,
+        pickup_path=cand.pickup_path,
+        dropoff_path=dpath,
+        reservation_id=rsv.id,
+        resource_version=cand.res_version,
+        incident_version=cand.inc_version,
+    )
+    decision["safety_checks"] = [c.to_dict() for c in verdict.checks]
+    if not verdict.ok:
+        release_reservation(world, rsv.id)
+        rnd.msg("SAFETY_REJECT", "safety-shield", res.id, inc.id, reason=verdict.reason, code=verdict.code)
+        engine.record_safety_rejection(res.id, inc.id, verdict, rnd.id)
+        if verdict.bad_edge and verdict.bad_edge in world.edges:
+            res.known_closed[verdict.bad_edge] = world.tick  # agent learns from the rejection
+        decision["outcome"] = "SAFETY_REJECTED"
+        decision["rejection_code"] = verdict.code
+        return None
+    a = Assignment(
+        id=aid,
+        resource_id=res.id,
+        incident_id=inc.id,
+        shelter_id=rsv.shelter_id,
+        reservation_id=rsv.id,
+        people=cand.people,
+        created_tick=world.tick,
+        strategy=world.strategy,
+        round_id=rnd.id,
+        decision_id=decision["id"],
+        eta_pickup_tick=world.tick + int(math.ceil(cand.eta_pickup)),
+        eta_dropoff_tick=eta_drop_tick,
+        pickup_route=list(cand.pickup_path),
+        dropoff_route=list(dpath),
+    )
+    world.assignments[aid] = a
+    rsv.pending_until = -1  # lease now bound to the commitment
+    res.assignment_id = aid
+    res.status = ResourceStatus.EN_ROUTE_PICKUP
+    res.version += 1
+    engine.set_route(res, cand.pickup_path)
+    inc.version += 1
+    engine.refresh_incident_status(inc)
+    rnd.msg("COMMIT", committer, res.id, inc.id, assignment=aid, shelter=rsv.shelter_id, people=cand.people, eta_pickup=a.eta_pickup_tick, eta_dropoff=a.eta_dropoff_tick)
+    rnd.commits.append(aid)
+    decision["outcome"] = "COMMITTED"
+    decision["assignment_id"] = aid
+    decision["shelter"] = rsv.shelter_id
+    engine.audit("assignment", f"{res.id} committed to {inc.id} ({cand.people} people) → {rsv.shelter_id}; ETA pickup t={a.eta_pickup_tick}, dropoff t={a.eta_dropoff_tick}", {"assignment": aid, "resource": res.id, "incident": inc.id, "shelter": rsv.shelter_id, "round": rnd.id, "decision": decision["id"]}, "ok")
+    return a
 
 
 def active_assignment_count(world: WorldState) -> int:

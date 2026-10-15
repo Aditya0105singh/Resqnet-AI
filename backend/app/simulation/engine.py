@@ -22,6 +22,7 @@ from typing import Any, Callable, Optional
 
 from ..negotiation import common
 from ..negotiation import decentralized
+from ..negotiation import message_passing
 from ..negotiation.common import (
     NegotiationRound,
     release_reservation,
@@ -77,6 +78,7 @@ EVENT_TYPES = (
     "TRIPLE_FAILURE",
     "ADD_RESOURCE",
     "SET_POLICY",
+    "NETWORK_PARTITION",
 )
 
 RELIABILITY = {"resident": 0.6, "sensor": 0.75, "responder": 0.9}
@@ -125,6 +127,7 @@ class Engine:
         self.finished = False
         self.listeners: list[Callable[[str, Any], None]] = []
         self.compute_ms = 0.0
+        self.mas: Any = None  # message-passing agent state (created on first use)
         # initial state (tick 0): flood picture + reports already known at t=0
         update_flood(self.world, cfg.flood_severity, cfg.flood_peak_tick)
         snapshot_traversability(self.world)
@@ -207,7 +210,7 @@ class Engine:
         return any(self.world.truth.get(t, {}).get("exists") for t in inc.truth_ids)
 
     def is_decentralized(self) -> bool:
-        return self.strategy == "decentralized"
+        return self.strategy in ("decentralized", "message_passing")
 
     def belief_for(self, res: RescueResource) -> Optional[frozenset]:
         if not self.is_decentralized():
@@ -647,6 +650,27 @@ class Engine:
         r.blackout_until = self.world.tick + dur
         ev.effects.append(f"{r.id} loses communications until t={r.blackout_until}; continues its last valid commitment")
 
+    def _ev_network_partition(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
+        w = self.world
+        members = p.get("members")
+        if not isinstance(members, list) or not members or len(set(members)) != len(members):
+            raise EventError("members must be a non-empty list of distinct resource / shelter ids")
+        unknown = [m for m in members if m not in w.resources and m not in w.shelters]
+        if unknown:
+            raise EventError(f"unknown agent(s) {unknown}")
+        busy = sorted({m for m in members if w.partition_of(m)})
+        if busy:
+            raise EventError(f"{busy} already in an active partition")
+        duration = p.get("duration", 30)
+        if isinstance(duration, bool) or not isinstance(duration, int) or not 1 <= duration <= 300:
+            raise EventError("duration must be an integer from 1 to 300")
+        pid = f"P{len(w.partitions) + 1}"
+        w.partitions.append({"id": pid, "members": sorted(members), "start": w.tick, "until": w.tick + duration})
+        ev.effects.append(
+            f"network partition {pid}: {', '.join(sorted(members))} cut off from incident agents, dispatch and other units until t={w.tick + duration}; "
+            "committed missions continue, no new commitments across the split"
+        )
+
     def _ev_manual_assign(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
         w = self.world
         res: RescueResource = self._need(p, "resource_id", w.resources, "resource")
@@ -861,9 +885,15 @@ class Engine:
             a = w.assignments.get(rsv.assignment_id)
             res = w.resources.get(rsv.resource_id)
             if not a or a.status not in ACTIVE_ASSIGNMENT:
+                if a is None and rsv.pending_until >= w.tick:
+                    continue  # lease granted during message-passing negotiation, not yet claimed
+                if a is None and rsv.pending_until >= 0:
+                    release_reservation(w, rsv.id, ReservationStatus.EXPIRED)
+                    self.audit("shelter", f"{rsv.id} at {rsv.shelter_id}: unclaimed lease for {rsv.resource_id} lapsed at t={rsv.pending_until}; seats returned", {"reservation": rsv.id}, "info")
+                    continue
                 release_reservation(w, rsv.id)
                 continue
-            connected = res is not None and res.blackout_until < w.tick
+            connected = res is not None and w.reachable(res.id, rsv.shelter_id)
             if rsv.expires_tick < w.tick:
                 release_reservation(w, rsv.id, ReservationStatus.EXPIRED)
                 self.audit("shelter", f"{rsv.id} at {rsv.shelter_id} EXPIRED (holder {rsv.resource_id} could not renew)", {"reservation": rsv.id}, "warn")
@@ -888,7 +918,7 @@ class Engine:
             if inc.status == IncidentStatus.FALSE_ALARM and a.status == AssignmentStatus.COMMITTED:
                 self.cancel_assignment(a, "incident reclassified as false alarm")
                 continue
-            in_blackout = res.blackout_until >= w.tick
+            in_blackout = w.isolated(res.id)
             rsv = w.reservations.get(a.reservation_id)
             if (rsv is None or rsv.status != ReservationStatus.ACTIVE) and not in_blackout and res.status != ResourceStatus.UNLOADING:
                 self._renegotiate_shelter(a, res, "retrying for capacity" if res.status == ResourceStatus.HOLDING else f"reservation {rsv.status.lower() if rsv else 'missing'}")
@@ -924,10 +954,12 @@ class Engine:
         return out
 
     def _run_strategy(self, trigger: str) -> None:
-        if self.strategy != "decentralized" and self.world.tick < self.world.coordinator_down_until:
+        if not self.is_decentralized() and self.world.tick < self.world.coordinator_down_until:
             return  # central and greedy dispatch need the coordinator; existing missions continue
         if self.strategy == "decentralized":
             rnd = decentralized.run(self, trigger)
+        elif self.strategy == "message_passing":
+            rnd = message_passing.run(self, trigger)
         elif self.strategy == "centralized":
             rnd = centralized.run_centralized(self, trigger)
         else:
@@ -1122,6 +1154,8 @@ class Engine:
                 why = "disabled"
             elif r.blackout_until >= w.tick:
                 why = f"comms blackout until t={r.blackout_until}"
+            elif w.partition_of(r.id):
+                why = f"network partition {w.partition_of(r.id)}"
             elif r.assignment_id:
                 why = f"busy with {r.assignment_id} ({r.status.lower()})"
             else:
