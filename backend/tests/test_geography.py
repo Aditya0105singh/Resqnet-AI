@@ -127,3 +127,34 @@ def test_aluva_runs_safely_under_triple_failure():
             e.step()
         m = compute_metrics(e)
         assert m["invariant_violations"] == 0 and m["route_violations"] == 0 and m["people_rescued"] > 0
+
+
+def test_river_pieces_that_meet_are_chained():
+    from app.geography.osm_city import Projection, _river_line
+    nodes = {k: (0.0, lon, {}) for k, lon in {"a": 0.0, "b": 0.01, "c": 0.02, "d": 0.03, "x": 0.5, "y": 0.501}.items()}
+    ways = [("w1", ["a", "b"], {"waterway": "river"}), ("w2", ["c", "d"], {"waterway": "river"}), ("w3", ["c", "b"], {"waterway": "river"}), ("w4", ["x", "y"], {"waterway": "river"})]
+    line = _river_line(nodes, ways, Projection(0.0, 0.0))
+    assert len(line) == 4  # a-b-c-d, not the isolated x-y piece
+
+
+def test_town_name_is_not_a_location():
+    from app.geography.osm_city import _drop_town_name
+    lms = [
+        {"id": "L1", "name": "Aluva", "node": "N1", "aliases": ["Aluva", "ആലുവ"]},
+        {"id": "L2", "name": "Aluva", "node": "N2", "aliases": ["Aluva", "Aluva Private Bus Stand", "ആലുവ"]},
+        {"id": "L3", "name": "Aluva Railway Station", "node": "N3", "aliases": ["Aluva Railway Station"]},
+    ]
+    out = _drop_town_name(lms, "Aluva")
+    assert [l["name"] for l in out] == ["Aluva Private Bus Stand", "Aluva Railway Station"]
+    assert all("ആലുവ" not in l["aliases"] and "Aluva" not in l["aliases"] for l in out)
+
+
+@pytest.mark.skipif(not os.path.exists(ALUVA), reason="Aluva city file not built")
+def test_aluva_sos_in_three_languages_finds_real_places_and_never_guesses():
+    e = Engine(get_preset("normal", seed=1, geography="aluva"), "decentralized", record_frames=False)
+    gaz = Gazetteer.for_world(e.world)
+    assert analyse("5 people trapped near Aluva railway station", gaz).location.matched == ["Aluva Railway Station"]
+    assert analyse("हम 4 लोग आलुवा रेलवे स्टेशन के पास फंसे हैं", gaz).location.matched == ["Aluva Railway Station"]
+    assert analyse("ആലുവ മാർക്കറ്റിനടുത്ത് 4 പേർ കുടുങ്ങി", gaz).location.matched == ["Aluva Market"]
+    assert analyse("stuck near the bus stand", gaz).location.status == "ambiguous", "two bus stands"
+    assert analyse("stuck in Aluva, please help", gaz).location.status == "none", "the town name is not a location"

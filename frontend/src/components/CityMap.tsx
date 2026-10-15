@@ -168,7 +168,7 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
           {/* district labels */}
           {!compact &&
             nbCentroids.map((c) => (
-              <text key={"nl" + c.id} x={c.x} y={c.y + (c.y < 3 ? -0.95 : 1.05)} textAnchor="middle" fontSize={0.2} fontFamily="JetBrains Mono" letterSpacing={0.02} fill={nbColor[c.id]} opacity={0.75}>
+              <text key={"nl" + c.id} x={c.x} y={c.y + (c.y < 3 ? -0.95 : 1.05)} textAnchor="middle" fontSize={0.2} fontFamily="JetBrains Mono" letterSpacing={0.02} fill={nbColor[c.id]} opacity={0.85} stroke="#fff" strokeWidth={0.06} strokeOpacity={0.85} paintOrder="stroke" style={{ pointerEvents: "none" }}>
                 {c.name.toUpperCase()}
               </text>
             ))}
@@ -243,7 +243,7 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
                     </g>
                   ) : null}
                   {e.kind === "bridge" && !compact && (
-                    <text x={mx + 0.16} y={my + 0.05} fontSize={0.15} fontFamily="JetBrains Mono" fill={manual ? "#dc2626" : "#3f3f46"}>
+                    <text x={mx + 0.16} y={my + 0.05} fontSize={0.15} fontFamily="JetBrains Mono" fill={manual ? "#dc2626" : "#3f3f46"} stroke="#fff" strokeWidth={0.05} paintOrder="stroke" style={{ pointerEvents: "none" }}>
                       {e.name}
                     </text>
                   )}

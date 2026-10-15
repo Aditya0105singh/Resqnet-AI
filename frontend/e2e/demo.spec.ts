@@ -93,3 +93,15 @@ test("home page, navigation menus, new-run dialog and failure menu work", async 
   await expect(page.getByText(/Flood surge \+0.5 m/).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("citizen SOS on the real Aluva map finds Aluva places", async ({ page }) => {
+  await page.goto("/command");
+  await page.getByRole("button", { name: "New run" }).click();
+  await page.getByRole("button", { name: /Aluva, Kerala/ }).click();
+  await page.getByRole("button", { name: "Launch" }).click();
+  await expect(page.getByText(/Aluva, Kerala · Multi-agent/)).toBeVisible();
+  await page.goto("/sos");
+  await page.getByRole("button", { name: "हिन्दी" }).click();
+  await page.getByRole("button", { name: "Send SOS" }).click();
+  await expect(page.getByText(/Aluva Railway Station/).first()).toBeVisible();
+});

@@ -1,0 +1,50 @@
+{
+  "_note": "Project-added alternative names (Hindi, Malayalam and common English forms) for well-known Aluva landmarks that OpenStreetMap tags only in English. Not OpenStreetMap data; written for this project and marked added_aliases in the city file.",
+  "Aluva Railway Station": [
+    "Aluva station",
+    "ആലുവ റെയിൽവേ സ്റ്റേഷൻ",
+    "आलुवा रेलवे स्टेशन"
+  ],
+  "Aluva Private Bus Stand": [
+    "private bus stand",
+    "आलुवा प्राइवेट बस स्टैंड",
+    "bus stand"
+  ],
+  "Aluva KSRTC Stand": [
+    "KSRTC bus stand",
+    "ആലുവ കെഎസ്ആർടിസി സ്റ്റാൻഡ്",
+    "आलुवा केएसआरटीसी बस स्टैंड",
+    "bus stand"
+  ],
+  "Aluva Palace": [
+    "आलुवा पैलेस"
+  ],
+  "Aluva Market": [
+    "ആലുവ മാർക്കറ്റ്",
+    "आलुवा मार्केट",
+    "आलुवा बाज़ार"
+  ],
+  "Manapuram Mahadeva Temple": [
+    "Aluva Manappuram",
+    "Manappuram",
+    "Aluva Shiva Temple",
+    "ആലുവ മണപ്പുറം",
+    "ആലുവ ശിവക്ഷേത്രം",
+    "मणप्पुरम महादेव मंदिर",
+    "आलुवा शिव मंदिर"
+  ],
+  "Government Hospital": [
+    "District Hospital Aluva",
+    "Aluva district hospital",
+    "ജില്ലാ ആശുപത്രി",
+    "जिला अस्पताल",
+    "सरकारी अस्पताल"
+  ],
+  "Aluva Metro Station": [
+    "metro station",
+    "आलुवा मेट्रो स्टेशन"
+  ],
+  "Aluva Police Station": [
+    "आलुवा पुलिस स्टेशन"
+  ]
+}

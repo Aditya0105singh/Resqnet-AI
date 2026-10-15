@@ -9,12 +9,19 @@ from ..metrics.metrics import SUMMARY_KEYS, compute_metrics
 from ..simulation.engine import Engine
 
 LIMITATIONS = [
-    "Riverbend is a synthetic city; geography, people counts and reports are generated from a seed.",
     "The flood model is a simplified threshold model, not hydraulic forecasting.",
     "Report confidence is a noisy-OR heuristic over source reliability metadata, not a calibrated probability.",
     "Cost weights are proposed starting values, not trained or validated parameters.",
     "Results describe this simulator only and must not be used for operational emergency dispatch.",
 ]
+
+
+def _geography_note(w) -> str:
+    meta = getattr(w, "meta", None) or {}
+    name = str(meta.get("name", "Riverbend")).replace(" (synthetic)", "")
+    if meta.get("synthetic", True):
+        return f"{name} is a synthetic city; geography, people counts and reports are generated from a seed."
+    return f"{name}: roads, bridges, river and place names are real OpenStreetMap data; elevation and shelters are assumed, and the flood, people counts and reports are generated from a seed."
 
 
 def build_report(engine: Engine, sim_id: str, compare: bool = True) -> dict[str, Any]:
@@ -94,7 +101,7 @@ def build_report(engine: Engine, sim_id: str, compare: bool = True) -> dict[str,
         "strategy_comparison": comparison,
         "injected_events": engine.injected,
         "lessons": lessons,
-        "limitations": LIMITATIONS,
+        "limitations": [_geography_note(w)] + LIMITATIONS,
     }
 
 

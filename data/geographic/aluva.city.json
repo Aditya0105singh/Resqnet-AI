@@ -8,6 +8,7 @@
   "osm_timestamp": "",
   "generator": "openstreetmap-cgimap 2.1.0 (1303 spike-07.openstreetmap.org)",
   "input": "aluva.osm",
+  "aliases": "aluva.aliases.json",
   "projection": {
    "type": "local equirectangular, km",
    "lat0": 10.109901,
@@ -31,31 +32,31 @@
   {
    "id": "Z1",
    "name": "Aluva North-West",
-   "flood_factor": 1.076,
+   "flood_factor": 1.098,
    "name_source": "generated"
   },
   {
    "id": "Z2",
    "name": "Aluva South-East",
-   "flood_factor": 1.011,
+   "flood_factor": 0.957,
    "name_source": "generated"
   },
   {
    "id": "Z3",
    "name": "Aluva West",
-   "flood_factor": 0.91,
+   "flood_factor": 0.94,
    "name_source": "generated"
   },
   {
    "id": "Z4",
    "name": "Aluva Central",
-   "flood_factor": 1.042,
+   "flood_factor": 0.997,
    "name_source": "generated"
   },
   {
    "id": "Z5",
    "name": "Thuruth",
-   "flood_factor": 1.122,
+   "flood_factor": 1.099,
    "name_source": "osm place"
   }
  ],
@@ -66,7 +67,7 @@
    "y": -0.6723,
    "lat": 10.115981,
    "lon": 76.354955,
-   "elevation": 2.97,
+   "elevation": 2.56,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -78,7 +79,7 @@
    "y": -0.4662,
    "lat": 10.114117,
    "lon": 76.352769,
-   "elevation": 3.48,
+   "elevation": 2.63,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -90,7 +91,7 @@
    "y": -0.4662,
    "lat": 10.114117,
    "lon": 76.356551,
-   "elevation": 2.77,
+   "elevation": 2.68,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -102,7 +103,7 @@
    "y": -0.4642,
    "lat": 10.114099,
    "lon": 76.354137,
-   "elevation": 3.2,
+   "elevation": 2.64,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -114,7 +115,7 @@
    "y": -0.4592,
    "lat": 10.114054,
    "lon": 76.356959,
-   "elevation": 2.74,
+   "elevation": 2.7,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -126,7 +127,7 @@
    "y": -0.3662,
    "lat": 10.113213,
    "lon": 76.353493,
-   "elevation": 3.42,
+   "elevation": 2.83,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -138,7 +139,7 @@
    "y": -0.3619,
    "lat": 10.113174,
    "lon": 76.352313,
-   "elevation": 3.65,
+   "elevation": 2.83,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -150,7 +151,7 @@
    "y": -0.353,
    "lat": 10.113094,
    "lon": 76.354686,
-   "elevation": 3.22,
+   "elevation": 2.87,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -162,7 +163,7 @@
    "y": -0.3405,
    "lat": 10.112981,
    "lon": 76.35092,
-   "elevation": 3.95,
+   "elevation": 2.76,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -186,7 +187,7 @@
    "y": -0.3096,
    "lat": 10.112701,
    "lon": 76.356496,
-   "elevation": 3.05,
+   "elevation": 2.99,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -210,7 +211,7 @@
    "y": -0.2569,
    "lat": 10.112224,
    "lon": 76.35229,
-   "elevation": 3.76,
+   "elevation": 3.02,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -246,7 +247,7 @@
    "y": -0.2263,
    "lat": 10.111948,
    "lon": 76.35081,
-   "elevation": 4.07,
+   "elevation": 2.93,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -258,7 +259,7 @@
    "y": -0.2275,
    "lat": 10.111958,
    "lon": 76.353432,
-   "elevation": 3.59,
+   "elevation": 3.11,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -282,7 +283,7 @@
    "y": -0.2167,
    "lat": 10.11186,
    "lon": 76.349479,
-   "elevation": 4.34,
+   "elevation": 2.75,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -294,7 +295,7 @@
    "y": -0.2115,
    "lat": 10.111814,
    "lon": 76.356433,
-   "elevation": 3.23,
+   "elevation": 3.18,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -306,7 +307,7 @@
    "y": -0.1884,
    "lat": 10.111605,
    "lon": 76.354785,
-   "elevation": 3.45,
+   "elevation": 3.2,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -330,7 +331,7 @@
    "y": -0.15,
    "lat": 10.111257,
    "lon": 76.347827,
-   "elevation": 4.72,
+   "elevation": 2.79,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -354,7 +355,7 @@
    "y": -0.1068,
    "lat": 10.110867,
    "lon": 76.352338,
-   "elevation": 3.93,
+   "elevation": 3.31,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -366,7 +367,7 @@
    "y": -0.1088,
    "lat": 10.110885,
    "lon": 76.354891,
-   "elevation": 3.57,
+   "elevation": 3.36,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -378,7 +379,7 @@
    "y": -0.1038,
    "lat": 10.11084,
    "lon": 76.35079,
-   "elevation": 4.2,
+   "elevation": 3.12,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -390,7 +391,7 @@
    "y": -0.0882,
    "lat": 10.110698,
    "lon": 76.349126,
-   "elevation": 4.52,
+   "elevation": 2.93,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -426,7 +427,7 @@
    "y": -0.0755,
    "lat": 10.110584,
    "lon": 76.353313,
-   "elevation": 3.83,
+   "elevation": 3.41,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -438,7 +439,7 @@
    "y": -0.0775,
    "lat": 10.110601,
    "lon": 76.356322,
-   "elevation": 3.47,
+   "elevation": 3.45,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -618,7 +619,7 @@
    "y": 0.0577,
    "lat": 10.109379,
    "lon": 76.35006,
-   "elevation": 4.52,
+   "elevation": 3.28,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -654,7 +655,7 @@
    "y": 0.0695,
    "lat": 10.109272,
    "lon": 76.349245,
-   "elevation": 4.68,
+   "elevation": 3.24,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -690,7 +691,7 @@
    "y": 0.0926,
    "lat": 10.109063,
    "lon": 76.354857,
-   "elevation": 3.93,
+   "elevation": 3.76,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -702,7 +703,7 @@
    "y": 0.103,
    "lat": 10.10897,
    "lon": 76.34796,
-   "elevation": 4.94,
+   "elevation": 3.28,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -714,7 +715,7 @@
    "y": 0.0957,
    "lat": 10.109036,
    "lon": 76.352292,
-   "elevation": 4.23,
+   "elevation": 3.63,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -726,7 +727,7 @@
    "y": 0.0956,
    "lat": 10.109036,
    "lon": 76.355938,
-   "elevation": 3.81,
+   "elevation": 3.78,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -738,7 +739,7 @@
    "y": 0.1054,
    "lat": 10.108947,
    "lon": 76.353342,
-   "elevation": 4.11,
+   "elevation": 3.77,
    "neighbourhood": "Z1",
    "kind": "land",
    "label": "",
@@ -798,7 +799,7 @@
    "y": 0.1951,
    "lat": 10.108136,
    "lon": 76.352187,
-   "elevation": 4.4,
+   "elevation": 3.76,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -822,7 +823,7 @@
    "y": 0.2084,
    "lat": 10.108016,
    "lon": 76.349519,
-   "elevation": 4.81,
+   "elevation": 3.52,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -870,7 +871,7 @@
    "y": 0.2273,
    "lat": 10.107846,
    "lon": 76.350882,
-   "elevation": 4.63,
+   "elevation": 3.66,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -906,7 +907,7 @@
    "y": 0.235,
    "lat": 10.107776,
    "lon": 76.353746,
-   "elevation": 4.29,
+   "elevation": 4.04,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -918,7 +919,7 @@
    "y": 0.2403,
    "lat": 10.107728,
    "lon": 76.354587,
-   "elevation": 4.21,
+   "elevation": 4.06,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -966,7 +967,7 @@
    "y": 0.2489,
    "lat": 10.10765,
    "lon": 76.348431,
-   "elevation": 5.04,
+   "elevation": 3.57,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1026,7 +1027,7 @@
    "y": 0.3231,
    "lat": 10.106979,
    "lon": 76.349664,
-   "elevation": 4.95,
+   "elevation": 3.75,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1050,7 +1051,7 @@
    "y": 0.3257,
    "lat": 10.106955,
    "lon": 76.354738,
-   "elevation": 4.34,
+   "elevation": 4.23,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1074,7 +1075,7 @@
    "y": 0.3442,
    "lat": 10.106788,
    "lon": 76.353933,
-   "elevation": 4.46,
+   "elevation": 4.24,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1098,7 +1099,7 @@
    "y": 0.3469,
    "lat": 10.106764,
    "lon": 76.350644,
-   "elevation": 4.85,
+   "elevation": 3.86,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1110,7 +1111,7 @@
    "y": 0.3518,
    "lat": 10.10672,
    "lon": 76.351909,
-   "elevation": 4.7,
+   "elevation": 3.99,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1230,7 +1231,7 @@
    "y": 0.44,
    "lat": 10.105922,
    "lon": 76.347965,
-   "elevation": 5.38,
+   "elevation": 3.96,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1266,7 +1267,7 @@
    "y": 0.4943,
    "lat": 10.105431,
    "lon": 76.349634,
-   "elevation": 5.22,
+   "elevation": 4.09,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1290,7 +1291,7 @@
    "y": 0.5001,
    "lat": 10.105378,
    "lon": 76.350724,
-   "elevation": 5.09,
+   "elevation": 4.16,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1302,7 +1303,7 @@
    "y": 0.4961,
    "lat": 10.105414,
    "lon": 76.352039,
-   "elevation": 4.93,
+   "elevation": 4.26,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1398,7 +1399,7 @@
    "y": 0.5224,
    "lat": 10.105176,
    "lon": 76.34825,
-   "elevation": 5.46,
+   "elevation": 4.12,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1410,7 +1411,7 @@
    "y": 0.5322,
    "lat": 10.105088,
    "lon": 76.354376,
-   "elevation": 4.74,
+   "elevation": 4.59,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1434,7 +1435,7 @@
    "y": 0.5439,
    "lat": 10.104982,
    "lon": 76.354099,
-   "elevation": 4.79,
+   "elevation": 4.57,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1458,7 +1459,7 @@
    "y": 0.6267,
    "lat": 10.104233,
    "lon": 76.352927,
-   "elevation": 5.06,
+   "elevation": 4.58,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1506,7 +1507,7 @@
    "y": 0.6599,
    "lat": 10.103933,
    "lon": 76.35204,
-   "elevation": 5.22,
+   "elevation": 4.56,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1518,7 +1519,7 @@
    "y": 0.6722,
    "lat": 10.103821,
    "lon": 76.350798,
-   "elevation": 5.37,
+   "elevation": 4.49,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1542,7 +1543,7 @@
    "y": 0.6798,
    "lat": 10.103753,
    "lon": 76.354849,
-   "elevation": 4.95,
+   "elevation": 4.89,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1626,7 +1627,7 @@
    "y": 0.74,
    "lat": 10.103209,
    "lon": 76.347572,
-   "elevation": 5.88,
+   "elevation": 4.56,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1638,7 +1639,7 @@
    "y": 0.743,
    "lat": 10.103182,
    "lon": 76.349394,
-   "elevation": 5.65,
+   "elevation": 4.57,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1686,7 +1687,7 @@
    "y": 0.7994,
    "lat": 10.102671,
    "lon": 76.349447,
-   "elevation": 5.74,
+   "elevation": 4.69,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1734,7 +1735,7 @@
    "y": 0.8345,
    "lat": 10.102353,
    "lon": 76.353898,
-   "elevation": 5.32,
+   "elevation": 5.05,
    "neighbourhood": "Z3",
    "kind": "shelter",
    "label": "Vidhyadhiraja School Ground (hypothetical shelter)",
@@ -1758,7 +1759,7 @@
    "y": 0.8387,
    "lat": 10.102316,
    "lon": 76.35223,
-   "elevation": 5.51,
+   "elevation": 4.9,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1782,7 +1783,7 @@
    "y": 0.8521,
    "lat": 10.102195,
    "lon": 76.350883,
-   "elevation": 5.68,
+   "elevation": 4.85,
    "neighbourhood": "Z3",
    "kind": "land",
    "label": "",
@@ -1946,10 +1947,82 @@
   },
   {
    "id": "R10",
-   "x": -0.3826,
-   "y": -0.6196,
-   "lat": 10.115504,
-   "lon": 76.357514,
+   "x": -0.3902,
+   "y": -0.6187,
+   "lat": 10.115496,
+   "lon": 76.357445,
+   "elevation": 0.0,
+   "neighbourhood": "Z1",
+   "kind": "river",
+   "label": "river",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "R11",
+   "x": -0.5888,
+   "y": -0.5952,
+   "lat": 10.115284,
+   "lon": 76.355632,
+   "elevation": 0.0,
+   "neighbourhood": "Z1",
+   "kind": "river",
+   "label": "river",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "R12",
+   "x": -0.7875,
+   "y": -0.5838,
+   "lat": 10.115181,
+   "lon": 76.353819,
+   "elevation": 0.0,
+   "neighbourhood": "Z1",
+   "kind": "river",
+   "label": "river",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "R13",
+   "x": -0.9836,
+   "y": -0.5757,
+   "lat": 10.115107,
+   "lon": 76.35203,
+   "elevation": 0.0,
+   "neighbourhood": "Z1",
+   "kind": "river",
+   "label": "river",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "R14",
+   "x": -1.1741,
+   "y": -0.5145,
+   "lat": 10.114554,
+   "lon": 76.350292,
+   "elevation": 0.0,
+   "neighbourhood": "Z1",
+   "kind": "river",
+   "label": "river",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "R15",
+   "x": -1.3314,
+   "y": -0.3996,
+   "lat": 10.113515,
+   "lon": 76.348856,
+   "elevation": 0.0,
+   "neighbourhood": "Z1",
+   "kind": "river",
+   "label": "river",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "R16",
+   "x": -1.3928,
+   "y": -0.3372,
+   "lat": 10.112951,
+   "lon": 76.348296,
    "elevation": 0.0,
    "neighbourhood": "Z1",
    "kind": "river",
@@ -3744,7 +3817,7 @@
    "v": "N141",
    "kind": "road",
    "length_km": 0.305,
-   "name": "Thrikkunnathu Church Road",
+   "name": "Seminary Road",
    "provenance": "osm-derived"
   },
   {
@@ -3960,7 +4033,61 @@
    "u": "R9",
    "v": "R10",
    "kind": "river",
-   "length_km": 0.192,
+   "length_km": 0.199,
+   "name": "",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "E-R10-R11",
+   "u": "R10",
+   "v": "R11",
+   "kind": "river",
+   "length_km": 0.2,
+   "name": "",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "E-R11-R12",
+   "u": "R11",
+   "v": "R12",
+   "kind": "river",
+   "length_km": 0.199,
+   "name": "",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "E-R12-R13",
+   "u": "R12",
+   "v": "R13",
+   "kind": "river",
+   "length_km": 0.196,
+   "name": "",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "E-R13-R14",
+   "u": "R13",
+   "v": "R14",
+   "kind": "river",
+   "length_km": 0.2,
+   "name": "",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "E-R14-R15",
+   "u": "R14",
+   "v": "R15",
+   "kind": "river",
+   "length_km": 0.195,
+   "name": "",
+   "provenance": "osm-derived"
+  },
+  {
+   "id": "E-R15-R16",
+   "u": "R15",
+   "v": "R16",
+   "kind": "river",
+   "length_km": 0.088,
    "name": "",
    "provenance": "osm-derived"
   },
@@ -4059,7 +4186,61 @@
    "u": "R10",
    "v": "N005",
    "kind": "jetty",
-   "length_km": 0.171,
+   "length_km": 0.168,
+   "name": "",
+   "provenance": "scenario-assumed"
+  },
+  {
+   "id": "E-R11-N001",
+   "u": "R11",
+   "v": "N001",
+   "kind": "jetty",
+   "length_km": 0.107,
+   "name": "",
+   "provenance": "scenario-assumed"
+  },
+  {
+   "id": "E-R12-N004",
+   "u": "R12",
+   "v": "N004",
+   "kind": "jetty",
+   "length_km": 0.125,
+   "name": "",
+   "provenance": "scenario-assumed"
+  },
+  {
+   "id": "E-R13-N002",
+   "u": "R13",
+   "v": "N002",
+   "kind": "jetty",
+   "length_km": 0.136,
+   "name": "",
+   "provenance": "scenario-assumed"
+  },
+  {
+   "id": "E-R14-N009",
+   "u": "R14",
+   "v": "N009",
+   "kind": "jetty",
+   "length_km": 0.187,
+   "name": "",
+   "provenance": "scenario-assumed"
+  },
+  {
+   "id": "E-R15-N019",
+   "u": "R15",
+   "v": "N019",
+   "kind": "jetty",
+   "length_km": 0.195,
+   "name": "",
+   "provenance": "scenario-assumed"
+  },
+  {
+   "id": "E-R16-N019",
+   "u": "R16",
+   "v": "N019",
+   "kind": "jetty",
+   "length_km": 0.177,
    "name": "",
    "provenance": "scenario-assumed"
   }
@@ -4086,12 +4267,12 @@
  ],
  "boat_homes": [
   "R0",
-  "R1",
   "R2",
-  "R3",
   "R4",
-  "R5",
-  "R6"
+  "R6",
+  "R8",
+  "R10",
+  "R12"
  ],
  "ground_homes": [
   "N001",
@@ -4256,18 +4437,6 @@
   },
   {
    "id": "L16",
-   "name": "Aluva",
-   "node": "N028",
-   "aliases": [
-    "Aluva",
-    "आलुवा",
-    "ആലുവാ"
-   ],
-   "type": "stop",
-   "provenance": "osm"
-  },
-  {
-   "id": "L17",
    "name": "Salala bakery",
    "node": "N118",
    "aliases": [
@@ -4277,7 +4446,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L18",
+   "id": "L17",
    "name": "Kavitha Hotel",
    "node": "N114",
    "aliases": [
@@ -4287,7 +4456,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L19",
+   "id": "L18",
    "name": "Cochin Computers",
    "node": "N110",
    "aliases": [
@@ -4297,7 +4466,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L20",
+   "id": "L19",
    "name": "Colleen Beauty Care",
    "node": "N114",
    "aliases": [
@@ -4307,7 +4476,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L21",
+   "id": "L20",
    "name": "Matha Madhurya Theatre",
    "node": "N079",
    "aliases": [
@@ -4317,7 +4486,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L22",
+   "id": "L21",
    "name": "MGS Builders",
    "node": "N096",
    "aliases": [
@@ -4327,7 +4496,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L23",
+   "id": "L22",
    "name": "Vimala Matha DM Convent",
    "node": "N108",
    "aliases": [
@@ -4337,7 +4506,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L24",
+   "id": "L23",
    "name": "State Bank of India",
    "node": "N069",
    "aliases": [
@@ -4348,7 +4517,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L25",
+   "id": "L24",
    "name": "Auto Taxi Stand Aluva Railway Station",
    "node": "N069",
    "aliases": [
@@ -4358,7 +4527,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L26",
+   "id": "L25",
    "name": "Bank of Bahrain and Kuwait",
    "node": "N028",
    "aliases": [
@@ -4368,7 +4537,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L27",
+   "id": "L26",
    "name": "Bread World",
    "node": "N028",
    "aliases": [
@@ -4378,7 +4547,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L28",
+   "id": "L27",
    "name": "Kerala Grameen Bank",
    "node": "N068",
    "aliases": [
@@ -4388,7 +4557,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L29",
+   "id": "L28",
    "name": "Sewing Machine Repairs",
    "node": "N055",
    "aliases": [
@@ -4398,7 +4567,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L30",
+   "id": "L29",
    "name": "Najath Hospital, Ernakulam",
    "node": "N025",
    "aliases": [
@@ -4408,7 +4577,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L31",
+   "id": "L30",
    "name": "Mazhuvanchery",
    "node": "N027",
    "aliases": [
@@ -4419,7 +4588,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L32",
+   "id": "L31",
    "name": "Iftar",
    "node": "N028",
    "aliases": [
@@ -4430,7 +4599,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L33",
+   "id": "L32",
    "name": "SIB Atm",
    "node": "N069",
    "aliases": [
@@ -4440,7 +4609,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L34",
+   "id": "L33",
    "name": "Everest Tourist Home",
    "node": "N069",
    "aliases": [
@@ -4450,7 +4619,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L35",
+   "id": "L34",
    "name": "Bambino Restaurant",
    "node": "N069",
    "aliases": [
@@ -4460,7 +4629,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L36",
+   "id": "L35",
    "name": "South Indian Bank",
    "node": "N069",
    "aliases": [
@@ -4470,7 +4639,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L37",
+   "id": "L36",
    "name": "Meleth Stores",
    "node": "N069",
    "aliases": [
@@ -4480,7 +4649,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L38",
+   "id": "L37",
    "name": "Manjooran",
    "node": "N069",
    "aliases": [
@@ -4491,7 +4660,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L39",
+   "id": "L38",
    "name": "Alankar Elite Inns and Hotels",
    "node": "N069",
    "aliases": [
@@ -4502,7 +4671,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L40",
+   "id": "L39",
    "name": "Kerala State Financial Enterprise Ltd",
    "node": "N069",
    "aliases": [
@@ -4512,7 +4681,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L41",
+   "id": "L40",
    "name": "Royal Sweets",
    "node": "N069",
    "aliases": [
@@ -4522,7 +4691,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L42",
+   "id": "L41",
    "name": "Ernakulam District Cooperative Bank",
    "node": "N069",
    "aliases": [
@@ -4532,7 +4701,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L43",
+   "id": "L42",
    "name": "Cooperative Department Store",
    "node": "N069",
    "aliases": [
@@ -4542,7 +4711,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L44",
+   "id": "L43",
    "name": "Federal Bank ATM",
    "node": "N069",
    "aliases": [
@@ -4552,30 +4721,23 @@
    "provenance": "osm"
   },
   {
-   "id": "L45",
-   "name": "Aluva",
-   "node": "N069",
-   "aliases": [
-    "Aluva",
-    "ആലുവാ"
-   ],
-   "type": "station",
-   "provenance": "osm"
-  },
-  {
-   "id": "L46",
+   "id": "L44",
    "name": "Aluva Police Station",
    "node": "N133",
    "aliases": [
     "Aluva Police Station",
     "Thrikkunnathu Seminary",
+    "आलुवा पुलिस स्टेशन",
     "ആലുവ പോലീസ് സ്റ്റേഷൻ"
    ],
    "type": "platform",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "आलुवा पुलिस स्टेशन"
+   ]
   },
   {
-   "id": "L47",
+   "id": "L45",
    "name": "Thrikkunnathu Seminary",
    "node": "N137",
    "aliases": [
@@ -4585,19 +4747,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L48",
-   "name": "Aluva",
-   "node": "N028",
-   "aliases": [
-    "Aluva",
-    "आलुवा",
-    "ആലുവാ"
-   ],
-   "type": "station",
-   "provenance": "osm"
-  },
-  {
-   "id": "L49",
+   "id": "L46",
    "name": "Sarathy Ayurveda Clinic",
    "node": "N051",
    "aliases": [
@@ -4607,7 +4757,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L50",
+   "id": "L47",
    "name": "State Bank of India",
    "node": "N115",
    "aliases": [
@@ -4619,7 +4769,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L51",
+   "id": "L48",
    "name": "XTreme Car Accessories",
    "node": "N058",
    "aliases": [
@@ -4629,7 +4779,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L52",
+   "id": "L49",
    "name": "Salafi Masjid",
    "node": "N027",
    "aliases": [
@@ -4639,7 +4789,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L53",
+   "id": "L50",
    "name": "ASHM Sait Juma Masjid",
    "node": "N007",
    "aliases": [
@@ -4649,7 +4799,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L54",
+   "id": "L51",
    "name": "Sree Krishna Swami Temple",
    "node": "N002",
    "aliases": [
@@ -4659,7 +4809,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L55",
+   "id": "L52",
    "name": "Sub Treasury സബ് ട്രഷറി",
    "node": "N139",
    "aliases": [
@@ -4669,7 +4819,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L56",
+   "id": "L53",
    "name": "Elaf Snacks Kitchen",
    "node": "N080",
    "aliases": [
@@ -4679,7 +4829,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L57",
+   "id": "L54",
    "name": "Manju Garments - Factory Outlet",
    "node": "N080",
    "aliases": [
@@ -4689,19 +4839,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L58",
-   "name": "Aluva",
-   "node": "N028",
-   "aliases": [
-    "Aluva",
-    "आलुवा",
-    "ആലുവാ"
-   ],
-   "type": "stop",
-   "provenance": "osm"
-  },
-  {
-   "id": "L59",
+   "id": "L55",
    "name": "Reservation Counter",
    "node": "N069",
    "aliases": [
@@ -4711,7 +4849,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L60",
+   "id": "L56",
    "name": "Auto Stand",
    "node": "N113",
    "aliases": [
@@ -4721,7 +4859,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L61",
+   "id": "L57",
    "name": "Kotak Mahindra Bank",
    "node": "N124",
    "aliases": [
@@ -4731,7 +4869,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L62",
+   "id": "L58",
    "name": "Aluva Municipality Town Baazar",
    "node": "N069",
    "aliases": [
@@ -4741,7 +4879,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L63",
+   "id": "L59",
    "name": "Canara Bank",
    "node": "N006",
    "aliases": [
@@ -4752,7 +4890,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L64",
+   "id": "L60",
    "name": "YWCA Women's Hoste",
    "node": "N048",
    "aliases": [
@@ -4762,7 +4900,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L65",
+   "id": "L61",
    "name": "Thrikkunnathu Seminary - Orthodox Bishop House",
    "node": "N141",
    "aliases": [
@@ -4772,7 +4910,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L66",
+   "id": "L62",
    "name": "സെന്റ് മേരീസ് ഓർത്തഡോക്സ് പള്ളി",
    "node": "N141",
    "aliases": [
@@ -4783,7 +4921,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L67",
+   "id": "L63",
    "name": "Thrikkunnathu Seminary- Ankamaly Diocesian Bishops",
    "node": "N133",
    "aliases": [
@@ -4793,7 +4931,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L68",
+   "id": "L64",
    "name": "Thrikkunnathu Seminary Shrine",
    "node": "N133",
    "aliases": [
@@ -4803,7 +4941,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L69",
+   "id": "L65",
    "name": "Thrikkunnathu Seminary Shrine",
    "node": "N141",
    "aliases": [
@@ -4813,7 +4951,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L70",
+   "id": "L66",
    "name": "PMM Tyre House",
    "node": "N080",
    "aliases": [
@@ -4823,7 +4961,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L71",
+   "id": "L67",
    "name": "Quality Furnitures",
    "node": "N066",
    "aliases": [
@@ -4833,7 +4971,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L72",
+   "id": "L68",
    "name": "New Tip Top Furnitures",
    "node": "N066",
    "aliases": [
@@ -4843,7 +4981,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L73",
+   "id": "L69",
    "name": "Jose Furnitures",
    "node": "N066",
    "aliases": [
@@ -4853,7 +4991,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L74",
+   "id": "L70",
    "name": "Priyadarsini Furnitures",
    "node": "N066",
    "aliases": [
@@ -4863,7 +5001,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L75",
+   "id": "L71",
    "name": "Royal Food Court",
    "node": "N066",
    "aliases": [
@@ -4873,7 +5011,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L76",
+   "id": "L72",
    "name": "Bharathi Pets World",
    "node": "N013",
    "aliases": [
@@ -4883,7 +5021,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L77",
+   "id": "L73",
    "name": "Navya Bake House",
    "node": "N027",
    "aliases": [
@@ -4893,7 +5031,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L78",
+   "id": "L74",
    "name": "Kerala State Beverage Corporation",
    "node": "N031",
    "aliases": [
@@ -4903,7 +5041,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L79",
+   "id": "L75",
    "name": "K.R. Bakes",
    "node": "N013",
    "aliases": [
@@ -4913,7 +5051,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L80",
+   "id": "L76",
    "name": "Photone Digital Studio & Colour Lab",
    "node": "N013",
    "aliases": [
@@ -4923,7 +5061,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L81",
+   "id": "L77",
    "name": "Regional Blood Transfusion Centre",
    "node": "N113",
    "aliases": [
@@ -4934,7 +5072,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L82",
+   "id": "L78",
    "name": "Kerala Ayurveda Hospital",
    "node": "N017",
    "aliases": [
@@ -4944,7 +5082,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L83",
+   "id": "L79",
    "name": "Arogyalayam Hospital",
    "node": "N027",
    "aliases": [
@@ -4954,7 +5092,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L84",
+   "id": "L80",
    "name": "Anwar Memorial Hospital",
    "node": "N062",
    "aliases": [
@@ -4964,20 +5102,29 @@
    "provenance": "osm"
   },
   {
-   "id": "L85",
+   "id": "L81",
    "name": "Aluva KSRTC Stand",
    "node": "N082",
    "aliases": [
     "ALY",
-    "Aluva",
     "Aluva KSRTC Stand",
-    "ആലുവ കെ.എസ്.ആർ.ടി.സി"
+    "KSRTC bus stand",
+    "bus stand",
+    "आलुवा केएसआरटीसी बस स्टैंड",
+    "ആലുവ കെ.എസ്.ആർ.ടി.സി",
+    "ആലുവ കെഎസ്ആർടിസി സ്റ്റാൻഡ്"
    ],
    "type": "platform",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "KSRTC bus stand",
+    "bus stand",
+    "आलुवा केएसआरटीसी बस स्टैंड",
+    "ആലുവ കെഎസ്ആർടിസി സ്റ്റാൻഡ്"
+   ]
   },
   {
-   "id": "L86",
+   "id": "L82",
    "name": "Kerala Ayurveda Academy",
    "node": "N042",
    "aliases": [
@@ -4987,7 +5134,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L87",
+   "id": "L83",
    "name": "HP Petrol Station",
    "node": "N066",
    "aliases": [
@@ -4997,7 +5144,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L88",
+   "id": "L84",
    "name": "HP Petrol station",
    "node": "N066",
    "aliases": [
@@ -5007,7 +5154,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L89",
+   "id": "L85",
    "name": "Grand hotel",
    "node": "N025",
    "aliases": [
@@ -5017,7 +5164,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L90",
+   "id": "L86",
    "name": "Gopu's Coolbar",
    "node": "N008",
    "aliases": [
@@ -5027,7 +5174,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L91",
+   "id": "L87",
    "name": "Pandhal Cake Shop",
    "node": "N006",
    "aliases": [
@@ -5037,7 +5184,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L92",
+   "id": "L88",
    "name": "Alpha German Homeo",
    "node": "N104",
    "aliases": [
@@ -5047,7 +5194,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L93",
+   "id": "L89",
    "name": "New German Homoeopathic",
    "node": "N104",
    "aliases": [
@@ -5057,7 +5204,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L94",
+   "id": "L90",
    "name": "Rishi Ayurveda Hospital",
    "node": "N122",
    "aliases": [
@@ -5067,7 +5214,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L95",
+   "id": "L91",
    "name": "Madeena Medicals",
    "node": "N103",
    "aliases": [
@@ -5077,7 +5224,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L96",
+   "id": "L92",
    "name": "GMC Pharma & Medical Equipments Private Limited",
    "node": "N136",
    "aliases": [
@@ -5087,7 +5234,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L97",
+   "id": "L93",
    "name": "Vidhyadhiraja School Ground",
    "node": "N140",
    "aliases": [
@@ -5097,17 +5244,25 @@
    "provenance": "osm"
   },
   {
-   "id": "L98",
+   "id": "L94",
    "name": "Aluva Market",
    "node": "N081",
    "aliases": [
-    "Aluva Market"
+    "Aluva Market",
+    "आलुवा बाज़ार",
+    "आलुवा मार्केट",
+    "ആലുവ മാർക്കറ്റ്"
    ],
    "type": "marketplace",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "आलुवा बाज़ार",
+    "आलुवा मार्केट",
+    "ആലുവ മാർക്കറ്റ്"
+   ]
   },
   {
-   "id": "L99",
+   "id": "L95",
    "name": "Sanghamam Multi-State Co-operative Credit Soceity Limited, Aluva Branch",
    "node": "N062",
    "aliases": [
@@ -5117,7 +5272,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L100",
+   "id": "L96",
    "name": "Aluva Women Cell",
    "node": "N123",
    "aliases": [
@@ -5127,7 +5282,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L101",
+   "id": "L97",
    "name": "Bank employees Cooperative society",
    "node": "N008",
    "aliases": [
@@ -5137,7 +5292,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L102",
+   "id": "L98",
    "name": "More Supermarket",
    "node": "N008",
    "aliases": [
@@ -5147,7 +5302,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L103",
+   "id": "L99",
    "name": "Arjuna Complex",
    "node": "N006",
    "aliases": [
@@ -5157,7 +5312,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L104",
+   "id": "L100",
    "name": "Samagra Homeo Clinic",
    "node": "N006",
    "aliases": [
@@ -5167,7 +5322,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L105",
+   "id": "L101",
    "name": "Yuva Stores",
    "node": "N139",
    "aliases": [
@@ -5177,7 +5332,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L106",
+   "id": "L102",
    "name": "Nippon Travels",
    "node": "N050",
    "aliases": [
@@ -5187,7 +5342,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L107",
+   "id": "L103",
    "name": "Fizza Cafetria And Buffet",
    "node": "N028",
    "aliases": [
@@ -5197,7 +5352,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L108",
+   "id": "L104",
    "name": "Parakkat Jewels Aluva",
    "node": "N064",
    "aliases": [
@@ -5207,7 +5362,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L109",
+   "id": "L105",
    "name": "Co-operation Bank",
    "node": "N050",
    "aliases": [
@@ -5217,7 +5372,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L110",
+   "id": "L106",
    "name": "The polo classic",
    "node": "N050",
    "aliases": [
@@ -5227,7 +5382,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L111",
+   "id": "L107",
    "name": "Kerala Kitchen",
    "node": "N050",
    "aliases": [
@@ -5237,7 +5392,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L112",
+   "id": "L108",
    "name": "Kallada Travels Aluva",
    "node": "N050",
    "aliases": [
@@ -5247,7 +5402,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L113",
+   "id": "L109",
    "name": "Market Masjid Aluva",
    "node": "N101",
    "aliases": [
@@ -5257,7 +5412,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L114",
+   "id": "L110",
    "name": "Prabhu Stores",
    "node": "N081",
    "aliases": [
@@ -5267,7 +5422,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L115",
+   "id": "L111",
    "name": "KMS Vegetables",
    "node": "N081",
    "aliases": [
@@ -5277,7 +5432,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L116",
+   "id": "L112",
    "name": "Kaduveli Stores",
    "node": "N081",
    "aliases": [
@@ -5287,7 +5442,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L117",
+   "id": "L113",
    "name": "VKD Vegetables",
    "node": "N081",
    "aliases": [
@@ -5297,7 +5452,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L118",
+   "id": "L114",
    "name": "Bismi Store",
    "node": "N081",
    "aliases": [
@@ -5307,7 +5462,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L119",
+   "id": "L115",
    "name": "Nakshatra Gold And Diamonds",
    "node": "N101",
    "aliases": [
@@ -5317,7 +5472,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L120",
+   "id": "L116",
    "name": "Golden aquarium Aluva",
    "node": "N009",
    "aliases": [
@@ -5327,7 +5482,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L121",
+   "id": "L117",
    "name": "Infogrys Technologies Pvt.Ltd",
    "node": "N009",
    "aliases": [
@@ -5337,7 +5492,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L122",
+   "id": "L118",
    "name": "Aluva Sree Narayana Advaitha Ashram Temple",
    "node": "N005",
    "aliases": [
@@ -5347,7 +5502,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L123",
+   "id": "L119",
    "name": "Adwaithasramam",
    "node": "N010",
    "aliases": [
@@ -5357,7 +5512,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L124",
+   "id": "L120",
    "name": "Janatha Hospital",
    "node": "N087",
    "aliases": [
@@ -5367,7 +5522,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L125",
+   "id": "L121",
    "name": "Homeo Clinic",
    "node": "N113",
    "aliases": [
@@ -5377,19 +5532,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L126",
-   "name": "Aluva",
-   "node": "N050",
-   "aliases": [
-    "Aluva",
-    "आलुवा",
-    "ആലുവാ"
-   ],
-   "type": "subway_entrance",
-   "provenance": "osm"
-  },
-  {
-   "id": "L127",
+   "id": "L122",
    "name": "UCO Bank",
    "node": "N114",
    "aliases": [
@@ -5399,7 +5542,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L128",
+   "id": "L123",
    "name": "AKSHAYA E Centre",
    "node": "N079",
    "aliases": [
@@ -5409,7 +5552,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L129",
+   "id": "L124",
    "name": "Akshaya",
    "node": "N115",
    "aliases": [
@@ -5419,7 +5562,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L130",
+   "id": "L125",
    "name": "Akshaya Centre, Bank Junction",
    "node": "N027",
    "aliases": [
@@ -5429,7 +5572,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L131",
+   "id": "L126",
    "name": "Akshaya",
    "node": "N066",
    "aliases": [
@@ -5439,7 +5582,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L132",
+   "id": "L127",
    "name": "Manhajul Islam Madrasa",
    "node": "N002",
    "aliases": [
@@ -5450,7 +5593,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L133",
+   "id": "L128",
    "name": "Union Bank of India",
    "node": "N082",
    "aliases": [
@@ -5460,7 +5603,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L134",
+   "id": "L129",
    "name": "Bypass",
    "node": "N027",
    "aliases": [
@@ -5472,7 +5615,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L135",
+   "id": "L130",
    "name": "Market Junction",
    "node": "N081",
    "aliases": [
@@ -5483,7 +5626,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L136",
+   "id": "L131",
    "name": "Drunken Panda",
    "node": "N104",
    "aliases": [
@@ -5493,7 +5636,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L137",
+   "id": "L132",
    "name": "Sree Balaji Hardwares",
    "node": "N087",
    "aliases": [
@@ -5503,7 +5646,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L138",
+   "id": "L133",
    "name": "Naadan Hotel",
    "node": "N087",
    "aliases": [
@@ -5513,7 +5656,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L139",
+   "id": "L134",
    "name": "Kerala Bank Aluva Main Br",
    "node": "N069",
    "aliases": [
@@ -5523,7 +5666,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L140",
+   "id": "L135",
    "name": "Kerala Bank  Aluva Place Road",
    "node": "N019",
    "aliases": [
@@ -5533,7 +5676,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L141",
+   "id": "L136",
    "name": "Colours",
    "node": "N066",
    "aliases": [
@@ -5543,7 +5686,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L142",
+   "id": "L137",
    "name": "Vandana Stores, Town Baazar, Aluva",
    "node": "N069",
    "aliases": [
@@ -5553,7 +5696,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L143",
+   "id": "L138",
    "name": "John Driving School",
    "node": "N102",
    "aliases": [
@@ -5563,7 +5706,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L144",
+   "id": "L139",
    "name": "Seemas",
    "node": "N064",
    "aliases": [
@@ -5573,7 +5716,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L145",
+   "id": "L140",
    "name": "Kerala Bank Aluva Palace Br.",
    "node": "N028",
    "aliases": [
@@ -5583,7 +5726,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L146",
+   "id": "L141",
    "name": "Ration shop",
    "node": "N084",
    "aliases": [
@@ -5593,7 +5736,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L147",
+   "id": "L142",
    "name": "BBS",
    "node": "N084",
    "aliases": [
@@ -5603,7 +5746,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L148",
+   "id": "L143",
    "name": "BBS Bakes and Curry shop",
    "node": "N084",
    "aliases": [
@@ -5613,7 +5756,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L149",
+   "id": "L144",
    "name": "Karothukuzhi",
    "node": "N103",
    "aliases": [
@@ -5624,7 +5767,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L150",
+   "id": "L145",
    "name": "Town Hall",
    "node": "N034",
    "aliases": [
@@ -5636,19 +5779,31 @@
    "provenance": "osm"
   },
   {
-   "id": "L151",
+   "id": "L146",
    "name": "Government Hospital",
    "node": "N113",
    "aliases": [
+    "Aluva district hospital",
     "Aspathri padi",
+    "District Hospital Aluva",
     "Government Hospital",
-    "ഗവൺമെന്റ് ആശുപത്രി"
+    "जिला अस्पताल",
+    "सरकारी अस्पताल",
+    "ഗവൺമെന്റ് ആശുപത്രി",
+    "ജില്ലാ ആശുപത്രി"
    ],
    "type": "platform",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "Aluva district hospital",
+    "District Hospital Aluva",
+    "जिला अस्पताल",
+    "सरकारी अस्पताल",
+    "ജില്ലാ ആശുപത്രി"
+   ]
   },
   {
-   "id": "L152",
+   "id": "L147",
    "name": "Aluva KSRTC",
    "node": "N082",
    "aliases": [
@@ -5659,7 +5814,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L153",
+   "id": "L148",
    "name": "Pump Junction",
    "node": "N079",
    "aliases": [
@@ -5670,7 +5825,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L154",
+   "id": "L149",
    "name": "Bank Junction",
    "node": "N006",
    "aliases": [
@@ -5681,31 +5836,43 @@
    "provenance": "osm"
   },
   {
-   "id": "L155",
-   "name": "Aluva",
+   "id": "L150",
+   "name": "Aluva Private Bus Stand",
    "node": "N068",
    "aliases": [
-    "Aluva",
     "Aluva Private Bus Stand",
-    "ആലുവ"
+    "bus stand",
+    "private bus stand",
+    "आलुवा प्राइवेट बस स्टैंड"
    ],
    "type": "platform",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "bus stand",
+    "private bus stand",
+    "आलुवा प्राइवेट बस स्टैंड"
+   ]
   },
   {
-   "id": "L156",
-   "name": "Aluva",
+   "id": "L151",
+   "name": "Aluva Private Bus Stand",
    "node": "N068",
    "aliases": [
-    "Aluva",
     "Aluva Private Bus Stand",
-    "ആലുവ"
+    "bus stand",
+    "private bus stand",
+    "आलुवा प्राइवेट बस स्टैंड"
    ],
    "type": "platform",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "bus stand",
+    "private bus stand",
+    "आलुवा प्राइवेट बस स्टैंड"
+   ]
   },
   {
-   "id": "L157",
+   "id": "L152",
    "name": "Karothukuzhi",
    "node": "N103",
    "aliases": [
@@ -5716,7 +5883,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L158",
+   "id": "L153",
    "name": "Old Railway",
    "node": "N069",
    "aliases": [
@@ -5727,7 +5894,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L159",
+   "id": "L154",
    "name": "Zeenath Junction",
    "node": "N114",
    "aliases": [
@@ -5738,11 +5905,10 @@
    "provenance": "osm"
   },
   {
-   "id": "L160",
+   "id": "L155",
    "name": "Bank Junction",
    "node": "N016",
    "aliases": [
-    "Aluva",
     "Bank Junction",
     "ബാങ്ക് ജംങ്ഷൻ"
    ],
@@ -5750,7 +5916,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L161",
+   "id": "L156",
    "name": "Bypass",
    "node": "N027",
    "aliases": [
@@ -5762,7 +5928,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L162",
+   "id": "L157",
    "name": "Seemas",
    "node": "N064",
    "aliases": [
@@ -5774,7 +5940,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L163",
+   "id": "L158",
    "name": "Police Aid Post",
    "node": "N068",
    "aliases": [
@@ -5784,7 +5950,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L164",
+   "id": "L159",
    "name": "Bus Information Center",
    "node": "N068",
    "aliases": [
@@ -5794,19 +5960,23 @@
    "provenance": "osm"
   },
   {
-   "id": "L165",
+   "id": "L160",
    "name": "Aluva Police Station",
    "node": "N133",
    "aliases": [
     "Aluva Police Station",
     "Thrikkunnathu Seminary",
+    "आलुवा पुलिस स्टेशन",
     "ആലുവ പോലീസ് സ്റ്റേഷൻ"
    ],
    "type": "platform",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "आलुवा पुलिस स्टेशन"
+   ]
   },
   {
-   "id": "L166",
+   "id": "L161",
    "name": "Zeenath Junction",
    "node": "N118",
    "aliases": [
@@ -5817,18 +5987,22 @@
    "provenance": "osm"
   },
   {
-   "id": "L167",
+   "id": "L162",
    "name": "Aluva Palace",
    "node": "N011",
    "aliases": [
     "Aluva Palace",
+    "आलुवा पैलेस",
     "ആലുവ പാലസ്"
    ],
    "type": "platform",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "आलुवा पैलेस"
+   ]
   },
   {
-   "id": "L168",
+   "id": "L163",
    "name": "Najath Hospital",
    "node": "N055",
    "aliases": [
@@ -5839,7 +6013,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L169",
+   "id": "L164",
    "name": "Auto Stand",
    "node": "N113",
    "aliases": [
@@ -5849,7 +6023,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L170",
+   "id": "L165",
    "name": "Aluva KSRTC",
    "node": "N082",
    "aliases": [
@@ -5859,7 +6033,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L171",
+   "id": "L166",
    "name": "Taxi Stand",
    "node": "N017",
    "aliases": [
@@ -5869,7 +6043,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L172",
+   "id": "L167",
    "name": "auto stand",
    "node": "N011",
    "aliases": [
@@ -5879,7 +6053,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L173",
+   "id": "L168",
    "name": "Taxi Stand",
    "node": "N015",
    "aliases": [
@@ -5889,18 +6063,24 @@
    "provenance": "osm"
   },
   {
-   "id": "L174",
+   "id": "L169",
    "name": "Aluva Metro Station",
    "node": "N050",
    "aliases": [
     "Aluva Metro Station",
+    "metro station",
+    "आलुवा मेट्रो स्टेशन",
     "ആലുവ മെട്രോ സ്റ്റേഷൻ"
    ],
    "type": "platform",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "metro station",
+    "आलुवा मेट्रो स्टेशन"
+   ]
   },
   {
-   "id": "L175",
+   "id": "L170",
    "name": "Ration Shop",
    "node": "N071",
    "aliases": [
@@ -5910,7 +6090,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L176",
+   "id": "L171",
    "name": "Anganwadi",
    "node": "N026",
    "aliases": [
@@ -5921,7 +6101,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L177",
+   "id": "L172",
    "name": "Pump Junction",
    "node": "N066",
    "aliases": [
@@ -5931,7 +6111,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L178",
+   "id": "L173",
    "name": "Town Hall",
    "node": "N034",
    "aliases": [
@@ -5943,7 +6123,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L179",
+   "id": "L174",
    "name": "Thottumukham",
    "node": "N063",
    "aliases": [
@@ -5954,7 +6134,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L180",
+   "id": "L175",
    "name": "Nature Kavala",
    "node": "N126",
    "aliases": [
@@ -5965,7 +6145,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L181",
+   "id": "L176",
    "name": "Thottumugham",
    "node": "N039",
    "aliases": [
@@ -5976,7 +6156,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L182",
+   "id": "L177",
    "name": "Thottumugham",
    "node": "N039",
    "aliases": [
@@ -5987,7 +6167,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L183",
+   "id": "L178",
    "name": "Manjooran Bar",
    "node": "N065",
    "aliases": [
@@ -5997,7 +6177,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L184",
+   "id": "L179",
    "name": "മഹാത്മാ ഗാന്ധി",
    "node": "N034",
    "aliases": [
@@ -6007,7 +6187,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L185",
+   "id": "L180",
    "name": "Airport Feeder Bus Stop",
    "node": "N047",
    "aliases": [
@@ -6017,7 +6197,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L186",
+   "id": "L181",
    "name": "Dr. Kurian's Orthodontics",
    "node": "N008",
    "aliases": [
@@ -6027,7 +6207,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L187",
+   "id": "L182",
    "name": "Dr. Tony Fernandez Eye Hospital",
    "node": "N072",
    "aliases": [
@@ -6037,7 +6217,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L188",
+   "id": "L183",
    "name": "Morroccan Restaurant",
    "node": "N101",
    "aliases": [
@@ -6047,7 +6227,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L189",
+   "id": "L184",
    "name": "Hotel Ayyappavilasam",
    "node": "N011",
    "aliases": [
@@ -6057,18 +6237,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L190",
-   "name": "Aluva",
-   "node": "N059",
-   "aliases": [
-    "Aluva",
-    "ആലുവാ"
-   ],
-   "type": "stop",
-   "provenance": "osm"
-  },
-  {
-   "id": "L191",
+   "id": "L185",
    "name": "McDonald's",
    "node": "N047",
    "aliases": [
@@ -6078,7 +6247,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L192",
+   "id": "L186",
    "name": "Domino's",
    "node": "N011",
    "aliases": [
@@ -6088,7 +6257,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L193",
+   "id": "L187",
    "name": "FirstCry",
    "node": "N011",
    "aliases": [
@@ -6098,7 +6267,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L194",
+   "id": "L188",
    "name": "ടൈലർസ് മാർട്",
    "node": "N101",
    "aliases": [
@@ -6109,7 +6278,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L195",
+   "id": "L189",
    "name": "CC Medicals",
    "node": "N027",
    "aliases": [
@@ -6119,7 +6288,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L196",
+   "id": "L190",
    "name": "Juice Spot",
    "node": "N027",
    "aliases": [
@@ -6129,7 +6298,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L197",
+   "id": "L191",
    "name": "Kings Beauty Care",
    "node": "N027",
    "aliases": [
@@ -6139,7 +6308,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L198",
+   "id": "L192",
    "name": "Q-Life Medicals",
    "node": "N055",
    "aliases": [
@@ -6149,7 +6318,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L199",
+   "id": "L193",
    "name": "Kerala Hardware Store (Non Official)",
    "node": "N055",
    "aliases": [
@@ -6159,7 +6328,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L200",
+   "id": "L194",
    "name": "Manavati",
    "node": "N055",
    "aliases": [
@@ -6169,7 +6338,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L201",
+   "id": "L195",
    "name": "Apollo Pharmacy",
    "node": "N055",
    "aliases": [
@@ -6179,7 +6348,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L202",
+   "id": "L196",
    "name": "Kammaths Cafe",
    "node": "N122",
    "aliases": [
@@ -6189,7 +6358,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L203",
+   "id": "L197",
    "name": "Yash Square GOEC Electric Vehicle (Car) Charging Station 2x60 KW CCS2",
    "node": "N039",
    "aliases": [
@@ -6199,7 +6368,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L204",
+   "id": "L198",
    "name": "Ifthar Restaurant",
    "node": "N028",
    "aliases": [
@@ -6209,7 +6378,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L205",
+   "id": "L199",
    "name": "Daily Mee",
    "node": "N028",
    "aliases": [
@@ -6219,7 +6388,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L206",
+   "id": "L200",
    "name": "Parag Cloth",
    "node": "N028",
    "aliases": [
@@ -6229,7 +6398,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L207",
+   "id": "L201",
    "name": "New Baloons - Gift Articles and Kids Toys",
    "node": "N028",
    "aliases": [
@@ -6239,7 +6408,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L208",
+   "id": "L202",
    "name": "Royal Sports",
    "node": "N028",
    "aliases": [
@@ -6249,7 +6418,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L209",
+   "id": "L203",
    "name": "Akbar Travels of India Pvt Ltd",
    "node": "N028",
    "aliases": [
@@ -6259,7 +6428,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L210",
+   "id": "L204",
    "name": "Phone Hub - Sales and Service",
    "node": "N028",
    "aliases": [
@@ -6269,7 +6438,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L211",
+   "id": "L205",
    "name": "Go Colors!",
    "node": "N028",
    "aliases": [
@@ -6279,7 +6448,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L212",
+   "id": "L206",
    "name": "Thuruth",
    "node": "N033",
    "aliases": [
@@ -6290,7 +6459,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L213",
+   "id": "L207",
    "name": "Thuruth Bridge",
    "node": "N012",
    "aliases": [
@@ -6300,17 +6469,21 @@
    "provenance": "osm"
   },
   {
-   "id": "L214",
+   "id": "L208",
    "name": "Aluva Palace",
    "node": "N003",
    "aliases": [
-    "Aluva Palace"
+    "Aluva Palace",
+    "आलुवा पैलेस"
    ],
    "type": "castle",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "आलुवा पैलेस"
+   ]
   },
   {
-   "id": "L215",
+   "id": "L209",
    "name": "Lakshmi hospital",
    "node": "N102",
    "aliases": [
@@ -6321,7 +6494,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L216",
+   "id": "L210",
    "name": "Little Flower Seminary",
    "node": "N119",
    "aliases": [
@@ -6331,7 +6504,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L217",
+   "id": "L211",
    "name": "Little Flower Church",
    "node": "N119",
    "aliases": [
@@ -6341,7 +6514,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L218",
+   "id": "L212",
    "name": "Federal Bank",
    "node": "N013",
    "aliases": [
@@ -6351,7 +6524,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L219",
+   "id": "L213",
    "name": "Federal Bank",
    "node": "N013",
    "aliases": [
@@ -6361,7 +6534,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L220",
+   "id": "L214",
    "name": "st. Dominic Parish Church",
    "node": "N088",
    "aliases": [
@@ -6371,7 +6544,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L221",
+   "id": "L215",
    "name": "Karothukuzhi Hospital",
    "node": "N103",
    "aliases": [
@@ -6381,7 +6554,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L222",
+   "id": "L216",
    "name": "Taxi Stand",
    "node": "N069",
    "aliases": [
@@ -6391,17 +6564,25 @@
    "provenance": "osm"
   },
   {
-   "id": "L223",
+   "id": "L217",
    "name": "Aluva Railway Station",
    "node": "N069",
    "aliases": [
-    "Aluva Railway Station"
+    "Aluva Railway Station",
+    "Aluva station",
+    "आलुवा रेलवे स्टेशन",
+    "ആലുവ റെയിൽവേ സ്റ്റേഷൻ"
    ],
    "type": "train_station",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "Aluva station",
+    "आलुवा रेलवे स्टेशन",
+    "ആലുവ റെയിൽവേ സ്റ്റേഷൻ"
+   ]
   },
   {
-   "id": "L224",
+   "id": "L218",
    "name": "Aluva Railway Station Parking",
    "node": "N059",
    "aliases": [
@@ -6411,7 +6592,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L225",
+   "id": "L219",
    "name": "Platform 3",
    "node": "N069",
    "aliases": [
@@ -6421,7 +6602,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L226",
+   "id": "L220",
    "name": "Platform 2",
    "node": "N069",
    "aliases": [
@@ -6431,7 +6612,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L227",
+   "id": "L221",
    "name": "Platform 1",
    "node": "N069",
    "aliases": [
@@ -6441,7 +6622,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L228",
+   "id": "L222",
    "name": "Kochi Metro Rail",
    "node": "N101",
    "aliases": [
@@ -6451,7 +6632,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L229",
+   "id": "L223",
    "name": "Puthussery Complex പുതുശ്ശേരി കോംപ്ലക്സ്",
    "node": "N115",
    "aliases": [
@@ -6462,7 +6643,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L230",
+   "id": "L224",
    "name": "Kerala Water Authority കേരള വാട്ടര്‍ അതോറിട്ടി",
    "node": "N116",
    "aliases": [
@@ -6473,7 +6654,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L231",
+   "id": "L225",
    "name": "Karothukuzhi Hospital Aux.Block-1",
    "node": "N103",
    "aliases": [
@@ -6483,7 +6664,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L232",
+   "id": "L226",
    "name": "Karothukuzhi Hospital Main Block",
    "node": "N103",
    "aliases": [
@@ -6493,7 +6674,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L233",
+   "id": "L227",
    "name": "Karothukuzhi Hospital Aux.Block-2",
    "node": "N103",
    "aliases": [
@@ -6503,7 +6684,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L234",
+   "id": "L228",
    "name": "സബ് ട്രഷറി, Sub Treasury",
    "node": "N139",
    "aliases": [
@@ -6513,7 +6694,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L235",
+   "id": "L229",
    "name": "Kochi Metro Rail",
    "node": "N101",
    "aliases": [
@@ -6523,18 +6704,26 @@
    "provenance": "osm"
   },
   {
-   "id": "L236",
+   "id": "L230",
    "name": "Aluva Private Bus Stand",
    "node": "N068",
    "aliases": [
     "Aluva Private Bus Stand",
+    "bus stand",
+    "private bus stand",
+    "आलुवा प्राइवेट बस स्टैंड",
     "ആലുവ പ്രൈവറ്റ് ബസ്സ് സ്റ്റാന്റ്"
    ],
    "type": "bus_station",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "bus stand",
+    "private bus stand",
+    "आलुवा प्राइवेट बस स्टैंड"
+   ]
   },
   {
-   "id": "L237",
+   "id": "L231",
    "name": "Jeevas CMI Central School",
    "node": "N051",
    "aliases": [
@@ -6544,7 +6733,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L238",
+   "id": "L232",
    "name": "Kochi Metro Rail",
    "node": "N028",
    "aliases": [
@@ -6554,7 +6743,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L239",
+   "id": "L233",
    "name": "Kochi Metro Rail",
    "node": "N028",
    "aliases": [
@@ -6564,7 +6753,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L240",
+   "id": "L234",
    "name": "Sree Krishna Swami Temple",
    "node": "N002",
    "aliases": [
@@ -6574,7 +6763,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L241",
+   "id": "L235",
    "name": "Aluva Muncipal Park",
    "node": "N006",
    "aliases": [
@@ -6584,7 +6773,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L242",
+   "id": "L236",
    "name": "ASHM Sait Masjid",
    "node": "N007",
    "aliases": [
@@ -6594,18 +6783,34 @@
    "provenance": "osm"
   },
   {
-   "id": "L243",
+   "id": "L237",
    "name": "Manapuram Mahadeva Temple",
    "node": "N001",
    "aliases": [
+    "Aluva Manappuram",
+    "Aluva Shiva Temple",
+    "Manappuram",
     "Manapuram Mahadeva Temple",
+    "आलुवा शिव मंदिर",
+    "मणप्पुरम महादेव मंदिर",
+    "ആലുവ മണപ്പുറം",
+    "ആലുവ ശിവക്ഷേത്രം",
     "മണപ്പുറം മഹാദേവക്ഷേത്രം"
    ],
    "type": "place_of_worship",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "Aluva Manappuram",
+    "Aluva Shiva Temple",
+    "Manappuram",
+    "आलुवा शिव मंदिर",
+    "मणप्पुरम महादेव मंदिर",
+    "ആലുവ മണപ്പുറം",
+    "ആലുവ ശിവക്ഷേത്രം"
+   ]
   },
   {
-   "id": "L244",
+   "id": "L238",
    "name": "Adwaithasramam",
    "node": "N005",
    "aliases": [
@@ -6615,7 +6820,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L245",
+   "id": "L239",
    "name": "St. Francis Xavier Church",
    "node": "N015",
    "aliases": [
@@ -6625,7 +6830,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L246",
+   "id": "L240",
    "name": "Aluva Muncipal Town Hall",
    "node": "N014",
    "aliases": [
@@ -6635,7 +6840,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L247",
+   "id": "L241",
    "name": "St. Thomas Marthoma Church",
    "node": "N014",
    "aliases": [
@@ -6645,7 +6850,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L248",
+   "id": "L242",
    "name": "Aluva Head Post Office",
    "node": "N034",
    "aliases": [
@@ -6655,7 +6860,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L249",
+   "id": "L243",
    "name": "Thrikkunnathu Seminary",
    "node": "N133",
    "aliases": [
@@ -6665,7 +6870,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L250",
+   "id": "L244",
    "name": "Blossom Tower Apartments",
    "node": "N009",
    "aliases": [
@@ -6675,7 +6880,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L251",
+   "id": "L245",
    "name": "Aluva Bank Jn",
    "node": "N006",
    "aliases": [
@@ -6685,7 +6890,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L252",
+   "id": "L246",
    "name": "Amity Landmark",
    "node": "N025",
    "aliases": [
@@ -6695,7 +6900,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L253",
+   "id": "L247",
    "name": "Manadath Home",
    "node": "N031",
    "aliases": [
@@ -6705,7 +6910,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L254",
+   "id": "L248",
    "name": "Manadath Apartments",
    "node": "N031",
    "aliases": [
@@ -6715,7 +6920,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L255",
+   "id": "L249",
    "name": "Najath Hospital Building",
    "node": "N025",
    "aliases": [
@@ -6725,17 +6930,21 @@
    "provenance": "osm"
   },
   {
-   "id": "L256",
+   "id": "L250",
    "name": "Aluva Palace",
    "node": "N003",
    "aliases": [
-    "Aluva Palace"
+    "Aluva Palace",
+    "आलुवा पैलेस"
    ],
    "type": "castle",
-   "provenance": "osm"
+   "provenance": "osm",
+   "added_aliases": [
+    "आलुवा पैलेस"
+   ]
   },
   {
-   "id": "L257",
+   "id": "L251",
    "name": "Anwar Memorial Hospital",
    "node": "N062",
    "aliases": [
@@ -6745,7 +6954,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L258",
+   "id": "L252",
    "name": "Aluva Sub Jail",
    "node": "N133",
    "aliases": [
@@ -6755,7 +6964,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L259",
+   "id": "L253",
    "name": "MY G",
    "node": "N065",
    "aliases": [
@@ -6765,7 +6974,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L260",
+   "id": "L254",
    "name": "Western Union",
    "node": "N114",
    "aliases": [
@@ -6775,7 +6984,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L261",
+   "id": "L255",
    "name": "Seemas",
    "node": "N064",
    "aliases": [
@@ -6785,7 +6994,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L262",
+   "id": "L256",
    "name": "Biju Stores",
    "node": "N118",
    "aliases": [
@@ -6795,7 +7004,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L263",
+   "id": "L257",
    "name": "Two Star Bakery",
    "node": "N114",
    "aliases": [
@@ -6805,7 +7014,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L264",
+   "id": "L258",
    "name": "Ferns N Petals",
    "node": "N114",
    "aliases": [
@@ -6815,7 +7024,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L265",
+   "id": "L259",
    "name": "Lakhmi Hospital Parking Ground",
    "node": "N114",
    "aliases": [
@@ -6825,7 +7034,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L266",
+   "id": "L260",
    "name": "Chaithanya Classes",
    "node": "N091",
    "aliases": [
@@ -6835,7 +7044,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L267",
+   "id": "L261",
    "name": "KEE Tradings",
    "node": "N114",
    "aliases": [
@@ -6845,7 +7054,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L268",
+   "id": "L262",
    "name": "Mecom Services",
    "node": "N102",
    "aliases": [
@@ -6855,7 +7064,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L269",
+   "id": "L263",
    "name": "Quality Bakers",
    "node": "N079",
    "aliases": [
@@ -6865,7 +7074,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L270",
+   "id": "L264",
    "name": "Brothers Bakery And Supermarket",
    "node": "N084",
    "aliases": [
@@ -6875,7 +7084,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L271",
+   "id": "L265",
    "name": "Kathayis Travels",
    "node": "N084",
    "aliases": [
@@ -6885,7 +7094,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L272",
+   "id": "L266",
    "name": "Casino Theatre",
    "node": "N090",
    "aliases": [
@@ -6895,7 +7104,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L273",
+   "id": "L267",
    "name": "Zaina",
    "node": "N066",
    "aliases": [
@@ -6905,7 +7114,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L274",
+   "id": "L268",
    "name": "Cheerakkada Bhagavathi Temple",
    "node": "N142",
    "aliases": [
@@ -6915,7 +7124,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L275",
+   "id": "L269",
    "name": "OP Block District Hospital Aluva",
    "node": "N113",
    "aliases": [
@@ -6925,7 +7134,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L276",
+   "id": "L270",
    "name": "Masjid Al Ansar",
    "node": "N062",
    "aliases": [
@@ -6936,7 +7145,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L277",
+   "id": "L271",
    "name": "Hotel Navaratna",
    "node": "N136",
    "aliases": [
@@ -6946,7 +7155,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L278",
+   "id": "L272",
    "name": "Ammus Petrol Pump",
    "node": "N136",
    "aliases": [
@@ -6956,7 +7165,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L279",
+   "id": "L273",
    "name": "Mahindra Mojo Showroom",
    "node": "N136",
    "aliases": [
@@ -6966,7 +7175,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L280",
+   "id": "L274",
    "name": "Aluva Town Juma' Masjid",
    "node": "N104",
    "aliases": [
@@ -6976,7 +7185,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L281",
+   "id": "L275",
    "name": "Fire and Rescue Station Aluva",
    "node": "N068",
    "aliases": [
@@ -6986,7 +7195,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L282",
+   "id": "L276",
    "name": "Queen Mother's College",
    "node": "N062",
    "aliases": [
@@ -6996,7 +7205,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L283",
+   "id": "L277",
    "name": "Anganavadi",
    "node": "N062",
    "aliases": [
@@ -7006,7 +7215,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L284",
+   "id": "L278",
    "name": "Mini Civil Station Aluva",
    "node": "N053",
    "aliases": [
@@ -7016,7 +7225,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L285",
+   "id": "L279",
    "name": "Aluva Municipal Library",
    "node": "N056",
    "aliases": [
@@ -7026,7 +7235,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L286",
+   "id": "L280",
    "name": "Kerala Excise Office Complex",
    "node": "N056",
    "aliases": [
@@ -7036,7 +7245,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L287",
+   "id": "L281",
    "name": "Tass Hall",
    "node": "N032",
    "aliases": [
@@ -7046,7 +7255,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L288",
+   "id": "L282",
    "name": "Sree Narayana Vidyaniketan",
    "node": "N015",
    "aliases": [
@@ -7056,7 +7265,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L289",
+   "id": "L283",
    "name": "St. Xavier's College for Women, Aluva",
    "node": "N034",
    "aliases": [
@@ -7066,7 +7275,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L290",
+   "id": "L284",
    "name": "St. Xavier's College for Women, Aluva",
    "node": "N010",
    "aliases": [
@@ -7076,7 +7285,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L291",
+   "id": "L285",
    "name": "Aluva Municipality",
    "node": "N048",
    "aliases": [
@@ -7086,7 +7295,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L292",
+   "id": "L286",
    "name": "Matha Madhurya Theater",
    "node": "N079",
    "aliases": [
@@ -7096,7 +7305,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L293",
+   "id": "L287",
    "name": "HP",
    "node": "N066",
    "aliases": [
@@ -7106,7 +7315,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L294",
+   "id": "L288",
    "name": "HP",
    "node": "N066",
    "aliases": [
@@ -7116,7 +7325,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L295",
+   "id": "L289",
    "name": "John the Baptist CSI Church",
    "node": "N079",
    "aliases": [
@@ -7126,7 +7335,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L296",
+   "id": "L290",
    "name": "St. John the Baptist CSI English Medium School",
    "node": "N079",
    "aliases": [
@@ -7136,7 +7345,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L297",
+   "id": "L291",
    "name": "Moosa Vaidyar Memorial",
    "node": "N090",
    "aliases": [
@@ -7146,7 +7355,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L298",
+   "id": "L292",
    "name": "Aluva Manappuram Program Stage",
    "node": "N001",
    "aliases": [
@@ -7156,7 +7365,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L299",
+   "id": "L293",
    "name": "Edakkattil Sree Dharmasastha Kshethram",
    "node": "N122",
    "aliases": [
@@ -7166,7 +7375,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L300",
+   "id": "L294",
    "name": "Salafi Masjid Aluva",
    "node": "N027",
    "aliases": [
@@ -7176,7 +7385,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L301",
+   "id": "L295",
    "name": "Federal Bank",
    "node": "N027",
    "aliases": [
@@ -7186,7 +7395,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L302",
+   "id": "L296",
    "name": "Mazhuvanchery",
    "node": "N027",
    "aliases": [
@@ -7196,7 +7405,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L303",
+   "id": "L297",
    "name": "MediHeaven Hospital",
    "node": "N007",
    "aliases": [
@@ -7206,7 +7415,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L304",
+   "id": "L298",
    "name": "Lakshmi Nursing Home",
    "node": "N011",
    "aliases": [
@@ -7216,7 +7425,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L305",
+   "id": "L299",
    "name": "J and J Online Centre",
    "node": "N120",
    "aliases": [
@@ -7226,7 +7435,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L306",
+   "id": "L300",
    "name": "OYO Home 62055 Luxurious Stay",
    "node": "N120",
    "aliases": [
@@ -7236,7 +7445,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L307",
+   "id": "L301",
    "name": "The Pentecostal Mission",
    "node": "N114",
    "aliases": [
@@ -7246,7 +7455,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L308",
+   "id": "L302",
    "name": "A.G. Church Aluva",
    "node": "N118",
    "aliases": [
@@ -7256,7 +7465,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L309",
+   "id": "L303",
    "name": "Erakkath traders & mill stores",
    "node": "N133",
    "aliases": [
@@ -7266,7 +7475,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L310",
+   "id": "L304",
    "name": "commercial building",
    "node": "N069",
    "aliases": [
@@ -7276,7 +7485,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L311",
+   "id": "L305",
    "name": "zeenath",
    "node": "N114",
    "aliases": [
@@ -7286,7 +7495,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L312",
+   "id": "L306",
    "name": "Main Block",
    "node": "N140",
    "aliases": [
@@ -7296,7 +7505,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L313",
+   "id": "L307",
    "name": "School Building 2",
    "node": "N140",
    "aliases": [
@@ -7306,7 +7515,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L314",
+   "id": "L308",
    "name": "Vidyadhiraja Vidya Bhavan English Medium High School",
    "node": "N140",
    "aliases": [
@@ -7316,7 +7525,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L315",
+   "id": "L309",
    "name": "School Building 1",
    "node": "N085",
    "aliases": [
@@ -7326,7 +7535,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L316",
+   "id": "L310",
    "name": "School Building 2",
    "node": "N085",
    "aliases": [
@@ -7336,7 +7545,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L317",
+   "id": "L311",
    "name": "School Building 4",
    "node": "N085",
    "aliases": [
@@ -7346,7 +7555,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L318",
+   "id": "L312",
    "name": "School Building 3",
    "node": "N085",
    "aliases": [
@@ -7356,7 +7565,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L319",
+   "id": "L313",
    "name": "School Building 6",
    "node": "N088",
    "aliases": [
@@ -7366,7 +7575,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L320",
+   "id": "L314",
    "name": "School Building 5",
    "node": "N085",
    "aliases": [
@@ -7376,7 +7585,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L321",
+   "id": "L315",
    "name": "Islamic Higher Secondary School Aluva",
    "node": "N085",
    "aliases": [
@@ -7386,7 +7595,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L322",
+   "id": "L316",
    "name": "Main Block",
    "node": "N072",
    "aliases": [
@@ -7396,7 +7605,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L323",
+   "id": "L317",
    "name": "School Building 1",
    "node": "N072",
    "aliases": [
@@ -7406,7 +7615,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L324",
+   "id": "L318",
    "name": "School Building 2",
    "node": "N053",
    "aliases": [
@@ -7416,7 +7625,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L325",
+   "id": "L319",
    "name": "Government Technical Higher Secondary School Aluva",
    "node": "N072",
    "aliases": [
@@ -7426,7 +7635,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L326",
+   "id": "L320",
    "name": "Main Block",
    "node": "N102",
    "aliases": [
@@ -7436,7 +7645,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L327",
+   "id": "L321",
    "name": "Saint Mary's Higher Secondary School Aluva",
    "node": "N091",
    "aliases": [
@@ -7446,7 +7655,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L328",
+   "id": "L322",
    "name": "Main Block",
    "node": "N091",
    "aliases": [
@@ -7456,7 +7665,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L329",
+   "id": "L323",
    "name": "Saint Mary's Lower Primary School Aluva",
    "node": "N091",
    "aliases": [
@@ -7466,7 +7675,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L330",
+   "id": "L324",
    "name": "School Building 2",
    "node": "N010",
    "aliases": [
@@ -7476,7 +7685,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L331",
+   "id": "L325",
    "name": "School Building 3",
    "node": "N010",
    "aliases": [
@@ -7486,7 +7695,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L332",
+   "id": "L326",
    "name": "School Building 1",
    "node": "N010",
    "aliases": [
@@ -7496,7 +7705,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L333",
+   "id": "L327",
    "name": "Saint Francis Xavier's Lower Primary School Aluva",
    "node": "N010",
    "aliases": [
@@ -7506,7 +7715,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L334",
+   "id": "L328",
    "name": "Main Block",
    "node": "N010",
    "aliases": [
@@ -7516,7 +7725,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L335",
+   "id": "L329",
    "name": "School Building 1",
    "node": "N010",
    "aliases": [
@@ -7526,7 +7735,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L336",
+   "id": "L330",
    "name": "Saint Francis Higher Secondary School Aluva",
    "node": "N010",
    "aliases": [
@@ -7536,7 +7745,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L337",
+   "id": "L331",
    "name": "Main Block",
    "node": "N015",
    "aliases": [
@@ -7546,7 +7755,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L338",
+   "id": "L332",
    "name": "School Building 3",
    "node": "N034",
    "aliases": [
@@ -7556,7 +7765,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L339",
+   "id": "L333",
    "name": "School Building 4",
    "node": "N034",
    "aliases": [
@@ -7566,7 +7775,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L340",
+   "id": "L334",
    "name": "School Building 2",
    "node": "N034",
    "aliases": [
@@ -7576,7 +7785,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L341",
+   "id": "L335",
    "name": "School Building 5",
    "node": "N015",
    "aliases": [
@@ -7586,7 +7795,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L342",
+   "id": "L336",
    "name": "School Building 1",
    "node": "N034",
    "aliases": [
@@ -7596,7 +7805,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L343",
+   "id": "L337",
    "name": "Sree Narayana Dharma Paripalana Higher Secondary School Aluva",
    "node": "N034",
    "aliases": [
@@ -7606,7 +7815,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L344",
+   "id": "L338",
    "name": "Main Block",
    "node": "N051",
    "aliases": [
@@ -7616,7 +7825,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L345",
+   "id": "L339",
    "name": "School Building",
    "node": "N051",
    "aliases": [
@@ -7626,7 +7835,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L346",
+   "id": "L340",
    "name": "Jeevass Cmi Central School Aluva",
    "node": "N051",
    "aliases": [
@@ -7636,7 +7845,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L347",
+   "id": "L341",
    "name": "Main Block",
    "node": "N051",
    "aliases": [
@@ -7646,7 +7855,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L348",
+   "id": "L342",
    "name": "School Building",
    "node": "N051",
    "aliases": [
@@ -7656,7 +7865,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L349",
+   "id": "L343",
    "name": "GG Higher Secondary School Aluva",
    "node": "N051",
    "aliases": [
@@ -7666,7 +7875,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L350",
+   "id": "L344",
    "name": "School Building 1",
    "node": "N051",
    "aliases": [
@@ -7676,7 +7885,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L351",
+   "id": "L345",
    "name": "Main Block",
    "node": "N040",
    "aliases": [
@@ -7686,7 +7895,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L352",
+   "id": "L346",
    "name": "School Building 2",
    "node": "N040",
    "aliases": [
@@ -7696,7 +7905,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L353",
+   "id": "L347",
    "name": "GHAC Lower Primary School Aluva",
    "node": "N051",
    "aliases": [
@@ -7706,7 +7915,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L354",
+   "id": "L348",
    "name": "School Building 1",
    "node": "N045",
    "aliases": [
@@ -7716,7 +7925,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L355",
+   "id": "L349",
    "name": "School Building 2",
    "node": "N045",
    "aliases": [
@@ -7726,7 +7935,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L356",
+   "id": "L350",
    "name": "School Building 3",
    "node": "N045",
    "aliases": [
@@ -7736,7 +7945,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L357",
+   "id": "L351",
    "name": "CSI School Karunalayam",
    "node": "N045",
    "aliases": [
@@ -7746,7 +7955,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L358",
+   "id": "L352",
    "name": "Punjab National Bank",
    "node": "N011",
    "aliases": [
@@ -7756,7 +7965,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L359",
+   "id": "L353",
    "name": "District Hospital Aluva",
    "node": "N113",
    "aliases": [
@@ -7766,7 +7975,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L360",
+   "id": "L354",
    "name": "Village Office, Alwaye West",
    "node": "N027",
    "aliases": [
@@ -7776,7 +7985,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L361",
+   "id": "L355",
    "name": "Kerala Water Authority, Section Office, Aluva",
    "node": "N116",
    "aliases": [
@@ -7786,7 +7995,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L362",
+   "id": "L356",
    "name": "Friendship House",
    "node": "N124",
    "aliases": [
@@ -7796,7 +8005,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L363",
+   "id": "L357",
    "name": "District Hospital Aluva",
    "node": "N113",
    "aliases": [
@@ -7807,7 +8016,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L364",
+   "id": "L358",
    "name": "samskaarika kendram",
    "node": "N009",
    "aliases": [
@@ -7817,7 +8026,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L365",
+   "id": "L359",
    "name": "Anwar memorial pain and paliative care",
    "node": "N057",
    "aliases": [
@@ -7827,7 +8036,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L366",
+   "id": "L360",
    "name": "Periyar Palace Residence",
    "node": "N004",
    "aliases": [
@@ -7837,7 +8046,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L367",
+   "id": "L361",
    "name": "sree balabhadra auditorium",
    "node": "N007",
    "aliases": [
@@ -7847,17 +8056,18 @@
    "provenance": "osm"
   },
   {
-   "id": "L368",
+   "id": "L362",
    "name": "sree balabhadra auditorium ",
    "node": "N007",
    "aliases": [
-    "sree balabhadra auditorium"
+    "sree balabhadra auditorium",
+    "sree balabhadra auditorium "
    ],
    "type": "commercial",
    "provenance": "osm"
   },
   {
-   "id": "L369",
+   "id": "L363",
    "name": "Ration Shop",
    "node": "N068",
    "aliases": [
@@ -7867,7 +8077,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L370",
+   "id": "L364",
    "name": "Anganavadi",
    "node": "N009",
    "aliases": [
@@ -7877,7 +8087,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L371",
+   "id": "L365",
    "name": "Palace View",
    "node": "N020",
    "aliases": [
@@ -7887,7 +8097,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L372",
+   "id": "L366",
    "name": "Sarathy Ayurvedic clinic",
    "node": "N011",
    "aliases": [
@@ -7897,7 +8107,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L373",
+   "id": "L367",
    "name": "Shanthi Homes",
    "node": "N007",
    "aliases": [
@@ -7907,7 +8117,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L374",
+   "id": "L368",
    "name": "National Highway Authority of India",
    "node": "N003",
    "aliases": [
@@ -7917,7 +8127,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L375",
+   "id": "L369",
    "name": "office of assistant engineer pwd aluva",
    "node": "N014",
    "aliases": [
@@ -7927,7 +8137,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L376",
+   "id": "L370",
    "name": "irrigation office 2",
    "node": "N014",
    "aliases": [
@@ -7937,7 +8147,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L377",
+   "id": "L371",
    "name": "aluva irrigation office and aluva statatical office",
    "node": "N014",
    "aliases": [
@@ -7947,7 +8157,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L378",
+   "id": "L372",
    "name": "Sr Antony's College",
    "node": "N066",
    "aliases": [
@@ -7957,7 +8167,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L379",
+   "id": "L373",
    "name": "Periyar Residency",
    "node": "N037",
    "aliases": [
@@ -7967,7 +8177,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L380",
+   "id": "L374",
    "name": "Ration Shop",
    "node": "N084",
    "aliases": [
@@ -7977,7 +8187,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L381",
+   "id": "L375",
    "name": "RB Imperial Park",
    "node": "N002",
    "aliases": [
@@ -7987,7 +8197,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L382",
+   "id": "L376",
    "name": "Electrical Wing (irrigation )Sub division",
    "node": "N048",
    "aliases": [
@@ -7997,7 +8207,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L383",
+   "id": "L377",
    "name": "judicial 1 class Magistrate's Court 1",
    "node": "N139",
    "aliases": [
@@ -8007,7 +8217,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L384",
+   "id": "L378",
    "name": "PWD OFFICE",
    "node": "N133",
    "aliases": [
@@ -8017,7 +8227,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L385",
+   "id": "L379",
    "name": "DYSP Office",
    "node": "N139",
    "aliases": [
@@ -8027,7 +8237,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L386",
+   "id": "L380",
    "name": "Police Station,Aluva East",
    "node": "N133",
    "aliases": [
@@ -8037,7 +8247,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L387",
+   "id": "L381",
    "name": "Yasoram Villayil Apartments",
    "node": "N071",
    "aliases": [
@@ -8047,7 +8257,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L388",
+   "id": "L382",
    "name": "Dr. Tony's Super Speciality Eye Institute",
    "node": "N071",
    "aliases": [
@@ -8057,7 +8267,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L389",
+   "id": "L383",
    "name": "Sport On Football Turf",
    "node": "N019",
    "aliases": [
@@ -8067,7 +8277,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L390",
+   "id": "L384",
    "name": "CAR WASH",
    "node": "N070",
    "aliases": [
@@ -8077,7 +8287,7 @@
    "provenance": "osm"
   },
   {
-   "id": "L391",
+   "id": "L385",
    "name": "Thempadath Sajida Memorial Building",
    "node": "N011",
    "aliases": [
@@ -8089,10 +8299,10 @@
  ],
  "stats": {
   "land_nodes": 147,
-  "river_nodes": 11,
+  "river_nodes": 17,
   "roads": 204,
   "bridges": 8,
-  "jetties": 11,
-  "landmarks": 391
+  "jetties": 17,
+  "landmarks": 385
  }
 }
