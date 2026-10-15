@@ -41,6 +41,7 @@ Ground truth (true people counts, whether an incident exists at all) lives in `w
 | GET | `/api/simulations[/{id}]` | list / summary + current frame |
 | POST | `/api/simulations/{id}/start · pause · step · reset · speed` | playback |
 | POST/GET | `/api/simulations/{id}/events` | inject validated event / list events |
+| POST | `/api/simulations/{id}/ask` | Mission Commander `{question}` → grounded answer, checked citations, queued proposals |
 | POST | `/api/simulations/{id}/sos` | citizen SOS `{text, shared_node?, people?, needs[]}` → extraction + ingested or queued |
 | GET | `/api/simulations/{id}/sos/{receipt}` | sender status by message fingerprint |
 | GET | `/api/simulations/{id}/proposals[?status=pending]` | approval queue. Create, approve and reject through `/events` with `PROPOSE_ACTION` / `APPROVE_PROPOSAL` / `REJECT_PROPOSAL` |

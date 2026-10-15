@@ -199,7 +199,12 @@ Each work package lists its files, the change, and its exit test. WP1–WP4 are 
   - Route `/crew/:resourceId`.
 - **Tests:** an offline-queued BOARDED for a cancelled assignment is rejected, and a duplicate `event_uuid` is a no-op.
 
-### WP8: AI Mission Commander
+### WP8: AI Mission Commander ✅ built
+
+> See [COMMANDER.md](COMMANDER.md). Differences from the plan:
+> - Offline rules are the default rather than a template-only fallback.
+> - Citations are verified against the records, not just rendered.
+> - The commander reads a deep-copied snapshot so it never races the running engine.
 
 - **New `backend/app/intelligence/commander.py`:** read-only tools implemented over existing endpoints.
   - `get_incident`, `get_agent_status`, `get_decision_audit`, `get_shelter_capacity`, `get_scenario_metrics`, `compare_counterfactuals`.
