@@ -28,6 +28,8 @@ from ..simulation.scenarios import POLICIES, PRESETS, STRATEGIES, ScenarioConfig
 from ..simulation.serialize import static_world
 from ..simulation.state import ResourceStatus
 from .report import build_report, report_pdf
+from ..intelligence.extract import analyse, fingerprint
+from ..intelligence.geocode import Gazetteer
 
 app = FastAPI(title="RESQNET AI", version="1.0.0", description="Multi-agent flood rescue coordination digital twin (synthetic research simulation).")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -469,6 +471,89 @@ def agents(sim_id: str) -> dict[str, Any]:
         "bridges": [{"id": x.id, "name": x.name, "ground_ok": x.ground_ok, "clearance": x.clearance, "risk": x.risk} for x in w.edges.values() if x.kind == "bridge"],
     }
     return {"strategy": e.strategy, "resources": out_res, "shelters": shelters, "incidents": incidents, "route_agent": route_agent}
+
+
+class SosIn(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+    shared_node: Optional[str] = None  # location shared by the sender (simulated GPS pin)
+    people: Optional[int] = Field(None, ge=1, le=60)
+    needs: list[str] = Field(default_factory=list)
+
+
+def _sos_rationale(x: Any) -> str:
+    loc = {"exact": f"inferred from '{', '.join(x.location.matched)}' (node {x.location.node})", "ambiguous": f"ambiguous: {', '.join(x.location.matched)} → {', '.join(x.location.candidates)}",
+           "area": f"neighbourhood only ({', '.join(x.location.matched)})", "none": "not recognised"}[x.location.status]
+    if x.location_verified:
+        loc = f"shared by the sender (node {x.location.node})"
+    parts = [
+        f"{x.language} SOS: {x.people_count or '?'} people" + (f", needs {', '.join(x.special_needs)}" if x.special_needs else "") + (f", evidence {', '.join(x.urgency_evidence)}" if x.urgency_evidence else "") + f" → urgency {x.urgency} (rule-based).",
+        f"Location {loc}" + (f'; text says "{x.location_text}"' if x.location_text else "") + ".",
+    ]
+    if x.review_reasons:
+        parts.append("Review: " + "; ".join(x.review_reasons) + ".")
+    parts.append(f"Extractor: {x.extractor}.")
+    return " ".join(parts)
+
+
+@app.post("/api/simulations/{sim_id}/sos")
+async def submit_sos(sim_id: str, body: SosIn) -> dict[str, Any]:
+    """Citizen SOS intake (simulation). Extract → geocode → either ingest directly (only when
+    the sender shared a location and nothing needs review) or queue for dispatcher approval."""
+    s = get_session(sim_id)
+    w = s.engine.world
+    if body.shared_node is not None and (body.shared_node not in w.nodes or w.nodes[body.shared_node].kind == "river"):
+        raise err(422, "BAD_LOCATION", "shared location must be a land node")
+    gaz = Gazetteer.for_world(w)
+    x = await asyncio.get_running_loop().run_in_executor(None, lambda: analyse(body.text, gaz, shared_node=body.shared_node, form_people=body.people, form_needs=body.needs))
+    params = {
+        "text": body.text, "node": x.location.node if x.location.status == "exact" else None, "candidates": x.location.candidates[:12],
+        "people": x.people_count, "urgency": x.urgency, "lang": x.language, "needs": x.special_needs, "evidence": x.urgency_evidence,
+        "claim": x.claim, "location_source": "shared" if x.location_verified else ("inferred" if x.location.status == "exact" else "dispatcher"),
+    }
+    try:
+        if not x.requires_human_review:
+            ev = s.engine.inject("SOS_REPORT", params, "citizen")
+            routed, ref = "ingested", ev.id
+        else:
+            ev = s.engine.inject("PROPOSE_ACTION", {"action": "SOS_REPORT", "params": params, "source": "sos-intake", "rationale": _sos_rationale(x)}, "citizen")
+            routed, ref = "queued_for_dispatcher", list(s.engine.proposals)[-1]
+    except EventError as exc:
+        raise err(422, "EVENT_REJECTED", str(exc))
+    s.persist()
+    await s.broadcast("event")
+    return {"receipt": fingerprint(body.text), "routed": routed, "ref": ref, "extraction": x.model_dump(), "status": sos_status(s, fingerprint(body.text))}
+
+
+def sos_status(s: Any, receipt: str) -> dict[str, Any]:
+    """Plain-language status for the sender, looked up by the message fingerprint."""
+    e, w = s.engine, s.engine.world
+    reps = [r for r in w.reports.values() if r.fingerprint == receipt]
+    if reps:
+        inc = w.incidents.get(reps[-1].incident_id or "")
+        if inc is None:
+            return {"stage": "logged", "message": "Your message was recorded. It did not match an open request."}
+        units = sorted(a.resource_id for a in w.assignments.values() if a.incident_id == inc.id and a.status in ("COMMITTED", "LOADED"))
+        eta = min((a.eta_pickup_tick for a in w.assignments.values() if a.incident_id == inc.id and a.status == "COMMITTED"), default=None)
+        if inc.status == "RESCUED":
+            stage, msg = "rescued", f"Rescue completed: {inc.people_rescued} people taken to a shelter."
+        elif units:
+            stage, msg = "help_assigned", f"Help is assigned: {', '.join(units)}" + (f", expected in about {max(0, eta - w.tick)} min" if eta is not None else "") + "."
+        elif inc.status == "FALSE_ALARM":
+            stage, msg = "closed", "This request was closed: responders found nobody needing rescue."
+        else:
+            stage, msg = "received", "Received and in the queue for the next available unit."
+        return {"stage": stage, "message": msg, "incident": inc.id, "incident_status": inc.status, "reports": len(reps), "units": units, "tick": w.tick}
+    props = [p for p in e.proposals.values() if p["action"] == "SOS_REPORT" and fingerprint(p["params"].get("text", "")) == receipt]
+    if props:
+        p = props[-1]
+        msg = {"PENDING": "Received. A dispatcher is confirming the location before sending help.", "REJECTED": "A dispatcher reviewed this message and did not open a rescue request.", "EXPIRED": "Received, but not yet confirmed. Please send your location again."}.get(p["status"], "Received.")
+        return {"stage": "awaiting_dispatcher" if p["status"] == "PENDING" else p["status"].lower(), "message": msg, "proposal": p["id"], "tick": w.tick}
+    return {"stage": "unknown", "message": "No message with this receipt in the current simulation."}
+
+
+@app.get("/api/simulations/{sim_id}/sos/{receipt}")
+def get_sos_status(sim_id: str, receipt: str) -> dict[str, Any]:
+    return sos_status(get_session(sim_id), receipt)
 
 
 @app.get("/api/simulations/{sim_id}/proposals")

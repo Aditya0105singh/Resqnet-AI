@@ -8,3 +8,4 @@ reportlab>=4.0
 httpx>=0.27
 pytest>=8.0
 hypothesis>=6.100
+anthropic>=1.14  # optional: Claude SOS extractor (RESQNET_SOS_LLM=on) and its mocked-transport tests

@@ -18,14 +18,58 @@ export function describe(p: Proposal) {
       return `Release ${x.resource_id} for reassignment`;
     case "RESOLVE_DISPUTE":
       return `${x.decision} disputed ${x.incident_id}`;
+    case "SOS_REPORT":
+      return `Open citizen SOS${x.node ? ` at ${x.node}` : ": location needed"}`;
     default:
       return p.action;
   }
 }
 
+function SosPlacement({ p }: { p: Proposal }) {
+  const inject = useSim((s) => s.inject);
+  const world = useSim((s) => s.world);
+  const x = p.params as { text: string; node: string | null; candidates: string[]; people: number | null; urgency: number; lang: string; location_source: string };
+  const [node, setNode] = useState<string>(x.node ?? "");
+  const land = (world?.nodes ?? []).filter((n) => n.kind === "land" || n.kind === "shelter");
+  const cands = new Set(x.candidates ?? []);
+  return (
+    <div className="mt-2 space-y-2">
+      <blockquote className="rounded-md border-l-2 border-line-2 bg-black/[0.02] px-2.5 py-1.5 text-[12.5px] leading-relaxed">{x.text}</blockquote>
+      <div className="mono text-[11px] text-mute">
+        {x.lang} · {x.people ?? "?"} people · urgency {x.urgency} · location {x.location_source}
+      </div>
+      <div className="flex gap-1.5">
+        <select aria-label="Place SOS" className="h-8 min-w-0 flex-1 rounded-md border border-line-2 bg-white px-2 text-[12px]" value={node} onChange={(e) => setNode(e.target.value)}>
+          <option value="">Place on map…</option>
+          {cands.size > 0 && (
+            <optgroup label="candidates from the message">
+              {land.filter((n) => cands.has(n.id)).map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.id} {n.label}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          <optgroup label="all land nodes">
+            {land.filter((n) => !cands.has(n.id)).map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.id} {n.label}
+              </option>
+            ))}
+          </optgroup>
+        </select>
+        <Button size="sm" variant="solid" icon={<Check className="size-3.5" />} disabled={!node} onClick={() => inject("APPROVE_PROPOSAL", { proposal_id: p.id, set: node === x.node ? {} : { node } }, `${p.id}: SOS placed at ${node}`)}>
+          Place & approve
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ProposalCard({ p }: { p: Proposal }) {
   const inject = useSim((s) => s.inject);
   const [open, setOpen] = useState(false);
+  const sos = p.action === "SOS_REPORT";
   const pending = p.status === "PENDING";
   const failed = p.preview.checks.filter((c) => !c.passed);
   return (
@@ -44,7 +88,7 @@ function ProposalCard({ p }: { p: Proposal }) {
       {pending && (
         <div className="mt-2 rounded-md bg-black/[0.03] px-2.5 py-2 text-[12px]">
           <div className="flex items-center gap-1.5">
-            <Badge tone={p.preview.ok ? "ok" : "crit"}>{p.preview.ok ? "preview passes" : "preview fails"}</Badge>
+            {sos && !(p.params as any).node ? <Badge tone="warn">needs location</Badge> : <Badge tone={p.preview.ok ? "ok" : "crit"}>{p.preview.ok ? "preview passes" : "preview fails"}</Badge>}
             <span className="mono text-[10.5px] text-mute">checked on a copy at t={p.preview.tick}</span>
           </div>
           {p.preview.plan && (
@@ -52,7 +96,7 @@ function ProposalCard({ p }: { p: Proposal }) {
               pickup {fmt(p.preview.plan.eta_pickup)} min · {fmt(p.preview.plan.eta_total)} min to {p.preview.plan.shelter} · {p.preview.plan.people} people · cost {fmt(p.preview.plan.cost, 3)}
             </div>
           )}
-          {!p.preview.ok && <div className="mt-1.5 text-crit">{p.preview.summary}</div>}
+          {!p.preview.ok && <div className={cx("mt-1.5", sos && !(p.params as any).node ? "text-mute" : "text-crit")}>{sos && !(p.params as any).node ? "Choose where this SOS is before it can be opened." : p.preview.summary}</div>}
           {p.preview.checks.length > 0 && (
             <button className="mt-1.5 flex items-center gap-1 text-[11px] text-mute hover:text-ink" onClick={() => setOpen(!open)}>
               {open ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
@@ -71,11 +115,14 @@ function ProposalCard({ p }: { p: Proposal }) {
         </div>
       )}
       {!pending && p.outcome && <p className="mono mt-2 text-[11px] text-mute">{p.outcome}</p>}
+      {pending && sos && <SosPlacement p={p} />}
       {pending && (
         <div className="mt-2.5 flex gap-1.5">
-          <Button size="sm" variant="solid" icon={<Check className="size-3.5" />} disabled={!p.preview.ok} onClick={() => inject("APPROVE_PROPOSAL", { proposal_id: p.id }, `${p.id} approved`)}>
-            Approve
-          </Button>
+          {!sos && (
+            <Button size="sm" variant="solid" icon={<Check className="size-3.5" />} disabled={!p.preview.ok} onClick={() => inject("APPROVE_PROPOSAL", { proposal_id: p.id }, `${p.id} approved`)}>
+              Approve
+            </Button>
+          )}
           <Button size="sm" variant="ghost" icon={<X className="size-3.5" />} onClick={() => inject("REJECT_PROPOSAL", { proposal_id: p.id, reason: "rejected by dispatcher" }, `${p.id} rejected`)}>
             Reject
           </Button>

@@ -1,0 +1,30 @@
+{
+  "name": "Riverbend gazetteer",
+  "synthetic": true,
+  "note": "Fictional landmarks for the synthetic city of Riverbend. Not real places. Aliases in English, Hindi and Malayalam are used to resolve landmark mentions in SOS text; a generic word shared by several landmarks resolves to all of them (ambiguous), never to one guess.",
+  "landmarks": [
+    {"id": "school-nb", "name": "Northbank Community School", "node": "N22", "aliases": ["northbank community school", "community school", "northbank school", "नॉर्थबैंक स्कूल", "कम्युनिटी स्कूल", "നോർത്ത്ബാങ്ക് സ്കൂൾ", "കമ്മ്യൂണിറ്റി സ്കൂൾ"]},
+    {"id": "hall-hc", "name": "Hillcrest Sports Hall", "node": "N26", "aliases": ["hillcrest sports hall", "sports hall", "स्पोर्ट्स हॉल", "സ്പോർട്സ് ഹാൾ"]},
+    {"id": "arena-rs", "name": "Riverside Civic Arena", "node": "N34", "aliases": ["riverside civic arena", "civic arena", "सिविक एरीना", "सिविक एरिना", "സിവിക് അരീന"]},
+    {"id": "church-nb", "name": "St. Thomas Church", "node": "N12", "aliases": ["st. thomas church", "st thomas church", "church", "चर्च", "गिरजाघर", "സെന്റ് തോമസ് പള്ളി", "പള്ളി"]},
+    {"id": "mosque-em", "name": "Eastmere Mosque", "node": "N56", "aliases": ["eastmere mosque", "mosque", "masjid", "मस्जिद", "മസ്ജിദ്", "പള്ളി"]},
+    {"id": "temple-rs", "name": "Riverside Shiva Temple", "node": "N44", "aliases": ["shiva temple", "temple", "मंदिर", "शिव मंदिर", "ക്ഷേത്രം", "അമ്പലം", "ശിവക്ഷേത്രം"]},
+    {"id": "market-oq", "name": "Old Quarter Market", "node": "N41", "aliases": ["old quarter market", "market", "बाज़ार", "बाजार", "मार्केट", "ചന്ത", "മാർക്കറ്റ്"]},
+    {"id": "busstand-em", "name": "Eastmere Bus Stand", "node": "N46", "aliases": ["eastmere bus stand", "bus stand", "bus station", "बस स्टैंड", "बस अड्डा", "ബസ് സ്റ്റാൻഡ്", "ബസ് സ്റ്റാന്റ്"]},
+    {"id": "tank-hc", "name": "Hillcrest Water Tank", "node": "N15", "aliases": ["hillcrest water tank", "water tank", "पानी की टंकी", "वाटर टैंक", "വാട്ടർ ടാങ്ക്", "ജലസംഭരണി"]},
+    {"id": "po-nb", "name": "Northbank Post Office", "node": "N02", "aliases": ["northbank post office", "post office", "डाकघर", "पोस्ट ऑफिस", "पोस्ट ऑफ़िस", "പോസ്റ്റ് ഓഫീസ്"]},
+    {"id": "clinic-rs", "name": "Riverside Health Centre", "node": "N33", "aliases": ["riverside health centre", "health centre", "health center", "hospital", "clinic", "अस्पताल", "स्वास्थ्य केंद्र", "ആശുപത്രി", "ഹെൽത്ത് സെന്റർ"]}
+  ],
+  "bridges": [
+    {"edge": "BR1", "aliases": ["mill bridge", "मिल ब्रिज", "मिल पुल", "മിൽ പാലം", "മിൽ ബ്രിഡ്ജ്"]},
+    {"edge": "BR2", "aliases": ["central bridge", "सेंट्रल ब्रिज", "सेंट्रल पुल", "സെൻട്രൽ പാലം", "സെൻട്രൽ ബ്രിഡ്ജ്"]},
+    {"edge": "BR3", "aliases": ["eastgate bridge", "ईस्टगेट ब्रिज", "ईस्टगेट पुल", "ഈസ്റ്റ്ഗേറ്റ് പാലം", "ഈസ്റ്റ്ഗേറ്റ് ബ്രിഡ്ജ്"]}
+  ],
+  "areas": [
+    {"neighbourhood": "NB", "aliases": ["northbank", "नॉर्थबैंक", "നോർത്ത്ബാങ്ക്"]},
+    {"neighbourhood": "HC", "aliases": ["hillcrest", "हिलक्रेस्ट", "ഹിൽക്രെസ്റ്റ്"]},
+    {"neighbourhood": "OQ", "aliases": ["old quarter", "ओल्ड क्वार्टर", "पुराना मोहल्ला", "ഓൾഡ് ക്വാർട്ടർ"]},
+    {"neighbourhood": "RS", "aliases": ["riverside", "रिवरसाइड", "റിവർസൈഡ്"]},
+    {"neighbourhood": "EM", "aliases": ["eastmere", "ईस्टमियर", "ഈസ്റ്റ്മിയർ"]}
+  ]
+}

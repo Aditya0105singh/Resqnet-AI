@@ -170,7 +170,12 @@ Each work package lists its files, the change, and its exit test. WP1–WP4 are 
   - determinism and replay pass on the Aluva scenario;
   - the existing Riverbend tests are unchanged.
 
-### WP6: Citizen SOS intake + LLM extraction
+### WP6: Citizen SOS intake + LLM extraction ✅ built
+
+> See [SOS_INTAKE.md](SOS_INTAKE.md). Differences from the plan:
+> - Hindi and Malayalam use native script; the eval set has 54 cases rather than about 60.
+> - Unlocated messages go to the WP4 queue as `SOS_REPORT` proposals that the dispatcher places with `set: {node}`.
+> - The LLM path is tested with a mocked transport but not yet evaluated against the live model.
 
 - **New `backend/app/intelligence/`:**
   - `schema.py` holds a Pydantic `SOSExtraction`. Its fields are exactly the blueprint JSON: `people_count`, `special_needs`, `urgency_evidence`, `location_text`, `coordinates|null`, `location_verified`, `requires_human_review`.

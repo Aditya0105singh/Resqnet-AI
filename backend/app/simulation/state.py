@@ -131,6 +131,8 @@ class IncidentReport:
     fingerprint: str = ""
     # hidden ground truth: the report this one was copied from (evaluation only, never read by fusion)
     derived_from: str = ""
+    text: str = ""  # original SOS text, when the report came from a citizen message
+    lang: str = ""
 
 
 @dataclass

@@ -9,6 +9,7 @@ import type { Strategy } from "../types";
 const NAV = [
   { to: "/judge", label: "Judge Mode" },
   { to: "/command", label: "Command" },
+  { to: "/sos", label: "Citizen SOS" },
   { to: "/dispatch", label: "Fleet" },
   { to: "/agents", label: "Negotiation" },
   { to: "/scenarios", label: "Chaos Lab" },
