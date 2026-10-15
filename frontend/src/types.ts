@@ -51,6 +51,20 @@ export interface Resource {
   speed_kmh: number;
   home_node: string;
 }
+export interface Proposal {
+  id: string;
+  tick: number;
+  expires: number;
+  action: string;
+  params: Record<string, unknown>;
+  source: string;
+  rationale: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+  preview: { ok: boolean; tick: number; summary: string; checks: { name: string; passed: boolean; detail: string }[]; plan?: { resource: string; shelter: string; eta_pickup: number; eta_total: number; cost: number; people: number } };
+  decided_tick: number | null;
+  decided_by: string | null;
+  outcome: string;
+}
 export interface Incident {
   id: string;
   node: string;
@@ -150,6 +164,7 @@ export interface Metrics {
 }
 export interface Frame {
   coordinator?: {available: boolean; restores_at: number};
+  proposals?: Proposal[];
   network?: {partitions: {id: string; members: string[]; start: number; until: number}[]; transport: Record<string, number> | null; latency: number; loss: number};
   tick: number;
   version: number;

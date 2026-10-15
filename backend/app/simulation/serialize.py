@@ -135,6 +135,7 @@ def frame(engine: Any) -> dict[str, Any]:
         "river_level": round(river_level(w, engine.cfg.flood_severity, engine.cfg.flood_peak_tick), 2),
         "flood_offset": w.flood_offset,
         "coordinator": {"available": w.tick >= w.coordinator_down_until, "restores_at": w.coordinator_down_until},
+        "proposals": [p for p in engine.proposals.values() if p["status"] == "PENDING"] + [p for p in engine.proposals.values() if p["status"] != "PENDING"][-8:],
         "network": {
             "partitions": [p for p in w.partitions if p["start"] <= w.tick <= p["until"]],
             "transport": dict(engine.mas.bus.stats) if engine.mas else None,

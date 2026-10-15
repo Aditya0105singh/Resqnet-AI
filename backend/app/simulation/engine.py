@@ -80,7 +80,15 @@ EVENT_TYPES = (
     "SET_POLICY",
     "NETWORK_PARTITION",
     "RESOLVE_DISPUTE",
+    "PROPOSE_ACTION",
+    "APPROVE_PROPOSAL",
+    "REJECT_PROPOSAL",
 )
+
+# actions that may be proposed for human approval (by the recommender, SOS intake, AI commander)
+PROPOSABLE = ("MANUAL_ASSIGN", "CANCEL_ASSIGNMENT", "REQUEST_REASSIGN", "RESOLVE_DISPUTE")
+PROPOSAL_TTL = 15  # ticks a proposal stays pending before it expires
+DRY_RUN_DETACH = ("frames", "rounds", "audit_log", "decisions", "metric_series", "hashes", "safety_log", "events", "injected", "listeners", "route_ghosts", "uncovered_series", "proposals")
 
 RELIABILITY = {"resident": 0.6, "sensor": 0.75, "responder": 0.9}
 
@@ -133,6 +141,7 @@ class Engine:
         self.listeners: list[Callable[[str, Any], None]] = []
         self.compute_ms = 0.0
         self.mas: Any = None  # message-passing agent state (created on first use)
+        self.proposals: dict[str, dict[str, Any]] = {}  # human-approval queue
         # initial state (tick 0): flood picture + reports already known at t=0
         update_flood(self.world, cfg.flood_severity, cfg.flood_peak_tick)
         snapshot_traversability(self.world)
@@ -474,6 +483,7 @@ class Engine:
         self._event_seq += 1
         self.injected.append({"tick": self.world.tick, "seq": self._event_seq, "type": type_, "params": params, "source": source})
         self._microstep(f"event {ev.id} {type_}")
+        self._repreview()  # any event can invalidate (or validate) a pending proposal
         self._update_disruptions()
         self._snapshot()
         return ev
@@ -697,6 +707,108 @@ class Engine:
             "verify": f"{inc.id}: dispatcher ordered a verification visit",
         }[decision])
 
+    # ================================================================ approval queue
+    def dry_run(self, type_: str, params: dict[str, Any]) -> dict[str, Any]:
+        """Preview an action by applying it to a throwaway copy of the engine: the exact
+        validation and safety code path that approval will run, with no side effects."""
+        saved = {k: getattr(self, k) for k in DRY_RUN_DETACH}
+        try:
+            for k, v in saved.items():
+                setattr(self, k, type(v)())
+            clone = copy.deepcopy(self)
+        finally:
+            for k, v in saved.items():
+                setattr(self, k, v)
+        try:
+            ev = clone._apply_event(type_, dict(params), "dry-run")
+        except EventError as exc:
+            checks = next((d.get("safety_checks") for d in reversed(list(clone.decisions.values())) if d.get("safety_checks")), [])
+            return {"ok": False, "tick": self.world.tick, "summary": f"would be rejected: {exc}", "checks": checks}
+        dec = next(iter(reversed(list(clone.decisions.values()))), None)
+        out = {"ok": True, "tick": self.world.tick, "summary": "; ".join(ev.effects) or "no effect", "checks": (dec or {}).get("safety_checks", [])}
+        if dec and dec.get("selected"):
+            sel = dec["selected"]
+            out["plan"] = {"resource": sel["resource_id"], "shelter": dec.get("shelter"), "eta_pickup": sel.get("eta_pickup"), "eta_total": sel.get("eta_total"), "cost": sel.get("cost"), "people": sel.get("people")}
+        return out
+
+    def _recommend_unit(self, inc: Incident) -> tuple[str, str]:
+        """Cheapest feasible idle unit for an incident, on authoritative state (the same
+        cost function every strategy uses). Returns (resource_id, rationale)."""
+        w = self.world
+        view = common.incident_view(w, inc)
+        offers, waits = common.shelter_offers(w), common.neighbourhood_waits(w)
+        cands = [common.evaluate(w, self.cfg, r, view, offers, waits, None, {}) for r in common.available_resources(w)]
+        feas = sorted((c for c in cands if c.feasible), key=lambda c: (c.cost, c.resource_id))
+        if not feas:
+            why = "; ".join(f"{c.resource_id}: {c.reason}" for c in cands[:4]) or "no idle, connected unit"
+            raise EventError(f"no feasible unit for {inc.id} ({why})")
+        best = feas[0]
+        rationale = f"{best.resource_id} has the lowest cost {best.cost:.3f} of {len(feas)} feasible unit(s): pickup in {best.eta_pickup:.0f} min, {best.eta_dropoff:.0f} min door-to-shelter via {best.shelter_options[0][0]}"
+        if len(feas) > 1:
+            rationale += f"; runner-up {feas[1].resource_id} at cost {feas[1].cost:.3f}"
+        return best.resource_id, rationale
+
+    def _ev_propose_action(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
+        action = p.get("action")
+        if action not in PROPOSABLE:
+            raise EventError(f"action must be one of {list(PROPOSABLE)}")
+        params = dict(p.get("params") or {})
+        source = str(p.get("source") or "dispatcher")[:40]
+        rationale = str(p.get("rationale") or "")[:600]
+        if action == "MANUAL_ASSIGN" and params.get("resource_id") in (None, "", "auto"):
+            inc = self._need(params, "incident_id", self.world.incidents, "incident")
+            params["resource_id"], rationale = self._recommend_unit(inc)
+        preview = self.dry_run(action, params)
+        pid = f"PR-{len(self.proposals) + 1:03d}"
+        self.proposals[pid] = {
+            "id": pid, "tick": self.world.tick, "expires": self.world.tick + PROPOSAL_TTL, "action": action, "params": params,
+            "source": source, "rationale": rationale, "status": "PENDING", "preview": preview,
+            "decided_tick": None, "decided_by": None, "outcome": "",
+        }
+        ev.effects.append(f"{pid} proposed by {source}: {action} {params} — preview {'OK' if preview['ok'] else 'FAILS'} ({preview['summary']}); awaiting dispatcher approval")
+
+    def _pending(self, p: dict[str, Any]) -> dict[str, Any]:
+        pr = self.proposals.get(p.get("proposal_id") or "")
+        if pr is None:
+            raise EventError(f"unknown proposal '{p.get('proposal_id')}'")
+        if pr["status"] != "PENDING":
+            raise EventError(f"{pr['id']} is already {pr['status'].lower()}")
+        return pr
+
+    def _ev_approve_proposal(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
+        pr = self._pending(p)
+        by = str(p.get("by") or "dispatcher")[:40]
+        if by.lower().startswith("ai"):
+            raise EventError("an AI assistant can propose actions but cannot approve them")
+        check = self.dry_run(pr["action"], pr["params"])  # re-validate against the state *now*
+        if not check["ok"]:
+            pr["preview"] = check
+            raise EventError(f"{pr['id']} no longer valid: {check['summary']}")
+        sub = self._apply_event(pr["action"], pr["params"], f"approved:{pr['id']}")
+        pr.update(status="APPROVED", decided_tick=self.world.tick, decided_by=by, outcome="; ".join(sub.effects))
+        ev.effects.append(f"{pr['id']} approved by {by}: {pr['outcome']}")
+
+    def _ev_reject_proposal(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
+        pr = self._pending(p)
+        by = str(p.get("by") or "dispatcher")[:40]
+        pr.update(status="REJECTED", decided_tick=self.world.tick, decided_by=by, outcome=str(p.get("reason") or "rejected by dispatcher")[:300])
+        ev.effects.append(f"{pr['id']} rejected by {by}: {pr['outcome']}")
+
+    def _refresh_proposals(self) -> None:
+        """Once per tick: expire stale proposals and re-preview the rest against the new state."""
+        for pr in self.proposals.values():
+            if pr["status"] != "PENDING":
+                continue
+            if self.world.tick > pr["expires"]:
+                pr.update(status="EXPIRED", decided_tick=self.world.tick, outcome=f"not decided within {PROPOSAL_TTL} min")
+                self.audit("event", f"{pr['id']} expired without a decision", {"proposal": pr["id"]}, "info")
+        self._repreview()
+
+    def _repreview(self) -> None:
+        for pr in self.proposals.values():
+            if pr["status"] == "PENDING":
+                pr["preview"] = self.dry_run(pr["action"], pr["params"])
+
     def _ev_manual_assign(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
         w = self.world
         res: RescueResource = self._need(p, "resource_id", w.resources, "resource")
@@ -889,6 +1001,7 @@ class Engine:
                 self.audit("safety", f"INVARIANT VIOLATION {v}", {}, "critical")
         self._update_disruptions()
         self._update_outages()
+        self._refresh_proposals()
         self._publish_all()
         w.bump()
         self.compute_ms += (time.perf_counter() - t0) * 1000
