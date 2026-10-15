@@ -19,7 +19,9 @@ const NB = [
 const SCHED_TYPES = ["TRIPLE_FAILURE", "CLOSE_EDGE", "RESOURCE_FAILURE", "SHELTER_CAPACITY", "FLOOD_SURGE", "COMM_BLACKOUT"];
 
 export default function Scenarios() {
-  const { sim, frame, createSim, inject } = useSim();
+  const { sim, frame, world, createSim, inject } = useSim();
+  const areas: string[][] = world?.neighbourhoods?.length ? world.neighbourhoods.map((z) => [z.id, z.name]) : NB;
+  const bridgeIds = (world?.edges ?? []).filter((e) => e.kind === "bridge").map((e) => e.id);
   const nav = useNavigate();
   const [presets, setPresets] = useState<ScenarioConfig[]>([]);
   const [base, setBase] = useState("triple_failure");
@@ -56,7 +58,9 @@ export default function Scenarios() {
     void description;
     void weights;
     try {
-      await createSim(base, strategy, { ...rest, name });
+      // keep the city of the current run (the presets themselves default to Riverbend)
+      const geography = sim?.config?.geography;
+      await createSim(base, strategy, { ...rest, name, ...(geography && geography !== "riverbend" ? { geography } : {}) });
       nav("/command");
     } catch {
       /* toast already shown */
@@ -66,8 +70,8 @@ export default function Scenarios() {
   };
 
   const targets: Record<string, string[]> = {
-    CLOSE_EDGE: ["BR1", "BR2", "BR3"],
-    OPEN_EDGE: ["BR1", "BR2", "BR3"],
+    CLOSE_EDGE: bridgeIds.length ? bridgeIds : ["BR1", "BR2", "BR3"],
+    OPEN_EDGE: bridgeIds.length ? bridgeIds : ["BR1", "BR2", "BR3"],
     RESOURCE_FAILURE: frame?.resources.map((r) => r.id) ?? [],
     RESOURCE_RESTORE: frame?.resources.filter((r) => r.status === "DISABLED").map((r) => r.id) ?? [],
     COMM_BLACKOUT: frame?.resources.map((r) => r.id) ?? [],
@@ -137,7 +141,7 @@ export default function Scenarios() {
               <div>
                 <div className="label mb-2">neighbourhood priority weights (1.0 = neutral)</div>
                 <div className="grid gap-x-5 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">
-                  {NB.map(([id, name]) => (
+                  {areas.map(([id, name]) => (
                     <Slider key={id} label={name} v={cfg.neighbourhood_priority[id] ?? 1} min={0.5} max={3} step={0.1} on={(v) => set("neighbourhood_priority", { ...cfg.neighbourhood_priority, [id]: v })} fmt={(v) => `${v.toFixed(1)}×`} />
                   ))}
                 </div>

@@ -7,9 +7,11 @@ import { CityMap } from "../components/CityMap";
 import { Badge, Button, cx } from "../components/ui";
 
 const HINDI_SOS = "हम लोग नदी के पास दूसरी मंज़िल पर फँसे हैं। यहाँ 5 लोग हैं, एक बुज़ुर्ग हैं। पानी बढ़ रहा है। जल्दी मदद भेजिए।";
-const PLACE_AT = "N43"; // Riverside, where the demo's dispatcher "confirms" the caller is
+// where the demo's dispatcher "confirms" the caller is: Manapuram Mahadeva Temple by the Periyar
+// on the Aluva map, or Riverside on the synthetic fallback city
+const PLACE = { aluva: { node: "N001", name: "Manapuram Mahadeva Temple, by the Periyar" }, riverbend: { node: "N43", name: "Riverside" } };
 
-type Ctx = { sim: string; proposal?: string; incident?: string; unit?: string; decision?: string };
+type Ctx = { sim: string; city: keyof typeof PLACE; proposal?: string; incident?: string; unit?: string; decision?: string; shelter?: string };
 type Result = { ok: boolean; lines: ReactNode[] };
 type Step = { title: string; say: string; run: (ctx: Ctx, tools: Tools) => Promise<Result> };
 type Tools = { step: (n: number) => Promise<void>; openDecision: (id: string) => void };
@@ -19,7 +21,7 @@ const ev = (sim: string, type: string, params: Record<string, unknown>) => api.p
 const STEPS: Step[] = [
   {
     title: "A flood is unfolding",
-    say: "A flood is rising in a test city. Every boat, rescue team and shelter is an independent agent that negotiates rescues in real time, and every plan passes a safety check.",
+    say: "A flood is rising in Aluva, Kerala, on real OpenStreetMap roads, bridges and the Periyar. Every boat, rescue team and shelter is an independent agent that negotiates rescues in real time, and every plan passes a safety check.",
     run: async (ctx, t) => {
       await t.step(6);
       const f = (await api.get<any>(`/api/simulations/${ctx.sim}`)).frame;
@@ -46,13 +48,14 @@ const STEPS: Step[] = [
   },
   {
     title: "The dispatcher places it and approves",
-    say: "A dispatcher marks where the people are and approves. Approving re-checks safety against the situation right now.",
+    say: "The dispatcher calls back and learns they are at the Manappuram temple by the river, marks it on the map and approves. Approving re-checks safety against the situation right now.",
     run: async (ctx) => {
       if (!ctx.proposal) return { ok: false, lines: ["No pending SOS proposal (run step 2 first)."] };
-      const r = await ev(ctx.sim, "APPROVE_PROPOSAL", { proposal_id: ctx.proposal, set: { node: PLACE_AT } });
+      const place = PLACE[ctx.city];
+      const r = await ev(ctx.sim, "APPROVE_PROPOSAL", { proposal_id: ctx.proposal, set: { node: place.node } });
       const m = (r.event.effects[0] as string).match(/I-\d{3}/);
       ctx.incident = m?.[0];
-      return { ok: !!ctx.incident, lines: [r.event.effects[0]] };
+      return { ok: !!ctx.incident, lines: [`Placed at ${place.name}.`, r.event.effects[0]] };
     },
   },
   {
@@ -70,6 +73,7 @@ const STEPS: Step[] = [
       if (!d) return { ok: false, lines: [`No decision for ${ctx.incident} yet; advance the clock and retry.`] };
       ctx.decision = d.id;
       ctx.unit = d.selected?.resource_id;
+      ctx.shelter = d.shelter ?? undefined;
       const feasible = d.candidates.filter((c: any) => c.feasible).length;
       return {
         ok: d.outcome === "COMMITTED",
@@ -82,17 +86,30 @@ const STEPS: Step[] = [
   },
   {
     title: "Break it three ways at once",
-    say: "Now three things fail at once: a bridge in use collapses, a busy boat breaks down and a shelter fills up. Affected rescues are cancelled and re-negotiated, safely.",
+    say: "Now three things fail at the same minute: the shelter our rescue is heading to fills up, a bridge collapses, and the team on its way to the temple breaks down. The rescue is re-negotiated with another unit, safely.",
     run: async (ctx, t) => {
-      const r = await ev(ctx.sim, "TRIPLE_FAILURE", {});
-      await t.step(2);
+      if (!ctx.unit) return { ok: false, lines: ["Run step 4 first."] };
+      const before = (await api.get<any>(`/api/simulations/${ctx.sim}`)).frame;
+      const world = useSim.getState().world;
+      const bridge = (world?.edges ?? []).find((e) => e.kind === "bridge" && before.edges[e.id] && !before.edges[e.id][2]);
+      const effects: string[] = [];
+      const shelter = ctx.shelter ?? [...before.shelters].sort((a: any, b: any) => b.reserved - a.reserved)[0]?.id;
+      if (shelter) effects.push(...(await ev(ctx.sim, "SHELTER_CAPACITY", { shelter_id: shelter, capacity: "occupancy", reason: "overflow" })).event.effects);
+      if (bridge) effects.push(...(await ev(ctx.sim, "CLOSE_EDGE", { edge_id: bridge.id, reason: "bridge collapse" })).event.effects);
+      effects.push(...(await ev(ctx.sim, "RESOURCE_FAILURE", { resource_id: ctx.unit, reason: "engine failure" })).event.effects);
+      await t.step(3);
       const f = (await api.get<any>(`/api/simulations/${ctx.sim}`)).frame;
-      return { ok: true, lines: [...(r.event.effects as string[]).map((e, i) => <span key={i} className="block">{e}</span>), `Two minutes later: ${f.metrics.reassignments} reassignment(s), ${f.metrics.invariant_violations} safety violations.`] };
+      const inc = f.incidents.find((i: any) => i.id === ctx.incident);
+      const now = inc?.status === "RESCUED" ? "already rescued" : inc?.assigned?.length ? `now handled by ${inc.assigned.join(", ")}` : "waiting for the next round";
+      return {
+        ok: f.metrics.invariant_violations === 0,
+        lines: [...effects.map((e, i) => <span key={i} className="block">{e}</span>), `Three minutes later: ${ctx.incident} is ${now}; ${f.metrics.reassignments} reassignment(s), ${f.metrics.invariant_violations} safety violations.`],
+      };
     },
   },
   {
     title: "The crew sees its updated mission",
-    say: "The boat crew sees its new mission on a phone. Every tap is checked, and updates made without signal are synced safely when signal returns.",
+    say: "The crew of the unit that took over sees its new mission on a phone. Every tap is checked, and updates made without signal are synced safely when signal returns.",
     run: async (ctx) => {
       const f = (await api.get<any>(`/api/simulations/${ctx.sim}`)).frame;
       const live = f.resources.filter((r: any) => r.assignment_id && r.status !== "DISABLED");
@@ -119,7 +136,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Every claim is measured",
-    say: "Every claim is measured over 10 paired runs with 95% confidence ranges. On a healthy network a central optimiser is as good or better. When it fails, the agents keep rescuing people.",
+    say: "Every claim is measured over 10 paired runs with 95% confidence ranges (benchmarks run on the synthetic test city, Riverbend). On a healthy network a central optimiser is as good or better. When it fails, the agents keep rescuing people.",
     run: async () => {
       const ev10 = await api.get<any>("/api/evaluation");
       const p = ev10.suites.resilience.scenarios.coordinator_outage.paired["decentralized-centralized"];
@@ -130,6 +147,7 @@ const STEPS: Step[] = [
         lines: [
           `Coordinator outage, multi-agent − centralised: service rate ${ci(p.service_rate)}, mean time to service ${ci(p.mean_time_to_service, 1)} min.`,
           `Healthy network, same comparison: mean time to service ${ci(q.mean_time_to_service, 1)} min (centralised is faster).`,
+          "Benchmarks use the synthetic Riverbend city with the same seeds for every approach.",
           <span key="l">
             <Link className="text-info underline" to="/arena">Arena</Link> · <Link className="text-info underline" to="/research">Evidence & assumptions</Link>
           </span>,
@@ -168,9 +186,11 @@ export default function Demo() {
     setResults(STEPS.map(() => null));
     // full fleet (the scenario's maximum) so the demo SOS is served within minutes; the
     // default fleet is busier and an urgent SOS can wait 15–30 min, which Arena reports
-    await createSim("normal", "decentralized", { seed: 7, boats: 7, ground_units: 6 });
+    const geos = await api.get<{ geographies: { id: string }[] }>("/api/geographies").catch(() => ({ geographies: [] }));
+    const city: Ctx["city"] = geos.geographies.some((g) => g.id === "aluva") ? "aluva" : "riverbend";
+    await createSim("normal", "decentralized", { seed: 7, boats: 7, ground_units: 6, ...(city === "aluva" ? { geography: "aluva" } : {}) });
     const sim = useSim.getState().sim!;
-    const c = { sim: sim.id };
+    const c: Ctx = { sim: sim.id, city };
     setCtx(c);
     setRunning(null);
     return c;
@@ -247,7 +267,7 @@ export default function Demo() {
           )}
         </div>
       </div>
-      <p className="text-[12px] text-mute">Research simulation in a test city (the demo uses a fixed seed and the full fleet). Assumptions, such as the coordinator outage leaving peer communication intact, are listed on the <Link className="underline" to="/research">evidence page</Link>.</p>
+      <p className="text-[12px] text-mute">Research simulation on real Aluva roads from OpenStreetMap; the flood and SOS messages are simulated (fixed seed, full fleet). Assumptions, such as the coordinator outage leaving peer communication intact, are listed on the <Link className="underline" to="/research">evidence page</Link>.</p>
     </div>
   );
 }
