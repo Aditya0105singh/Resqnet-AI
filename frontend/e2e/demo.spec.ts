@@ -11,11 +11,11 @@ test("guided demo runs end to end on the real engine", async ({ page }) => {
   // what each step actually returned
   await expect(page.getByText(/Understood: 5 people, needs elderly/)).toBeVisible();
   await expect(page.getByText(/not recognised, so nothing is guessed/)).toBeVisible();
-  await expect(page.getByText("Placed at Manapuram Mahadeva Temple, by the Periyar.")).toBeVisible();
-  await expect(page.getByText(/citizen SOS RPT-\d+ at N001/)).toBeVisible();
+  await expect(page.getByText("Placed at Aluva Market, by the Periyar.")).toBeVisible();
+  await expect(page.getByText(/citizen SOS RPT-\d+ at N34/)).toBeVisible();
   await expect(page.getByText(/committed, with [BG]\d+ chosen from \d+ feasible bid/)).toBeVisible();
   await expect(page.getByText(/disabled: engine failure/).first()).toBeVisible();
-  await expect(page.getByText(/Three minutes later: I-\d{3} is .*0 safety violations/)).toBeVisible();
+  await expect(page.getByText(/\d+ minutes? later: I-\d{3} is .*0 safety violations/)).toBeVisible();
   await expect(page.getByText(/0 grounding warning/)).toBeVisible();
   await expect(page.getByText(/Coordinator outage, multi-agent − centralised: service rate \+/)).toBeVisible();
   expect(errors).toEqual([]);
@@ -29,13 +29,13 @@ test("citizen SOS is placed and approved by a dispatcher in the UI", async ({ br
   await citizen.goto("/sos");
   await citizen.getByRole("button", { name: "മലയാളം" }).click();
   await citizen.getByRole("button", { name: "Send SOS" }).click();
-  await expect(citizen.getByText("Aluva Market (N081)")).toBeVisible();
+  await expect(citizen.getByText("Aluva Market (N34)")).toBeVisible();
   await expect(citizen.getByText(/A dispatcher is confirming the location/)).toBeVisible();
 
   const dispatcher = await ctx.newPage();
   await dispatcher.goto("/command");
   await dispatcher.getByRole("button", { name: /Approvals ·/ }).click();
-  await expect(dispatcher.getByText("Open citizen SOS at N081")).toBeVisible();
+  await expect(dispatcher.getByText("Open citizen SOS at N34")).toBeVisible();
   await dispatcher.getByRole("button", { name: "Place & approve" }).click();
   await expect(dispatcher.getByText(/approved by dispatcher/).first()).toBeVisible();
 
@@ -87,9 +87,9 @@ test("home page, navigation menus, new-run dialog and failure menu work", async 
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Live console" }).click();
   await page.getByRole("button", { name: "New run" }).click();
   await expect(page.getByRole("dialog", { name: "Start a new run" })).toBeVisible();
-  await page.getByRole("button", { name: /Aluva, Kerala/ }).click();
+  await page.getByRole("button", { name: /Aluva · Periyar River/ }).click();
   await page.getByRole("button", { name: "Launch" }).click();
-  await expect(page.getByText(/Aluva, Kerala · Multi-agent/)).toBeVisible();
+  await expect(page.getByText(/Aluva · Periyar River · Multi-agent/)).toBeVisible();
   await page.getByRole("button", { name: "Simulate failure" }).click();
   await page.getByRole("menuitem", { name: /Flood surge/ }).click();
   await expect(page.getByText(/Flood surge \+0.5 m/).first()).toBeVisible();
@@ -99,9 +99,9 @@ test("home page, navigation menus, new-run dialog and failure menu work", async 
 test("citizen SOS on the real Aluva map finds Aluva places", async ({ page }) => {
   await page.goto("/command");
   await page.getByRole("button", { name: "New run" }).click();
-  await page.getByRole("button", { name: /Aluva, Kerala/ }).click();
+  await page.getByRole("button", { name: /Aluva · Periyar River/ }).click();
   await page.getByRole("button", { name: "Launch" }).click();
-  await expect(page.getByText(/Aluva, Kerala · Multi-agent/)).toBeVisible();
+  await expect(page.getByText(/Aluva · Periyar River · Multi-agent/)).toBeVisible();
   await page.goto("/sos");
   await page.getByRole("button", { name: "हिन्दी" }).click();
   await page.getByRole("button", { name: "Send SOS" }).click();

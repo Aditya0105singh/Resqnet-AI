@@ -161,3 +161,50 @@ select:focus-visible {
     background: white;
   }
 }
+
+/* real-geography map: Leaflet basemap with the SVG scene synced on top */
+.geo-map .leaflet-container {
+  font-family: var(--font-sans);
+  background: #e9edf0;
+  outline: none;
+}
+.geo-map.cursor-crosshair .leaflet-container,
+.geo-map.cursor-crosshair .leaflet-grab,
+.geo-map.cursor-crosshair .leaflet-dragging .leaflet-grab {
+  cursor: crosshair;
+}
+.geo-overlay {
+  pointer-events: none;
+  overflow: visible;
+}
+.geo-overlay .hit,
+.geo-overlay .hit * {
+  pointer-events: auto !important;
+}
+.geo-overlay .hit-stroke {
+  pointer-events: stroke !important;
+}
+/* markers keep a constant on-screen size: --k is set from the map zoom (design px-per-km / current px-per-km) */
+.geo-overlay .mk {
+  transform-origin: 0 0;
+  transform: scale(var(--k, 1));
+  transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1);
+}
+.geo-map .leaflet-control-attribution {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--color-mute);
+  border-top-left-radius: 8px;
+}
+.geo-map .leaflet-control-attribution a {
+  color: var(--color-ink-2);
+}
+.tiles-muted {
+  filter: grayscale(0.5) saturate(0.85) contrast(0.92) brightness(1.06);
+}
+.tiles-soft {
+  filter: saturate(0.7) brightness(1.04);
+}
+.tiles-dim {
+  filter: brightness(0.92) saturate(0.85);
+}

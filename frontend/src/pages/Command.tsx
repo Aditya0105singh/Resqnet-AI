@@ -5,6 +5,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import { useSim, type Layers } from "../store/sim";
 import { CityMap, MapLegend } from "../components/CityMap";
 import { ChaosMenu } from "../components/Chaos";
+import { RiverCard } from "../components/RiverCard";
 import { ActivityFeed } from "../components/Feed";
 import { SelectionPanel } from "../components/SelectionPanel";
 import { Approvals } from "../components/Approvals";
@@ -14,7 +15,7 @@ import { Badge, Button, cx, Empty, inputCls, Panel, Segmented, Spinner, Stat } f
 import { clock, fmt, INCIDENT_TONE, isOpen, pct, statusLabel } from "../lib/format";
 
 export default function Command() {
-  const { world, frame, sim, layers, selection, setSelection, toggleLayer, inject, audit } = useSim();
+  const { world, frame, sim, layers, selection, setSelection, toggleLayer, inject, audit, focus } = useSim();
   const [mode, setMode] = useState<"select" | "close-edge" | "new-incident">("select");
   const [filter, setFilter] = useState<"open" | "urgent" | "uncovered" | "all">("open");
   const [tab, setTab] = useState<"detail" | "feed" | "approvals">("feed");
@@ -150,21 +151,23 @@ export default function Command() {
               ))}
             </div>
           )}
-          <div className="absolute top-[4.5rem] right-3 z-20">
-            <DisruptionCard
-              onInspect={(id) => {
-                setSelection({ type: "incident", id });
-                setTab("detail");
-              }}
-            />
-          </div>
-          <div className="absolute top-3 right-3 z-10 rounded-xl border border-line-2 bg-white/90 px-3 py-1.5 text-right shadow-sm backdrop-blur">
-            <div className="label">river level</div>
-            <div className="mono num text-sm font-semibold">{frame.river_level} m</div>
+          <div className="pointer-events-none absolute top-3 right-3 z-[1000] flex max-h-[calc(100%-1.5rem)] flex-col items-end gap-2 overflow-y-auto">
+            <div className="pointer-events-auto">
+              <RiverCard />
+            </div>
+            <div className="pointer-events-auto">
+              <DisruptionCard
+                onInspect={(id) => {
+                  setSelection({ type: "incident", id });
+                  setTab("detail");
+                }}
+              />
+            </div>
           </div>
           <CityMap
             world={world}
             frame={frame}
+            focus={focus}
             layers={layers}
             selection={selection}
             mode={mode}

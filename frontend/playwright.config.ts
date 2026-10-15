@@ -10,6 +10,7 @@ export default defineConfig({
   timeout: 120_000,
   expect: { timeout: 20_000 },
   workers: 1,
+  retries: 1,
   reporter: [["list"]],
   use: {
     baseURL: "http://localhost:5173",

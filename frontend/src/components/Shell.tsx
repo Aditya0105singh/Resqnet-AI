@@ -1,11 +1,10 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Bot, ChevronDown, CircleAlert, CircleCheck, Info, Menu, Pause, Play, PlayCircle, RotateCcw, SkipForward, TriangleAlert, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { api } from "../lib/api";
 import { useSim } from "../store/sim";
 import { clock, STRATEGY_LABEL } from "../lib/format";
 import { Button, cx, Modal, useDismiss } from "./ui";
-import type { Strategy } from "../types";
+import type { MapListing, Strategy } from "../types";
 
 type NavItem = { to: string; label: string; desc?: string };
 const PRIMARY: NavItem[] = [
@@ -19,6 +18,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: "/chaos", label: "Scenario & failure lab", desc: "Design a flood, then break bridges, boats and shelters" },
       { to: "/decision-lab", label: "What-if lab", desc: "Rewind, change one decision, compare two futures" },
+      { to: "/judge", label: "Judge mode", desc: "A guided five-chapter story on the real map" },
       { to: "/agents", label: "Agent negotiation", desc: "Watch rescue units bid for every rescue" },
       { to: "/dispatch", label: "Rescue fleet", desc: "Every boat and team, and what it is doing" },
     ],
@@ -84,6 +84,7 @@ export function TopBar() {
   const conn = useSim((s) => s.conn);
   const askOpen = useSim((s) => s.askOpen);
   const setAskOpen = useSim((s) => s.setAskOpen);
+  const world = useSim((s) => s.world);
   const loc = useLocation();
   const [mobile, setMobile] = useState(false);
   useEffect(() => setMobile(false), [loc.pathname]);
@@ -91,6 +92,7 @@ export function TopBar() {
     <div className="no-print sticky top-0 z-30">
       <div className="bg-[#0b2530] px-4 py-1 text-center text-[12px] text-cyan-50/85">
         Research simulation, not an emergency service. In a real emergency in India, call <b className="text-white">112</b>.
+        {world?.map.real && <span className="hidden md:inline"> · {world.map.name}: real OpenStreetMap roads and Copernicus terrain; floods and incidents are simulated.</span>}
       </div>
       <header className="border-b border-line bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-[60px] max-w-[1680px] items-center gap-2 px-4">
@@ -186,6 +188,7 @@ export function Footer() {
 const SPEEDS = [0.5, 1, 2, 4, 8, 16];
 
 export const SCENARIOS: { id: string; name: string; desc: string }[] = [
+  { id: "kerala_2018", name: "Kerala 2018 flood replay", desc: "The river follows the real August 2018 flood; SOS arrivals follow the real rain. Best on a Kerala map." },
   { id: "normal", name: "Normal flood", desc: "The river rises steadily. A good first run." },
   { id: "triple_failure", name: "Triple failure", desc: "A bridge, a boat and a shelter fail at the same minute." },
   { id: "coordinator_outage", name: "Control room goes down", desc: "Central dispatch is offline for an hour." },
@@ -281,14 +284,13 @@ export function NewRunMenu() {
   const createSim = useSim((s) => s.createSim);
   const sim = useSim((s) => s.sim);
   const busy = useSim((s) => s.busy.create);
+  const maps = useSim((s) => s.maps);
+  const mapId = useSim((s) => s.mapId);
   const [open, setOpen] = useState(false);
+  const [mapSel, setMapSel] = useState(mapId);
+  useEffect(() => setMapSel(mapId), [mapId]);
   const [scenario, setScenario] = useState(sim?.scenario ?? "normal");
   const [strategy, setStrategy] = useState<Strategy>(sim?.strategy ?? "decentralized");
-  const [geos, setGeos] = useState<{ id: string; name: string; synthetic: boolean; attribution?: string }[]>([]);
-  const [geography, setGeography] = useState(sim?.config?.geography ?? "riverbend");
-  useEffect(() => {
-    if (open && !geos.length) api.get<{ geographies: typeof geos }>("/api/geographies").then((r) => setGeos(r.geographies)).catch(() => {});
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   const close = useCallback(() => setOpen(false), []);
   return (
     <>
@@ -310,7 +312,12 @@ export function NewRunMenu() {
               variant="primary"
               loading={busy}
               onClick={async () => {
-                await createSim(scenario, strategy, geography === "riverbend" ? {} : { geography }).catch(() => {});
+                await createSim(scenario, strategy, {}, mapSel).catch(() => {});
+                try {
+                  localStorage.setItem("resqnet.map", mapSel);
+                } catch {
+                  /* ignore */
+                }
                 setOpen(false);
               }}
             >
@@ -330,10 +337,10 @@ export function NewRunMenu() {
         </div>
         <div className="label mt-5 mb-2">2 · City</div>
         <div className="grid gap-2 sm:grid-cols-2">
-          {(geos.length ? geos : [{ id: "riverbend", name: "Riverbend (synthetic)", synthetic: true }]).map((g) => (
-            <button type="button" key={g.id} aria-pressed={geography === g.id} onClick={() => setGeography(g.id)} className={cx("rounded-xl border px-3.5 py-2.5 text-left transition", geography === g.id ? "border-brand bg-brand-soft ring-1 ring-brand" : "border-line-2 hover:border-ink/30")}>
-              <div className="text-sm font-medium">{g.name.replace(" (synthetic)", "")}</div>
-              <div className="mt-0.5 text-[12.5px] text-mute">{g.synthetic ? "Made-up city for testing" : "Real roads, bridges and river from OpenStreetMap"}</div>
+          {(maps.length ? maps : [{ id: "riverbend", name: "Riverbend (synthetic)", region: "", real: false, note: "" } as MapListing]).map((m) => (
+            <button type="button" key={m.id} aria-pressed={mapSel === m.id} onClick={() => setMapSel(m.id)} className={cx("rounded-xl border px-3.5 py-2.5 text-left transition", mapSel === m.id ? "border-brand bg-brand-soft ring-1 ring-brand" : "border-line-2 hover:border-ink/30")}>
+              <div className="text-sm font-medium">{m.name.replace(" (synthetic)", "")}</div>
+              <div className="mt-0.5 text-[12.5px] text-mute">{m.real ? `Real roads, bridges and river${m.population ? ` · about ${Math.round(m.population / 1000)}k residents` : ""}` : "Made-up city for tests and benchmarks"}</div>
             </button>
           ))}
         </div>

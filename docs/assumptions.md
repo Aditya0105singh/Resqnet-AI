@@ -44,7 +44,7 @@ RESQNET is a research and teaching simulation. Every number it produces is a mod
 
 ## Not modelled
 
-- Real geography, terrain or historical floods (see [dataset-provenance.md](dataset-provenance.md)).
+- Hydraulics: on the Kerala maps the roads, terrain and the 2018 river-discharge timing are real, but inundation depths come from a threshold model, not a hydraulic simulation (see [flood_validation.md](flood_validation.md) and [dataset-provenance.md](dataset-provenance.md)).
 - Fuel or endurance limits.
 - Multi-stop missions.
 - Crew fatigue or shift changes.

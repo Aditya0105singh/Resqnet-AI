@@ -20,6 +20,9 @@ class ScenarioConfig:
     key: str = "normal"
     name: str = "Normal Flood"
     description: str = ""
+    map: str = "riverbend"  # map source id (see simulation/maps.py)
+    flood_event: str = ""  # real flood event id replayed as the river level (see simulation/events.py)
+    extra_shelters: bool = True  # maps with more than three shelters open S4+ at their indicative capacity
     seed: int = 7
     duration: int = 180  # ticks; 1 tick = 1 simulated minute
     flood_severity: float = 1.0
@@ -70,7 +73,7 @@ PRESETS: dict[str, ScenarioConfig] = {
         key="bridge_dependency", name="Across the River",
         description="South-bank rescue demand, north-bank shelter capacity. Ground teams must cross bridges; close a live bridge in Judge Mode to inspect rerouting.",
         flood_severity=0.3, boats=2, ground_units=4,
-        shelter_capacity=[80, 0, 80], shelter_occupancy=[0, 0, 0],
+        shelter_capacity=[80, 0, 80], shelter_occupancy=[0, 0, 0], extra_shelters=False,
         report_noise=0, duplicate_rate=0, delayed_report_rate=0,
     ),
     "coordinator_outage": _preset(
@@ -78,6 +81,17 @@ PRESETS: dict[str, ScenarioConfig] = {
         name="Coordinator Outage",
         description="Central dispatch fails at t=15 for 60 minutes. Existing missions continue; peer communication and local safety remain available. No standby coordinator is modelled.",
         schedule=[{"tick": 15, "type": "COORDINATOR_OUTAGE", "params": {"duration": 60}}],
+    ),
+    "kerala_2018": _preset(
+        key="kerala_2018",
+        name="Kerala 2018 · flood replay",
+        description="River discharge replays the real August 2018 flood (GloFAS) and SOS arrivals follow the real rainfall (ERA5), time-compressed to 180 minutes. Needs a Kerala map; other maps fall back to a synthetic rise.",
+        flood_event="kerala_2018",
+        flood_severity=1.15,
+        boats=7,  # the real 2018 rescue relied on hundreds of fishing boats
+        initial_incidents=10,
+        arrival_incidents=22,
+        arrival_window=150,
     ),
     "normal": _preset(
         key="normal",
@@ -96,8 +110,8 @@ PRESETS: dict[str, ScenarioConfig] = {
     "bridge_closure": _preset(
         key="bridge_closure",
         name="Critical Bridge Closure",
-        description="Central Bridge is closed by structural damage at t=15 while units depend on it.",
-        schedule=[{"tick": 15, "type": "CLOSE_EDGE", "params": {"edge_id": "BR2", "reason": "structural damage"}}],
+        description="The most heavily used bridge is closed by structural damage at t=15 while units depend on it.",
+        schedule=[{"tick": 15, "type": "CLOSE_EDGE", "params": {"edge_id": "@critical", "reason": "structural damage"}}],
     ),
     "resource_shortage": _preset(
         key="resource_shortage",
@@ -109,8 +123,9 @@ PRESETS: dict[str, ScenarioConfig] = {
     "shelter_overflow": _preset(
         key="shelter_overflow",
         name="Shelter Overflow",
-        description="Riverside Civic Arena loses most of its capacity at t=25 (power failure).",
+        description="Shelter S2 loses most of its capacity at t=25 (power failure).",
         schedule=[{"tick": 25, "type": "SHELTER_CAPACITY", "params": {"shelter_id": "S2", "capacity": 16, "reason": "power failure"}}],
+        extra_shelters=False,  # a capacity stress test: only the three configured shelters
     ),
     "contradictory": _preset(
         key="contradictory",

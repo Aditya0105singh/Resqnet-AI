@@ -12,19 +12,16 @@ import networkx as nx
 from ..simulation.flood import GROUND_MAX_DEPTH
 from ..simulation.state import EdgeKind, GraphEdge, RescueResource, ResourceKind, WorldState
 
-_GRAPH_CACHE: dict[int, nx.Graph] = {}
-
-
 def graph_for(world: WorldState) -> nx.Graph:
-    key = id(world.edges)
-    g = _GRAPH_CACHE.get(key)
+    """Undirected topology graph (edge ids as attributes). Topology never changes during a run,
+    so it is cached on the world itself; an id()-keyed global would hand a new world with a
+    different map the graph of a collected one."""
+    g = world.__dict__.get("_graph")
     if g is None:
         g = nx.Graph()
         for e in world.edges.values():
             g.add_edge(e.u, e.v, eid=e.id)
-        if len(_GRAPH_CACHE) > 256:
-            _GRAPH_CACHE.clear()
-        _GRAPH_CACHE[key] = g
+        world.__dict__["_graph"] = g
     return g
 
 
@@ -39,7 +36,7 @@ def truly_traversable(e: GraphEdge, kind: str) -> bool:
 
 def speed_factor(e: GraphEdge, kind: str) -> float:
     if kind == ResourceKind.GROUND:
-        return max(0.35, 1.0 - 0.5 * min(e.depth, GROUND_MAX_DEPTH) / GROUND_MAX_DEPTH)
+        return e.speed * max(0.35, 1.0 - 0.5 * min(e.depth, GROUND_MAX_DEPTH) / GROUND_MAX_DEPTH)
     if e.kind == EdgeKind.RIVER:
         return 1.0
     if e.kind == EdgeKind.JETTY:

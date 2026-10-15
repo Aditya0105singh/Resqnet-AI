@@ -541,6 +541,8 @@ class Engine:
 
     def _ev_close_edge(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
         w = self.world
+        if p.get("edge_id") == "@critical":  # scenario presets name the map's most critical bridge
+            p = dict(p, edge_id=w.meta.get("critical_bridge") or "BR2")
         e = self._need(p, "edge_id", w.edges, "edge")
         for r in sorted(w.resources.values(), key=lambda r: r.id):
             path = self.remaining_path(r)
@@ -1049,7 +1051,11 @@ class Engine:
         if kind not in (ResourceKind.BOAT, ResourceKind.GROUND):
             raise EventError("kind must be boat|ground")
         default = next((n.id for n in sorted(w.nodes.values(), key=lambda n: n.id) if (n.kind == "river") == (kind == ResourceKind.BOAT)), None)
-        node = p.get("node") or ("R3" if kind == ResourceKind.BOAT and "R3" in w.nodes else "N14" if kind != ResourceKind.BOAT and "N14" in w.nodes else default)
+        node = (
+            p.get("node")
+            or w.meta.get("default_boat_node" if kind == ResourceKind.BOAT else "default_ground_node")
+            or ("R3" if kind == ResourceKind.BOAT and "R3" in w.nodes else "N14" if kind != ResourceKind.BOAT and "N14" in w.nodes else default)
+        )
         if node not in w.nodes:
             raise EventError(f"unknown node '{node}'")
         if (w.nodes[node].kind == "river") != (kind == ResourceKind.BOAT):
@@ -1141,7 +1147,7 @@ class Engine:
         for rsv in w.reservations.values():
             if rsv.status == ReservationStatus.ACTIVE:
                 pend[rsv.shelter_id] = pend.get(rsv.shelter_id, 0) + rsv.people
-        shelter = p.get("shelter_id") or (max(pend.items(), key=lambda kv: (kv[1], kv[0]))[0] if pend else "S2")
+        shelter = p.get("shelter_id") or (max(pend.items(), key=lambda kv: (kv[1], kv[0]))[0] if pend else w.meta.get("default_shelter", "S2"))
         sub = []
         if bridge:
             sub.append(self._apply_event("CLOSE_EDGE", {"edge_id": bridge, "reason": "triple failure: bridge collapse"}, "system"))

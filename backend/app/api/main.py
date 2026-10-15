@@ -25,6 +25,7 @@ from ..persistence import store
 from ..routing.router import believed_closed
 from ..simulation.engine import EVENT_TYPES, Engine, EventError
 from ..simulation.scenarios import POLICIES, PRESETS, STRATEGIES, ScenarioConfig, get_preset
+from ..simulation.maps import available_maps, is_known
 from ..simulation.serialize import static_world
 from ..simulation.world import available_geographies
 from ..simulation.state import ResourceStatus
@@ -79,6 +80,9 @@ class Session:
             "duration": self.cfg.duration,
             "version": e.world.version,
             "seed": self.cfg.seed,
+            "map": self.cfg.map,
+            "map_name": e.world.meta.get("name", self.cfg.map),
+            "flood_event": e.world.meta.get("flood_event"),
             "config": self.cfg.to_dict(),
             "injected": e.injected,
         }
@@ -189,6 +193,7 @@ class CreateSimulation(BaseModel):
     strategy: str = "decentralized"
     seed: Optional[int] = None
     overrides: dict[str, Any] = Field(default_factory=dict)
+    map: Optional[str] = None  # map source id; see GET /api/maps
 
 
 class EventIn(BaseModel):
@@ -225,12 +230,13 @@ class AdversarialIn(BaseModel):
     trials: int = 12
     seed: int = 42
     duration: Optional[int] = None
+    map: Optional[str] = None
 
 
 ALLOWED_OVERRIDES = {
     "seed", "duration", "flood_severity", "flood_peak_tick", "initial_incidents", "arrival_incidents", "arrival_window", "boats", "ground_units",
     "shelter_capacity", "shelter_occupancy", "report_noise", "duplicate_rate", "delayed_report_rate", "false_alarm_rate", "contradiction_rate", "forward_rate", "fusion_dedup", "geography",
-    "comm_delay", "msg_latency", "msg_loss", "msg_duplicate", "policy", "weights", "neighbourhood_priority", "schedule", "name",
+    "comm_delay", "msg_latency", "msg_loss", "msg_duplicate", "policy", "weights", "neighbourhood_priority", "schedule", "name", "map", "flood_event", "extra_shelters",
 }
 
 
@@ -243,6 +249,8 @@ def make_config(scenario: str, seed: Optional[int], overrides: dict[str, Any]) -
     ov = dict(overrides)
     if seed is not None:
         ov["seed"] = seed
+    if "map" in ov and ov["map"] is not None and not is_known(str(ov["map"])):
+        raise err(400, "BAD_MAP", f"unknown map '{ov['map']}'")
     cfg = get_preset(scenario, **ov)
     checks = [
         (1 <= cfg.duration <= 600, "duration must be 1..600"),
@@ -305,12 +313,19 @@ def scenarios() -> dict[str, Any]:
     }
 
 
+@app.get("/api/maps")
+def maps() -> dict[str, Any]:
+    return {"maps": available_maps()}
+
+
 @app.get("/api/world")
-def world(sim: Optional[str] = None) -> dict[str, Any]:
-    """Static geometry: of a given simulation's city, or of Riverbend by default."""
+def world(sim: Optional[str] = None, map: str = "riverbend") -> dict[str, Any]:
+    """Static geometry: of a given simulation's city, or of a map (Riverbend by default)."""
     if sim:
         return static_world(get_session(sim).engine.world)
-    return static_world(Engine(get_preset("normal"), record_frames=False).world)
+    if not is_known(map):
+        raise err(400, "BAD_MAP", f"unknown map '{map}'")
+    return static_world(Engine(get_preset("normal", map=map), record_frames=False).world)
 
 
 # ================================================================ simulations
@@ -318,7 +333,10 @@ def world(sim: Optional[str] = None) -> dict[str, Any]:
 async def create_simulation(body: CreateSimulation) -> dict[str, Any]:
     if body.strategy not in STRATEGIES:
         raise err(400, "BAD_STRATEGY", f"strategy must be one of {list(STRATEGIES)}")
-    cfg = make_config(body.scenario, body.seed, body.overrides)
+    overrides = dict(body.overrides)
+    if body.map:
+        overrides["map"] = body.map
+    cfg = make_config(body.scenario, body.seed, overrides)
     sim_id = uuid.uuid4().hex[:10]
     s = Session(sim_id, cfg, body.strategy)
     SESSIONS[sim_id] = s
@@ -800,7 +818,10 @@ async def create_adversarial(body: AdversarialIn) -> dict[str, Any]:
         raise err(400, "BAD_STRATEGY", "unknown strategy")
     if not (1 <= body.n_failures <= 5 and 1 <= body.trials <= 60):
         raise err(422, "BAD_REQUEST", "n_failures 1..5, trials 1..60")
-    cfg = make_config(body.scenario, None, {"duration": body.duration} if body.duration else {})
+    ov: dict[str, Any] = {"duration": body.duration} if body.duration else {}
+    if body.map:
+        ov["map"] = body.map
+    cfg = make_config(body.scenario, None, ov)
     return _start_job("adversarial", body.model_dump(), lambda p: adversarial(cfg, body.strategy, body.n_failures, body.categories, body.trials, body.seed, p))
 
 

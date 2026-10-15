@@ -12,6 +12,8 @@ import os
 import random
 import re
 
+from .events import load_event
+from .maps import SYNTHETIC, Projection, load_snapshot
 from .scenarios import ScenarioConfig
 from .state import (
     EdgeKind,
@@ -130,6 +132,80 @@ def build_city() -> tuple[dict[str, GraphNode], dict[str, GraphEdge]]:
     return nodes, edges
 
 
+def riverbend_meta() -> dict:
+    """Static metadata the engine needs from a map, for the synthetic city."""
+    return {
+        "id": SYNTHETIC,
+        "name": "Riverbend (synthetic)",
+        "real": False,
+        "disclaimer": "Synthetic city for research and education. Not real geography or live flood data.",
+        "boat_homes": [h for *_, h in BOAT_SPECS],
+        "ground_homes": [h for *_, h in GROUND_SPECS],
+        "far_bank": [f"N{r}{c}" for r in range(3, ROWS) for c in range(COLS)],
+        "far_bank_homes": ["N41", "N44", "N46", "N52", "N53", "N55"],
+        "default_boat_node": "R3",
+        "default_ground_node": "N14",
+        "default_shelter": "S2",
+        "critical_bridge": "BR2",
+    }
+
+
+def _snapshot_landmarks(map_id: str) -> list[dict]:
+    path = os.path.join(os.path.dirname(__file__), "..", "data", "landmarks", f"{map_id}.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("landmarks", [])
+    except (OSError, ValueError):
+        return []
+
+
+def build_real_city(snap: dict) -> tuple[dict[str, GraphNode], dict[str, GraphEdge], list[Neighbourhood], list[tuple[str, str, str]], dict]:
+    """Instantiate a real-geography snapshot (see scripts/build_map.py)."""
+    lat0, lon0 = snap["origin"]
+    proj = Projection(lat0, lon0)
+    nodes: dict[str, GraphNode] = {}
+    for n in snap["nodes"]:
+        x, y = proj.xy(n["lat"], n["lng"])
+        nodes[n["id"]] = GraphNode(
+            n["id"], round(x, 3), round(y, 3), float(n["elev"]), n["nb"], n["kind"], n.get("label", ""),
+            lat=n["lat"], lon=n["lng"], lng=n["lng"], provenance="osm (elevation: Copernicus DEM)", elev_msl=n.get("elev_msl"), pop=int(n.get("pop", 0)),
+        )
+    edges: dict[str, GraphEdge] = {}
+    for e in snap["edges"]:
+        pts = [proj.xy(la, lo) for la, lo in e["geometry"]]
+        # the polyline must start and end exactly on its nodes
+        pts[0] = (nodes[e["u"]].x, nodes[e["u"]].y)
+        pts[-1] = (nodes[e["v"]].x, nodes[e["v"]].y)
+        length = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts, pts[1:]))
+        kind = e["kind"]
+        edges[e["id"]] = GraphEdge(
+            e["id"], e["u"], e["v"], kind, round(max(length, 0.05), 3), name=e.get("name", ""),
+            clearance=float(e["clearance"]) if e.get("clearance") else 99.0,
+            ground_ok=kind in (EdgeKind.ROAD, EdgeKind.BRIDGE), boat_ok=kind in (EdgeKind.RIVER, EdgeKind.JETTY),
+            geometry=[(round(px, 3), round(py, 3)) for px, py in pts],
+            gated=bool(e.get("gated")),
+            speed=float(e.get("speed", 1.0)),
+        )
+    nbs = [Neighbourhood(n["id"], n["name"], float(n["flood_factor"])) for n in snap["neighbourhoods"]]
+    shelters = [(s["id"], s["node"], s["name"], int(s.get("capacity", 40))) for s in snap["shelters"]]
+    meta = {
+        "id": snap["id"], "name": snap["name"], "region": snap.get("region", ""), "real": True, "note": snap.get("note", ""),
+        "disclaimer": snap.get("disclaimer", ""), "source": snap.get("source", {}),
+        "origin": snap["origin"], "bbox": snap["bbox"], "projection": proj.to_dict(),
+        "boat_homes": snap["boat_homes"], "ground_homes": snap["ground_homes"],
+        "far_bank": snap.get("far_bank", []), "far_bank_homes": snap.get("far_bank_homes", []),
+        "default_boat_node": snap.get("default_boat_node"), "default_ground_node": snap.get("default_ground_node"),
+        "default_shelter": "S2" if any(x[0] == "S2" for x in shelters) else shelters[0][0],
+        "critical_bridge": snap.get("critical_bridge") or "BR1",
+        "shelter_amenity": {x["id"]: x.get("amenity", "") for x in snap["shelters"]},
+        "synthetic": False,
+        "attribution": snap.get("source", {}).get("attribution", "© OpenStreetMap contributors"),
+        # named places for SOS messages (scripts/build_landmarks.py); empty when none were built
+        "landmarks": [lm for lm in _snapshot_landmarks(snap["id"]) if lm["node"] in nodes],
+    }
+    return nodes, edges, nbs, shelters, meta
+
+
 def nearest_land_nbhd(world: WorldState, node_id: str) -> str:
     n = world.nodes[node_id]
     if n.kind != "river":
@@ -184,33 +260,51 @@ def _from_city(city: dict) -> tuple[dict[str, GraphNode], dict[str, GraphEdge], 
 
 def build_world(cfg: ScenarioConfig, strategy: str) -> WorldState:
     if cfg.geography and cfg.geography != "riverbend":
+        # an OpenStreetMap city file from data/geographic (scripts/build_geo.py)
         return _build_from_city(cfg, strategy, load_city_file(cfg.geography))
-    nodes, edges = build_city()
+    snap = load_snapshot(cfg.map)  # None for the synthetic city; KeyError for an unknown map
+    if snap is None:
+        nodes, edges = build_city()
+        nbs = list(NEIGHBOURHOODS)
+        shelter_specs = [(sid, nid, name, 40) for sid, (nid, name) in SHELTER_NODES.items()]
+        meta = {**riverbend_meta(), **RIVERBEND_META}
+    else:
+        nodes, edges, nbs, shelter_specs, meta = build_real_city(snap)
     resources: dict[str, RescueResource] = {}
-    for i, (name, cap, home) in enumerate(BOAT_SPECS[: max(0, min(cfg.boats, len(BOAT_SPECS)))]):
+    boat_homes, ground_homes = meta["boat_homes"], meta["ground_homes"]
+    for i, (name, cap, _home) in enumerate(BOAT_SPECS[: max(0, min(cfg.boats, len(BOAT_SPECS)))]):
         rid = f"B{i + 1}"
+        home = boat_homes[i % len(boat_homes)]
         resources[rid] = RescueResource(rid, name, ResourceKind.BOAT, cap, 16.0, home, home)
-    for i, (name, cap, home) in enumerate(GROUND_SPECS[: max(0, min(cfg.ground_units, len(GROUND_SPECS)))]):
-        if cfg.key == "bridge_dependency":
-            home = ("N41", "N44", "N46", "N52", "N53", "N55")[i]
+    for i, (name, cap, _home) in enumerate(GROUND_SPECS[: max(0, min(cfg.ground_units, len(GROUND_SPECS)))]):
+        home = ground_homes[i % len(ground_homes)]
+        if cfg.key == "bridge_dependency" and meta["far_bank_homes"]:
+            home = meta["far_bank_homes"][i % len(meta["far_bank_homes"])]
         rid = f"G{i + 1}"
         resources[rid] = RescueResource(rid, name, ResourceKind.GROUND, cap, 28.0, home, home)
     shelters: dict[str, Shelter] = {}
-    for i, (sid, (nid, name)) in enumerate(SHELTER_NODES.items()):
-        cap = cfg.shelter_capacity[i] if i < len(cfg.shelter_capacity) else 40
+    for i, (sid, nid, name, hint) in enumerate(shelter_specs):
+        if i >= len(cfg.shelter_capacity) and not cfg.extra_shelters:
+            continue
+        cap = cfg.shelter_capacity[i] if i < len(cfg.shelter_capacity) else hint
         occ = cfg.shelter_occupancy[i] if i < len(cfg.shelter_occupancy) else 0
         shelters[sid] = Shelter(sid, name, nid, int(cap), min(int(occ), int(cap)))
+    event = load_event(cfg.flood_event, meta["id"], cfg.duration)
+    if event:
+        meta = {**meta, "flood_event": {k: v for k, v in event.items() if k not in ("curve", "rain")}}
     return WorldState(
+        flood_curve=event["curve"] if event else None,
         tick=0,
         seed=cfg.seed,
         scenario=cfg.key,
         strategy=strategy,
         nodes=nodes,
         edges=edges,
-        neighbourhoods={n.id: Neighbourhood(n.id, n.name, n.flood_factor) for n in NEIGHBOURHOODS},
+        neighbourhoods={n.id: Neighbourhood(n.id, n.name, n.flood_factor) for n in nbs},
         resources=resources,
         shelters=shelters,
-        meta=dict(RIVERBEND_META),
+        map_id=meta["id"],
+        meta=meta,
     )
 
 
@@ -246,8 +340,19 @@ def _build_from_city(cfg: ScenarioConfig, strategy: str, city: dict) -> WorldSta
         # display only: real road shapes and background layers; the engine routes on the graph
         "geometry": {e["id"]: e["geometry"] for e in city.get("edges", []) if e.get("geometry")},
         "basemap": city.get("basemap", {}),
+        # engine metadata shared with the real-geography map snapshots
+        "id": cfg.geography,
+        "real": not city.get("synthetic"),
+        "boat_homes": boat_homes,
+        "ground_homes": ground_homes,
+        "far_bank": [],
+        "far_bank_homes": [],
+        "default_boat_node": boat_homes[0] if boat_homes else None,
+        "default_ground_node": ground_homes[0] if ground_homes else None,
+        "default_shelter": next(iter(shelters), None),
+        "critical_bridge": next((e.id for e in sorted(edges.values(), key=lambda e: e.id) if e.kind == EdgeKind.BRIDGE), None),
     }
-    return WorldState(tick=0, seed=cfg.seed, scenario=cfg.key, strategy=strategy, nodes=nodes, edges=edges, neighbourhoods=nbs, resources=resources, shelters=shelters, meta=meta)
+    return WorldState(tick=0, seed=cfg.seed, scenario=cfg.key, strategy=strategy, nodes=nodes, edges=edges, neighbourhoods=nbs, resources=resources, shelters=shelters, meta=meta, map_id=cfg.geography)
 
 
 def generate_reports(world: WorldState, cfg: ScenarioConfig) -> list[IncidentReport]:
@@ -258,19 +363,39 @@ def generate_reports(world: WorldState, cfg: ScenarioConfig) -> list[IncidentRep
     """
     rng = random.Random(cfg.seed * 7919 + 17)
     land = [n for n in world.nodes.values() if n.kind == "land"]
-    if cfg.key == "bridge_dependency" and world.meta.get("name") == RIVERBEND_META["name"]:
-        land = [n for n in land if int(n.id[1]) >= 3]
+    if cfg.key == "bridge_dependency":
+        far = set(world.meta.get("far_bank", []))
+        if len(far) >= 4:
+            land = [n for n in land if n.id in far]
     peak = 1.2 + cfg.flood_severity * 2.2
     weights = []
+    populated = [n.pop for n in land if n.pop > 0]
+    mean_pop = sum(populated) / len(populated) if populated else 0.0
     for n in land:
         exposure = max(0.0, peak * world.neighbourhoods[n.neighbourhood].flood_factor - n.elevation)
-        weights.append(1.0 + 3.0 * min(exposure, 2.0))
+        w = 1.0 + 3.0 * min(exposure, 2.0)
+        if mean_pop:  # real maps: people live where the buildings are
+            w *= min(3.0, max(0.25, 0.35 + 1.65 * n.pop / mean_pop))
+        weights.append(w)
 
     truths: list[dict] = []
     total = cfg.initial_incidents + cfg.arrival_incidents
     used: dict[str, int] = {}
+    # with a real event, SOS arrivals follow the replayed rainfall rather than being uniform
+    ev = load_event(cfg.flood_event, world.meta.get("id", ""), cfg.duration)
+    arr_ticks: list[int] = []
+    arr_w: list[float] = []
+    if ev:
+        arr_ticks = list(range(3, max(4, cfg.arrival_window) + 1))
+        peak_rain = max(ev["rain"]) or 1.0
+        arr_w = [0.15 + ev["rain"][min(t, len(ev["rain"]) - 1)] / peak_rain for t in arr_ticks]
     for i in range(total):
-        tick = 0 if i < cfg.initial_incidents else rng.randint(3, max(4, cfg.arrival_window))
+        if i < cfg.initial_incidents:
+            tick = 0
+        elif ev:
+            tick = rng.choices(arr_ticks, weights=arr_w)[0]
+        else:
+            tick = rng.randint(3, max(4, cfg.arrival_window))
         for _ in range(20):
             node = rng.choices(land, weights=weights)[0]
             if abs(used.get(node.id, -999) - tick) > 60:

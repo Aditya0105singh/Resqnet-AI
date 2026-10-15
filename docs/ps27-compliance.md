@@ -20,7 +20,7 @@ Each requirement is mapped to the code that implements it and the tests that pro
 
 | Item | Status | Notes |
 |---|---|---|
-| Real geography with source labelling | ✅ | Real **Aluva, Kerala** map from OpenStreetMap (roads, bridges, Periyar, landmarks), selectable in New run; every scenario × strategy runs on it with 0 violations (`test_aluva_runs_safely_under_triple_failure`). Elevation, shelters and the flood remain assumed or synthetic. Flood-extent and DEM data not yet added. See [dataset-provenance.md](dataset-provenance.md). |
+| Real geography with source labelling | ✅ | Real **Aluva (Periyar)** and **Chengannur (Pamba)** maps: OpenStreetMap roads, bridges and rivers, Copernicus 30 m terrain, relief-camp shelters; the app opens on Aluva. A **Kerala 2018 flood replay** scenario drives the river from the real GloFAS discharge and shapes SOS arrivals with real rainfall; the flood model is checked against Sentinel-1 ([flood_validation.md](flood_validation.md): useful on Chengannur, weak on Aluva). Inundation depths, units, incidents and shelter capacities remain simulated or assumed. Sources and terms: [dataset-provenance.md](dataset-provenance.md). Tests: `test_maps.py`, `test_sos_real_maps.py`. |
 | Multilingual SOS extraction and verification | ✅ | English, Hindi, Malayalam; never invents a location; 54-case eval. [SOS_INTAKE.md](SOS_INTAKE.md) |
 | Dispatcher approval and override | ✅ | Approval queue with side-effect-free previews; manual directives; dispute resolution |
 | Crew mobile mission lifecycle | ✅ | `/crew/:unit`, validated idempotent crew events, offline outbox (no service worker). [CREW_APP.md](CREW_APP.md) |

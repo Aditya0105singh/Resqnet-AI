@@ -274,9 +274,22 @@ FAILURE_POOL: dict[str, list[tuple[str, dict[str, Any]]]] = {
 }
 
 
+def failure_pool(cfg: ScenarioConfig) -> dict[str, list[tuple[str, dict[str, Any]]]]:
+    """FAILURE_POOL with the bridges and shelters of the configured map (BR1..BRn, S1..Sn)."""
+    from ..simulation.world import build_world
+
+    w = build_world(cfg, "decentralized")
+    pool = dict(FAILURE_POOL)
+    bridges = sorted(e.id for e in w.edges.values() if e.kind == "bridge")
+    pool["bridge"] = [("CLOSE_EDGE", {"edge_id": b, "reason": "adversarial: bridge failure"}) for b in bridges]
+    pool["shelter"] = [("SHELTER_CAPACITY", {"shelter_id": s, "capacity": "occupancy", "reason": "adversarial: overflow"}) for s in sorted(w.shelters)]
+    return pool
+
+
 def adversarial(cfg: ScenarioConfig, strategy: str, n_failures: int, categories: list[str], trials: int, seed: int, progress: Optional[Callable[[float], None]] = None) -> dict[str, Any]:
     rng = random.Random(seed)
-    pool = [(cat, t, p) for cat in categories for t, p in FAILURE_POOL.get(cat, [])]
+    fpool = failure_pool(cfg)
+    pool = [(cat, t, p) for cat in categories for t, p in fpool.get(cat, [])]
     if not pool:
         raise ValueError("no failure categories selected")
     baseline = run_one(cfg, strategy)

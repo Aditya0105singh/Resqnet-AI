@@ -60,17 +60,26 @@ class Gazetteer:
 
     @classmethod
     def for_world(cls, world: Any, path: str = DEFAULT_PATH) -> "Gazetteer":
+        """Place names of the world's own map. The Riverbend list is used only for Riverbend:
+        its names mean nothing on any other map, and putting them there would invent locations."""
         meta = getattr(world, "meta", {}) or {}
-        if meta.get("geography") and meta.get("geography") != "riverbend":
-            # an OSM city: landmarks and their multilingual aliases come from OSM name tags
+        riverbend = (meta.get("id") or "riverbend") == "riverbend" and not meta.get("geography") and not meta.get("real")
+        if riverbend:
+            data = _load(os.path.abspath(path))
+        else:
+            # real maps: named places from OpenStreetMap (with their multilingual aliases), plus the
+            # shelters' own names; bridges and areas come from the graph
+            landmarks = [{"id": l["id"], "name": l["name"], "node": l["node"], "aliases": sorted({l["name"], *l.get("aliases", [])})} for l in meta.get("landmarks", []) if l["node"] in world.nodes]
+            known = {l["name"].lower() for l in landmarks}
+            for sh in world.shelters.values():
+                if sh.name.lower() not in known and sh.node in world.nodes:
+                    landmarks.append({"id": f"S-{sh.id}", "name": sh.name, "node": sh.node, "aliases": [sh.name]})
             data = {
-                "synthetic": meta.get("synthetic", False),
-                "landmarks": [{"id": l["id"], "name": l["name"], "node": l["node"], "aliases": sorted({l["name"], *l.get("aliases", [])})} for l in meta.get("landmarks", []) if l["node"] in world.nodes],
+                "synthetic": bool(meta.get("synthetic", False)),
+                "landmarks": landmarks,
                 "bridges": [{"edge": e.id, "aliases": [e.name]} for e in world.edges.values() if e.kind == "bridge" and e.name],
                 "areas": [{"neighbourhood": z.id, "aliases": [z.name]} for z in world.neighbourhoods.values()],
             }
-        else:
-            data = _load(os.path.abspath(path))
         ends = {e.id: sorted([e.u, e.v]) for e in world.edges.values() if e.kind == "bridge"}
         areas: dict[str, list[str]] = {}
         for n in world.nodes.values():

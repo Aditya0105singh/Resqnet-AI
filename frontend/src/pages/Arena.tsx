@@ -352,7 +352,7 @@ function RunOwn() {
 
   const start = async () => {
     try {
-      const j = await api.post<any>("/api/benchmarks", { scenario, strategies, seeds: Array.from({ length: nSeeds }, (_, i) => seedStart + i) });
+      const j = await api.post<any>("/api/benchmarks", { scenario, strategies, seeds: Array.from({ length: nSeeds }, (_, i) => seedStart + i), overrides: { map: useSim.getState().mapId } });
       setJob(j);
       clearInterval(poll.current);
       poll.current = setInterval(async () => {

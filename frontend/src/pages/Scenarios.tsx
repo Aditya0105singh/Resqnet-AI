@@ -9,19 +9,15 @@ import { Badge, Button, cx, Empty, Field, inputCls, PageHeader, Panel, Segmented
 import type { ScenarioConfig, Strategy } from "../types";
 import { STRATEGY_LABEL } from "../lib/format";
 
-const NB = [
-  ["NB", "Northbank"],
-  ["HC", "Hillcrest"],
-  ["OQ", "Old Quarter"],
-  ["RS", "Riverside"],
-  ["EM", "Eastmere"],
-];
 const SCHED_TYPES = ["TRIPLE_FAILURE", "CLOSE_EDGE", "RESOURCE_FAILURE", "SHELTER_CAPACITY", "FLOOD_SURGE", "COMM_BLACKOUT"];
 
 export default function Scenarios() {
   const { sim, frame, world, createSim, inject } = useSim();
-  const areas: string[][] = world?.neighbourhoods?.length ? world.neighbourhoods.map((z) => [z.id, z.name]) : NB;
-  const bridgeIds = (world?.edges ?? []).filter((e) => e.kind === "bridge").map((e) => e.id);
+  const NB = (world?.neighbourhoods ?? []).map((n) => [n.id, n.name] as const);
+  const areas: (readonly [string, string])[] = NB;
+  const bridges = (world?.edges ?? []).filter((e) => e.kind === "bridge").map((e) => e.id);
+  const bridgeIds = bridges;
+  const shelterIds = (world?.shelters ?? []).map((s) => s.id);
   const nav = useNavigate();
   const [presets, setPresets] = useState<ScenarioConfig[]>([]);
   const [base, setBase] = useState("triple_failure");
@@ -29,7 +25,7 @@ export default function Scenarios() {
   const [strategy, setStrategy] = useState<Strategy>("decentralized");
   const [launching, setLaunching] = useState(false);
   const [disruptions, setDisruptions] = useState<any[]>([]);
-  const [manual, setManual] = useState({ type: "CLOSE_EDGE", target: "BR1" });
+  const [manual, setManual] = useState({ type: "CLOSE_EDGE", target: "" });
 
   useEffect(() => {
     api.get<{ scenarios: ScenarioConfig[] }>("/api/scenarios").then((r) => {
@@ -70,27 +66,28 @@ export default function Scenarios() {
   };
 
   const targets: Record<string, string[]> = {
-    CLOSE_EDGE: bridgeIds.length ? bridgeIds : ["BR1", "BR2", "BR3"],
-    OPEN_EDGE: bridgeIds.length ? bridgeIds : ["BR1", "BR2", "BR3"],
+    CLOSE_EDGE: bridgeIds,
+    OPEN_EDGE: bridgeIds,
     RESOURCE_FAILURE: frame?.resources.map((r) => r.id) ?? [],
     RESOURCE_RESTORE: frame?.resources.filter((r) => r.status === "DISABLED").map((r) => r.id) ?? [],
     COMM_BLACKOUT: frame?.resources.map((r) => r.id) ?? [],
-    SHELTER_CAPACITY: ["S1", "S2", "S3"],
+    SHELTER_CAPACITY: shelterIds,
     CONTRADICTORY_REPORT: frame?.incidents.filter((i) => i.status !== "RESCUED").map((i) => i.id) ?? [],
   };
+  const target = manual.target || targets[manual.type]?.[0] || "";
   const fireManual = () => {
     const t = manual.type;
     const p: Record<string, unknown> =
       t === "CLOSE_EDGE" || t === "OPEN_EDGE"
-        ? { edge_id: manual.target, reason: "chaos lab" }
+        ? { edge_id: target, reason: "chaos lab" }
         : t === "SHELTER_CAPACITY"
-          ? { shelter_id: manual.target, capacity: "occupancy", reason: "chaos lab overflow" }
+          ? { shelter_id: target, capacity: "occupancy", reason: "chaos lab overflow" }
           : t === "COMM_BLACKOUT"
-            ? { resource_id: manual.target, duration: 20 }
+            ? { resource_id: target, duration: 20 }
             : t === "CONTRADICTORY_REPORT"
-              ? { incident_id: manual.target, claim: "NO_VICTIMS", source: "resident" }
-              : { resource_id: manual.target, reason: "chaos lab" };
-    inject(t, p, `${t.toLowerCase().replace(/_/g, " ")} ${manual.target}`);
+              ? { incident_id: target, claim: "NO_VICTIMS", source: "resident" }
+              : { resource_id: target, reason: "chaos lab" };
+    inject(t, p, `${t.toLowerCase().replace(/_/g, " ")} ${target}`);
   };
 
   return (
@@ -149,7 +146,7 @@ export default function Scenarios() {
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <div className="label">scheduled events</div>
-                  <Button size="sm" icon={<Plus className="size-3.5" />} onClick={() => set("schedule", [...cfg.schedule, { tick: 30, type: "CLOSE_EDGE", params: { edge_id: "BR2", reason: "scheduled" } }])}>
+                  <Button size="sm" icon={<Plus className="size-3.5" />} onClick={() => set("schedule", [...cfg.schedule, { tick: 30, type: "CLOSE_EDGE", params: { edge_id: "@critical", reason: "scheduled" } }])}>
                     Add event
                   </Button>
                 </div>
@@ -176,7 +173,7 @@ export default function Scenarios() {
                 )}
               </div>
               <div className="flex items-center justify-end gap-2 border-t border-line pt-4">
-                <span className="text-xs text-mute">Synthetic, seeded and reproducible.</span>
+                <span className="text-xs text-mute">{world?.map.real ? `Real roads of ${world.map.name}; incidents and floods simulated, seeded and reproducible.` : "Synthetic, seeded and reproducible."}</span>
                 <Button variant="solid" icon={<Rocket className="size-4" />} loading={launching} onClick={launch}>
                   Launch scenario
                 </Button>
@@ -199,12 +196,12 @@ export default function Scenarios() {
                       <option key={t}>{t}</option>
                     ))}
                   </select>
-                  <select className={cx(inputCls, "w-28")} value={manual.target} onChange={(e) => setManual({ ...manual, target: e.target.value })}>
+                  <select className={cx(inputCls, "w-28")} value={target} onChange={(e) => setManual({ ...manual, target: e.target.value })}>
                     {(targets[manual.type] ?? []).map((t) => (
                       <option key={t}>{t}</option>
                     ))}
                   </select>
-                  <Button variant="solid" disabled={!manual.target} onClick={fireManual}>
+                  <Button variant="solid" disabled={!target} onClick={fireManual}>
                     Inject
                   </Button>
                 </div>
@@ -244,7 +241,7 @@ export default function Scenarios() {
 function defaultParams(t: string): Record<string, unknown> {
   switch (t) {
     case "CLOSE_EDGE":
-      return { edge_id: "BR2", reason: "scheduled" };
+      return { edge_id: "@critical", reason: "scheduled" };
     case "RESOURCE_FAILURE":
       return { resource_id: "B1", reason: "scheduled" };
     case "SHELTER_CAPACITY":
