@@ -17,6 +17,7 @@ export interface WorldEdge {
   length_km: number;
   name: string;
   clearance: number | null;
+  geometry?: number[][]; // real road shape (display only), u → v
 }
 export interface StaticWorld {
   name: string;
@@ -27,6 +28,7 @@ export interface StaticWorld {
   nodes: WorldNode[];
   edges: WorldEdge[];
   neighbourhoods: { id: string; name: string; flood_factor: number }[];
+  basemap?: { buildings?: number[][][]; green?: number[][][]; water?: number[][][]; rail?: number[][][]; streams?: number[][][] };
 }
 
 export interface Resource {

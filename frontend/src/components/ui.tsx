@@ -63,16 +63,32 @@ export function Badge({ tone = "neutral", children, className, dot }: { tone?: k
   );
 }
 
-export function Stat({ label, value, unit, tone, hint, className }: { label: string; value: ReactNode; unit?: string; tone?: "crit" | "warn" | "ok" | "info"; hint?: ReactNode; className?: string }) {
+export function Stat({ label, value, unit, tone, hint, className, info }: { label: string; value: ReactNode; unit?: string; tone?: "crit" | "warn" | "ok" | "info"; hint?: ReactNode; className?: string; info?: string }) {
   return (
     <div className={cx("min-w-0", className)}>
-      <div className="label truncate">{label}</div>
+      <div className="label flex items-center gap-1">
+        <span className="truncate">{label}</span>
+        {info && <InfoTip text={info} />}
+      </div>
       <div className={cx("num mt-1 font-display text-[22px] leading-none font-semibold tracking-tight", tone === "crit" && "text-crit", tone === "warn" && "text-warn", tone === "ok" && "text-ok", tone === "info" && "text-info")}>
         {value ?? "—"}
         {unit && <span className="ml-0.5 text-xs font-medium text-mute">{unit}</span>}
       </div>
       {hint && <div className="mt-1 truncate text-[11px] text-mute">{hint}</div>}
     </div>
+  );
+}
+
+/** Small ⓘ that explains a number in plain words (hover, focus or tap). */
+export function InfoTip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-flex normal-case" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button type="button" aria-label={text} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} onClick={() => setOpen((o) => !o)} className="grid size-3.5 place-items-center rounded-full border border-current text-[9px] leading-none font-semibold text-faint hover:text-ink">
+        i
+      </button>
+      {open && <span role="tooltip" className="absolute top-5 left-1/2 z-50 w-56 -translate-x-1/2 rounded-lg bg-ink px-2.5 py-1.5 text-[12px] leading-snug font-normal tracking-normal text-white shadow-lg">{text}</span>}
+    </span>
   );
 }
 

@@ -147,6 +147,7 @@ def _road_graph(nodes: dict, ways: list, proj: Projection, opt: Options) -> tupl
             if (start, nxt) in seen:
                 continue
             length, bridge, names, prev, cur = 0.0, False, [], start, nxt
+            pts = [pos[start]]
             while True:
                 seen.add((prev, cur))
                 seen.add((cur, prev))
@@ -155,6 +156,7 @@ def _road_graph(nodes: dict, ways: list, proj: Projection, opt: Options) -> tupl
                 bridge |= seg["bridge"]
                 if seg["name"]:
                     names.append(seg["name"])
+                pts.append(pos[cur])
                 if cur in keep:
                     break
                 prev, cur = cur, next(x for x in adj[cur] if x != prev)
@@ -162,7 +164,7 @@ def _road_graph(nodes: dict, ways: list, proj: Projection, opt: Options) -> tupl
                     break
             if cur != start:
                 key = tuple(sorted((start, cur)))
-                cand = {"len": length, "bridge": bridge, "name": max(set(names), key=names.count) if names else ""}
+                cand = {"len": length, "bridge": bridge, "name": max(set(names), key=names.count) if names else "", "pts": pts if key[0] == start else pts[::-1]}
                 if key not in edges or edges[key]["len"] > length:
                     edges[key] = cand
     return {n: pos[n] for n in keep}, edges
@@ -188,7 +190,11 @@ def _merge(pos: dict[str, tuple[float, float]], edges: dict, merge_km: float) ->
         key = tuple(sorted((ra, rb)))
         cur = medges.get(key)
         if cur is None or e["len"] < cur["len"]:
-            medges[key] = {**e, "bridge": e["bridge"] or bool(cur and cur["bridge"])}
+            pts = list(e.get("pts") or [pos[a], pos[b]])
+            if ra != key[0]:
+                pts = pts[::-1]
+            pts = [mpos[key[0]], *pts[1:-1], mpos[key[1]]]
+            medges[key] = {**e, "pts": pts, "bridge": e["bridge"] or bool(cur and cur["bridge"])}
         elif e["bridge"]:
             cur["bridge"] = True
     return mpos, medges
@@ -325,6 +331,53 @@ def _feature_points(nodes: dict, ways: list, proj: Projection) -> list[tuple[tup
     return out
 
 
+def _simplify(pts: list[tuple[float, float]], tol: float) -> list[tuple[float, float]]:
+    """Douglas-Peucker: drop shape points closer than tol km to the line between their neighbours."""
+    if len(pts) <= 2:
+        return list(pts)
+    a, b = pts[0], pts[-1]
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    L = math.hypot(dx, dy) or 1e-9
+    i, d = max(((i, abs(dy * (p[0] - a[0]) - dx * (p[1] - a[1])) / L) for i, p in enumerate(pts[1:-1], 1)), key=lambda t: t[1])
+    if d <= tol:
+        return [a, b]
+    return _simplify(pts[: i + 1], tol)[:-1] + _simplify(pts[i:], tol)
+
+
+GREEN = {("leisure", "park"), ("leisure", "pitch"), ("leisure", "garden"), ("leisure", "festival_grounds"), ("landuse", "grass"), ("landuse", "recreation_ground"), ("landuse", "meadow"), ("natural", "grassland"), ("natural", "wood"), ("landuse", "forest")}
+
+
+def _basemap(nodes: dict, ways: list, proj: Projection) -> dict[str, list]:
+    """Background map layers drawn under the simulation: building footprints, green areas, ponds,
+    railway lines and minor streams. Display only; the engine never reads them."""
+    out: dict[str, list] = {"buildings": [], "green": [], "water": [], "rail": [], "streams": []}
+    for _wid, refs, tags in ways:
+        pts = [proj.xy(nodes[r][0], nodes[r][1]) for r in refs if r in nodes]
+        if len(pts) < 2:
+            continue
+        closed = refs[0] == refs[-1] and len(pts) >= 4
+        if tags.get("building") and closed:
+            layer = "buildings"
+        elif closed and any((k, tags.get(k)) in GREEN for k in ("leisure", "landuse", "natural")):
+            layer = "green"
+        elif closed and (tags.get("natural") == "water" or tags.get("water")):
+            layer = "water"
+        elif tags.get("railway") == "rail":
+            layer = "rail"
+        elif tags.get("waterway") in ("stream", "drain", "ditch", "canal"):
+            layer = "streams"
+        else:
+            continue
+        if closed:
+            # split a ring at its far point so the simplifier never sees a zero-length baseline
+            far = max(range(len(pts)), key=lambda i: _dist(pts[0], pts[i]))
+            pts = _simplify(pts[: far + 1], 0.002)[:-1] + _simplify(pts[far:], 0.002)
+        else:
+            pts = _simplify(pts, 0.002)
+        out[layer].append([[round(x, 4), round(y, 4)] for x, y in pts])
+    return out
+
+
 def _drop_town_name(landmarks: list[dict], town: str) -> list[dict]:
     """The town's own name is not a location inside the town.
 
@@ -429,11 +482,15 @@ def build_city(xml_text: str, opt: Optional[Options] = None, source: Optional[di
     nbr = 0
     for (a, b), e in sorted(edges.items(), key=lambda kv: (nid[kv[0][0]], nid[kv[0][1]])):
         u, v = sorted((nid[a], nid[b]))
+        pts = e.get("pts") or [land[nid[a]], land[nid[b]]]
+        if nid[a] != u:
+            pts = pts[::-1]
+        geom = [[round(x, 4), round(y, 4)] for x, y in _simplify(pts, 0.004)] if len(pts) > 2 else None
         if e["bridge"]:
             nbr += 1
-            out_edges.append({"id": f"BR{nbr}", "u": u, "v": v, "kind": "bridge", "length_km": round(e["len"], 3), "name": e["name"] or f"Bridge {nbr}", "clearance": round(3.0 + 0.4 * (nbr % 3), 2), "provenance": "osm (clearance scenario-assumed)"})
+            out_edges.append({"id": f"BR{nbr}", "u": u, "v": v, "kind": "bridge", "length_km": round(e["len"], 3), "name": e["name"] or f"Bridge {nbr}", "clearance": round(3.0 + 0.4 * (nbr % 3), 2), "provenance": "osm (clearance scenario-assumed)", **({"geometry": geom} if geom else {})})
         else:
-            out_edges.append({"id": f"E-{u}-{v}", "u": u, "v": v, "kind": "road", "length_km": round(e["len"], 3), "name": e["name"], "provenance": "osm-derived"})
+            out_edges.append({"id": f"E-{u}-{v}", "u": u, "v": v, "kind": "road", "length_km": round(e["len"], 3), "name": e["name"], "provenance": "osm-derived", **({"geometry": geom} if geom else {})})
     for i in range(len(river) - 1):
         out_edges.append({"id": f"E-R{i}-R{i + 1}", "u": f"R{i}", "v": f"R{i + 1}", "kind": "river", "length_km": round(_dist(river[i], river[i + 1]), 3), "name": "", "provenance": "osm-derived"})
     jetties = 0
@@ -508,6 +565,7 @@ def build_city(xml_text: str, opt: Optional[Options] = None, source: Optional[di
         "boat_homes": boat_homes,
         "ground_homes": ground_homes,
         "landmarks": landmarks,
+        "basemap": _basemap(nodes, ways, proj),
         "stats": {"land_nodes": len(land), "river_nodes": len(river), "roads": sum(1 for e in out_edges if e["kind"] == "road"), "bridges": nbr, "jetties": jetties, "landmarks": len(landmarks)},
     }
 

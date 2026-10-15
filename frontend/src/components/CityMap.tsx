@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { Minus, Plus, Scan } from "lucide-react";
 import type { StaticWorld } from "../types";
-import type { Layers, Selection } from "../store/sim";
-import { NB_COLOR, URGENCY_COLOR } from "../lib/format";
+import { useSim, type Layers, type Selection } from "../store/sim";
+import { NB_COLOR, statusLabel, URGENCY_COLOR } from "../lib/format";
 import { cx } from "./ui";
 
 /** Minimal frame shape the map needs (full frames and counterfactual compact frames). */
@@ -45,7 +45,17 @@ function displayScale(world: StaticWorld): number {
 
 export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, selection, onSelect, onEdgeClick, onNodeClick, mode = "select", transitionMs = 900, compact, className, highlight = [] }: Props) {
   const u = useMemo(() => displayScale(rawWorld), [rawWorld]);
-  const world = useMemo(() => (u === 1 ? rawWorld : { ...rawWorld, nodes: rawWorld.nodes.map((n) => ({ ...n, x: n.x / u, y: n.y / u })) }), [rawWorld, u]);
+  const world = useMemo(() => {
+    if (u === 1) return rawWorld;
+    const sp = (pts?: number[][]) => pts?.map(([x, y]) => [x / u, y / u]);
+    const bm = rawWorld.basemap;
+    return {
+      ...rawWorld,
+      nodes: rawWorld.nodes.map((n) => ({ ...n, x: n.x / u, y: n.y / u })),
+      edges: rawWorld.edges.map((e) => (e.geometry ? { ...e, geometry: sp(e.geometry) } : e)),
+      basemap: bm && Object.fromEntries(Object.entries(bm).map(([k, v]) => [k, (v ?? []).map((pts) => sp(pts)!)])),
+    };
+  }, [rawWorld, u]);
   const frame = useMemo(() => {
     if (u === 1) return rawFrame;
     const sc = <T extends { x: number; y: number }>(xs: T[]) => xs.map((e) => ({ ...e, x: e.x / u, y: e.y / u }));
@@ -53,6 +63,28 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
   }, [rawFrame, u]);
   const layers = { ...ALL, ...layerProp };
   const nodes = useMemo(() => Object.fromEntries(world.nodes.map((n) => [n.id, n])), [world]);
+  // real road shapes, looked up by node pair in either direction (display only)
+  const shapes = useMemo(() => {
+    const m: Record<string, number[][]> = {};
+    for (const e of world.edges) {
+      if (!e.geometry) continue;
+      m[e.u + ">" + e.v] = e.geometry;
+      m[e.v + ">" + e.u] = [...e.geometry].reverse();
+    }
+    return m;
+  }, [world]);
+  const edgePts = (e: { u: string; v: string; geometry?: number[][] }) => e.geometry ?? [[nodes[e.u].x, nodes[e.u].y], [nodes[e.v].x, nodes[e.v].y]];
+  /** Node path → polyline points following real road shapes where known. */
+  const pathPts = (ids: string[], start?: [number, number]) => {
+    const out: number[][] = start ? [start] : [];
+    ids.forEach((id, i) => {
+      const prev = ids[i - 1];
+      const shape = prev ? shapes[prev + ">" + id] : undefined;
+      if (shape) out.push(...shape.slice(1));
+      else if (nodes[id]) out.push([nodes[id].x, nodes[id].y]);
+    });
+    return out.map((p) => p.join(",")).join(" ");
+  };
   const bounds = useMemo(() => {
     const xs = world.nodes.map((n) => n.x);
     const ys = world.nodes.map((n) => n.y);
@@ -76,6 +108,8 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
     return Object.entries(acc).map(([id, a]) => ({ id, x: a.x / a.n, y: a.y / a.n, name: world.neighbourhoods.find((z) => z.id === id)?.name ?? id }));
   }, [world]);
 
+  // area tint: discs overlap more in dense real cities, so each is fainter there
+  const tint = useMemo(() => 0.035 * Math.min(1, 60 / Math.max(1, world.nodes.length)), [world]);
   const [view, setView] = useState({ k: 1, tx: 0, ty: 0 });
   const drag = useRef<{ x: number; y: number; tx: number; ty: number; moved: boolean } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -139,13 +173,28 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
           {world.nodes
             .filter((n) => n.kind !== "river")
             .map((n) => (
-              <circle key={"d" + n.id} cx={n.x} cy={n.y} r={0.78} fill={nbColor[n.neighbourhood]} opacity={0.035} />
+              <circle key={"d" + n.id} cx={n.x} cy={n.y} r={0.78} fill={nbColor[n.neighbourhood]} opacity={tint} />
             ))}
+          {/* background map: buildings, parks, ponds, streams, railway (display only) */}
+          {world.basemap && !compact && (
+            <g pointerEvents="none">
+              {world.basemap.green?.map((p, i) => <polygon key={"g" + i} points={p.map((q) => q.join(",")).join(" ")} fill="#dfeedd" />)}
+              {world.basemap.water?.map((p, i) => <polygon key={"w" + i} points={p.map((q) => q.join(",")).join(" ")} fill="#cfe6f2" />)}
+              {world.basemap.streams?.map((p, i) => <polyline key={"s" + i} points={p.map((q) => q.join(",")).join(" ")} fill="none" stroke="#bcdcec" strokeWidth={sw(2)} />)}
+              {world.basemap.buildings?.map((p, i) => <polygon key={"b" + i} points={p.map((q) => q.join(",")).join(" ")} fill="#dcd8cf" stroke="#c9c4b8" strokeWidth={sw(0.6)} />)}
+              {world.basemap.rail?.map((p, i) => (
+                <g key={"r" + i}>
+                  <polyline points={p.map((q) => q.join(",")).join(" ")} fill="none" stroke="#a8a29e" strokeWidth={sw(3)} />
+                  <polyline points={p.map((q) => q.join(",")).join(" ")} fill="none" stroke="#fff" strokeWidth={sw(1.4)} strokeDasharray="0.05 0.05" />
+                </g>
+              ))}
+            </g>
+          )}
           {/* river */}
           {layers.water && (
             <>
               <polyline
-                points={[`${river[0].x - 1.2},${river[0].y}`, ...river.map((r) => `${r.x},${r.y}`), `${river[river.length - 1].x + 1.2},${river[river.length - 1].y}`].join(" ")}
+                points={(u === 1 ? [`${river[0].x - 1.2},${river[0].y}`, ...river.map((r) => `${r.x},${r.y}`), `${river[river.length - 1].x + 1.2},${river[river.length - 1].y}`] : river.map((r) => `${r.x},${r.y}`)).join(" ")}
                 fill="none"
                 stroke="#d4e9f4"
                 strokeWidth={0.62 + Math.max(0, (frame as any).river_level ? ((frame as any).river_level - 2) * 0.1 : 0)}
@@ -211,19 +260,21 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
                 stroke = "#d97706";
                 dash = "0.12 0.08";
               }
-              const mx = (a.x + b.x) / 2;
-              const my = (a.y + b.y) / 2;
+              const P = edgePts(e);
+              const ep = P.map((q) => q.join(",")).join(" ");
+              const mid = P[Math.floor((P.length - 1) / 2)];
+              const mid2 = P[Math.ceil((P.length - 1) / 2)];
+              const mx = P.length % 2 ? mid[0] : (mid[0] + mid2[0]) / 2;
+              const my = P.length % 2 ? mid[1] : (mid[1] + mid2[1]) / 2;
               const hot = sel("edge", e.id);
               return (
                 <g key={e.id}>
-                  {boat && e.kind === "road" && layers.flood ? <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#cfe6f2" strokeWidth={sw(14)} strokeLinecap="round" /> : null}
-                  <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={hot ? "#0891b2" : stroke} strokeWidth={hot ? width * 1.6 : width} strokeDasharray={dash} strokeLinecap="round" opacity={op} />
+                  {boat && e.kind === "road" && layers.flood ? <polyline points={ep} fill="none" stroke="#cfe6f2" strokeWidth={sw(14)} strokeLinecap="round" strokeLinejoin="round" /> : null}
+                  <polyline points={ep} fill="none" stroke={hot ? "#0891b2" : stroke} strokeWidth={hot ? width * 1.6 : width} strokeDasharray={dash} strokeLinecap="round" strokeLinejoin="round" opacity={op} />
                   {(onEdgeClick || onSelect) && !isWater && (
-                    <line
-                      x1={a.x}
-                      y1={a.y}
-                      x2={b.x}
-                      y2={b.y}
+                    <polyline
+                      points={ep}
+                      fill="none"
                       stroke="transparent"
                       strokeWidth={sw(22)}
                       className={cx(mode === "close-edge" && "cursor-pointer hover:stroke-[#dc262633]")}
@@ -234,7 +285,7 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
                       }}
                     >
                       <title>{`${e.name || e.id} · ${e.kind}${manual ? " · CLOSED" : !g ? " · impassable for ground" : ""}${boat && e.kind === "road" ? " · navigable by boat" : ""}`}</title>
-                    </line>
+                    </polyline>
                   )}
                   {manual && layers.closures ? (
                     <g transform={`translate(${mx} ${my})`}>
@@ -267,7 +318,7 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
             ))}
           {/* routes */}
           {layers.routes && frame.route_ghosts?.map((g, i) => (
-            <polyline key={`${g.resource}-${g.tick}-${i}`} points={g.path.filter(id => nodes[id]).map(id => `${nodes[id].x},${nodes[id].y}`).join(" ")}
+            <polyline key={`${g.resource}-${g.tick}-${i}`} points={pathPts(g.path.filter((id) => nodes[id]))}
               fill="none" stroke="#e11d48" strokeWidth={sw(4)} strokeDasharray="0.12 0.1" opacity={0.65} pointerEvents="none">
               <title>{g.resource}: route before {g.edge} closed at minute {g.tick}</title>
             </polyline>
@@ -275,13 +326,13 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
           {layers.routes &&
             frame.resources.map((r) => {
               if (!r.route?.length || r.status === "DISABLED") return null;
-              const pts = [`${r.x},${r.y}`, ...r.route.map((id) => (nodes[id] ? `${nodes[id].x},${nodes[id].y}` : "")).filter(Boolean)];
+              const ptsStr = pathPts(r.route.filter((id) => nodes[id]), [r.x, r.y]);
               const c = routeColor(r.status);
               const hot = sel("resource", r.id);
               return (
                 <g key={"rt" + r.id} opacity={selection && !hot && selection.type === "resource" ? 0.25 : 1}>
-                  <polyline points={pts.join(" ")} fill="none" stroke={c} strokeOpacity={0.18} strokeWidth={sw(hot ? 16 : 11)} strokeLinecap="round" strokeLinejoin="round" />
-                  <polyline points={pts.join(" ")} fill="none" stroke={c} strokeWidth={sw(hot ? 4 : 2.6)} strokeDasharray="0.06 0.06" pathLength={undefined} className="route-dash" strokeLinecap="round" strokeLinejoin="round" style={{ strokeDashoffset: 0 }} />
+                  <polyline points={ptsStr} fill="none" stroke={c} strokeOpacity={0.18} strokeWidth={sw(hot ? 16 : 11)} strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline points={ptsStr} fill="none" stroke={c} strokeWidth={sw(hot ? 4 : 2.6)} strokeDasharray="0.06 0.06" pathLength={undefined} className="route-dash" strokeLinecap="round" strokeLinejoin="round" style={{ strokeDashoffset: 0 }} />
                 </g>
               );
             })}
@@ -367,13 +418,13 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
                   style={{ transform: `translate(${r.x}px, ${r.y}px)`, transitionDuration: `${transitionMs}ms` }}
                   onClick={() => clicked() && onSelect?.({ type: "resource", id: r.id })}
                 >
-                  <title>{`${r.id} · ${r.kind} · ${r.status}${r.load ? ` · ${r.load} aboard` : ""}${black ? (r.partition ? ` · PARTITIONED (${r.partition})` : " · COMMS DOWN") : ""}`}</title>
+                  <title>{`${r.kind === "boat" ? "Boat" : "Road team"} ${r.id} · ${statusLabel(r.status)}${r.load ? ` · ${r.load} aboard` : ""}${black ? (r.partition ? ` · cut off from the network (${r.partition})` : " · no radio contact") : ""} · click for details`}</title>
                   {hot && <circle r={0.3} fill="#22d3ee" opacity={0.18} />}
                   {hold && <circle r={0.26} fill="none" stroke="#dc2626" strokeWidth={sw(2)} className="pulse" />}
                   {r.kind === "boat" ? (
                     <path d="M-0.17 -0.07H0.1L0.19 0L0.1 0.07H-0.17Z" fill={dis ? "#fff" : "#0a0a0a"} stroke={dis ? "#dc2626" : hot ? "#22d3ee" : "#fff"} strokeWidth={sw(2)} />
                   ) : (
-                    <rect x={-0.13} y={-0.09} width={0.26} height={0.18} rx={0.05} fill={dis ? "#fff" : "#27272a"} stroke={dis ? "#dc2626" : hot ? "#22d3ee" : "#fff"} strokeWidth={sw(2)} />
+                    <rect x={-0.13} y={-0.09} width={0.26} height={0.18} rx={0.05} fill={dis ? "#fff" : "#0e7490"} stroke={dis ? "#dc2626" : hot ? "#22d3ee" : "#fff"} strokeWidth={sw(2)} />
                   )}
                   <text y={0.04} x={r.kind === "boat" ? -0.02 : 0} textAnchor="middle" fontSize={0.1} fontWeight={600} fontFamily="JetBrains Mono" fill={dis ? "#dc2626" : "#fff"}>
                     {r.id}
@@ -415,22 +466,24 @@ export function CityMap({ world: rawWorld, frame: rawFrame, layers: layerProp, s
 }
 
 export function MapLegend() {
-  const item = (el: React.ReactNode, label: string) => (
-    <span className="inline-flex items-center gap-1.5">
+  const layers = useSim((s) => s.layers);
+  const toggle = useSim((s) => s.toggleLayer);
+  const item = (el: React.ReactNode, label: string, layer: keyof Layers) => (
+    <button type="button" onClick={() => toggle(layer)} aria-pressed={layers[layer]} title={`${layers[layer] ? "Hide" : "Show"} ${label} on the map`} className={cx("inline-flex items-center gap-1.5 rounded px-0.5 hover:text-ink", !layers[layer] && "line-through opacity-50")}>
       {el}
       {label}
-    </span>
+    </button>
   );
   return (
-    <div className="mono flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[10.5px] text-mute">
-      {item(<span className="inline-block size-2.5 rotate-45 rounded-[2px] bg-crit" />, "urgent")}
-      {item(<span className="inline-block size-2.5 rotate-45 rounded-[2px] border border-dashed border-warn" />, "unverified")}
-      {item(<span className="inline-block h-2 w-3.5 rounded-sm bg-ink" />, "boat / team")}
-      {item(<span className="inline-block size-2.5 rounded-[3px] border-[1.5px] border-ink" />, "shelter")}
-      {item(<span className="inline-block h-0.5 w-4 border-t-2 border-dashed border-info" />, "to pickup")}
-      {item(<span className="inline-block h-0.5 w-4 border-t-2 border-dashed border-ok" />, "to shelter")}
-      {item(<span className="inline-block h-0.5 w-4 border-t-2 border-dashed border-crit" />, "closed")}
-      {item(<span className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[#93c5dd]" />, "flooded")}
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-mute">
+      {item(<span className="inline-block size-2.5 rotate-45 rounded-[2px] bg-crit" />, "urgent request", "incidents")}
+      {item(<span className="inline-block size-2.5 rotate-45 rounded-[2px] border border-dashed border-warn" />, "unconfirmed", "uncertain")}
+      {item(<svg viewBox="-0.2 -0.1 0.4 0.2" className="h-2.5 w-4"><path d="M-0.17 -0.07H0.1L0.19 0L0.1 0.07H-0.17Z" fill="#0a0a0a" /></svg>, "boat", "units")}
+      {item(<span className="inline-block h-2.5 w-3.5 rounded-sm bg-brand" />, "road team", "units")}
+      {item(<span className="inline-block size-2.5 rounded-[3px] border-[1.5px] border-ink" />, "shelter", "shelters")}
+      {item(<span className="inline-block h-0.5 w-4 border-t-2 border-dashed border-info" />, "route", "routes")}
+      {item(<span className="inline-block h-0.5 w-4 border-t-2 border-dashed border-crit" />, "closed", "closures")}
+      {item(<span className="inline-block h-0.5 w-4 border-t-2 border-dashed border-[#93c5dd]" />, "flooded", "flood")}
     </div>
   );
 }

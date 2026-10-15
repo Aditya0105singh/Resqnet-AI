@@ -50,9 +50,23 @@ interface SimState {
   control: (action: "start" | "pause" | "reset" | "step", ticks?: number) => Promise<void>;
   setSpeed: (speed: number) => Promise<void>;
   inject: (type: string, params: Record<string, unknown>, label?: string) => Promise<boolean>;
+  /** The latest failure injected from the UI, for the "what just happened" card. */
+  disruption: Disruption | null;
+  clearDisruption: () => void;
   applySocket: (msg: any) => void;
   setConn: (c: Conn) => void;
 }
+
+export interface Disruption {
+  id: number;
+  label: string;
+  tick: number;
+  effects: string[];
+  /** affected rescue requests and the units they had before the failure */
+  affected: { incident: string; before: string[] }[];
+}
+const FAILURES = new Set(["TRIPLE_FAILURE", "CLOSE_EDGE", "RESOURCE_FAILURE", "SHELTER_CAPACITY", "FLOOD_SURGE", "COMM_BLACKOUT", "NETWORK_PARTITION", "CONTRADICTORY_REPORT"]);
+let disruptionSeq = 1;
 
 const SIM_KEY = "resqnet.sim";
 let toastSeq = 1;
@@ -68,6 +82,8 @@ export const useSim = create<SimState>((set, get) => ({
   decisionId: null,
   layers: { roads: true, water: true, flood: true, closures: true, routes: true, incidents: true, units: true, shelters: true, uncertain: true, labels: false },
   toasts: [],
+  disruption: null,
+  clearDisruption: () => set({ disruption: null }),
   lastSeq: 0,
   busy: {},
   setSelection: (selection) => set({ selection }),
@@ -171,9 +187,20 @@ export const useSim = create<SimState>((set, get) => ({
     if (!sim) return false;
     set((s) => ({ busy: { ...s.busy, [type]: true } }));
     try {
+      const before = get().frame;
       const r = await api.post<any>(`/api/simulations/${sim.id}/events`, { type, params });
       set({ frame: r.frame });
-      get().toast({ kind: type.includes("FAIL") || type === "CLOSE_EDGE" || type === "SHELTER_CAPACITY" ? "warn" : "info", title: label ?? type.replace(/_/g, " ").toLowerCase(), body: (r.event.effects as string[]).join(" · ") });
+      if (FAILURES.has(type) && before) {
+        const effects = r.event.effects as string[];
+        const named = new Set(effects.join(" ").match(/I-\d{3}/g) ?? []);
+        const after = Object.fromEntries((r.frame.incidents as any[]).map((i) => [i.id, i.assigned as string[]]));
+        const affected = before.incidents
+          .filter((i) => named.has(i.id) || (i.assigned.length > 0 && i.assigned.some((u) => !(after[i.id] ?? []).includes(u))))
+          .map((i) => ({ incident: i.id, before: i.assigned }));
+        set({ disruption: { id: disruptionSeq++, label: label ?? type.replace(/_/g, " ").toLowerCase(), tick: r.frame.tick, effects, affected } });
+      }
+      // failures get the "what just happened" card instead of a long toast
+      get().toast({ kind: FAILURES.has(type) ? "warn" : "info", title: label ?? type.replace(/_/g, " ").toLowerCase(), body: FAILURES.has(type) ? undefined : (r.event.effects as string[]).join(" · ") });
       return true;
     } catch (e) {
       get().toast({ kind: "crit", title: "Rejected by engine", body: (e as Error).message });

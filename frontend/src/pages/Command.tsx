@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { ChevronDown, Crosshair, Layers as LayersIcon, MapPinPlus, MousePointer2, Scissors } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useSim, type Layers } from "../store/sim";
@@ -7,6 +8,7 @@ import { ChaosMenu } from "../components/Chaos";
 import { ActivityFeed } from "../components/Feed";
 import { SelectionPanel } from "../components/SelectionPanel";
 import { Approvals } from "../components/Approvals";
+import { DisruptionCard } from "../components/DisruptionCard";
 import { NewRunMenu, SimControls } from "../components/Shell";
 import { Badge, Button, cx, Empty, inputCls, Panel, Segmented, Spinner, Stat } from "../components/ui";
 import { clock, fmt, INCIDENT_TONE, isOpen, pct, statusLabel } from "../lib/format";
@@ -19,6 +21,7 @@ export default function Command() {
   const [sos, setSos] = useState({ people: 4, urgency: 4 });
   const [showLayers, setShowLayers] = useState(false);
   const [moreKpis, setMoreKpis] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"map" | "requests" | "activity">("map");
 
   const incidents = useMemo(() => {
     if (!frame) return [];
@@ -43,6 +46,18 @@ export default function Command() {
           </>
         }
       />
+      <GettingStarted />
+      <div className="lg:hidden">
+        <Segmented
+          value={mobileTab}
+          onChange={setMobileTab}
+          options={[
+            { value: "map", label: "Map" },
+            { value: "requests", label: `Requests · ${m.open_incidents}` },
+            { value: "activity", label: pendingCount ? `Activity · ${pendingCount} to approve` : "Activity" },
+          ]}
+        />
+      </div>
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[300px_1fr_360px]">
         {/* incident queue */}
         <Panel
@@ -50,7 +65,7 @@ export default function Command() {
           sub={`${m.open_incidents} open · ${frame.incidents.filter((i) => isOpen(i) && i.unassigned > 0).length} still need a unit`}
           right={<Badge tone="neutral">{incidents.length}</Badge>}
           bodyClass="flex flex-col"
-          className="max-lg:h-80"
+          className={cx("max-lg:h-[70vh]", mobileTab !== "requests" && "max-lg:hidden")}
         >
           <div className="border-b border-line px-3 py-2">
             <Segmented size="sm" value={filter} onChange={setFilter} options={[{ value: "open", label: "Open" }, { value: "urgent", label: "Urgent" }, { value: "uncovered", label: "No unit yet" }, { value: "all", label: "All" }]} />
@@ -96,7 +111,7 @@ export default function Command() {
         </Panel>
 
         {/* map */}
-        <section className="panel relative min-h-[420px] overflow-hidden">
+        <section className={cx("panel relative min-h-[420px] overflow-hidden", mobileTab !== "map" && "max-lg:hidden")}>
           <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-1.5">
             <div className="inline-flex rounded-full border border-line-2 bg-white/95 p-0.5 shadow-sm backdrop-blur">
               {(
@@ -135,6 +150,14 @@ export default function Command() {
               ))}
             </div>
           )}
+          <div className="absolute top-[4.5rem] right-3 z-20">
+            <DisruptionCard
+              onInspect={(id) => {
+                setSelection({ type: "incident", id });
+                setTab("detail");
+              }}
+            />
+          </div>
           <div className="absolute top-3 right-3 z-10 rounded-xl border border-line-2 bg-white/90 px-3 py-1.5 text-right shadow-sm backdrop-blur">
             <div className="label">river level</div>
             <div className="mono num text-sm font-semibold">{frame.river_level} m</div>
@@ -149,6 +172,7 @@ export default function Command() {
             onSelect={(s) => {
               setSelection(s);
               setTab("detail");
+              setMobileTab("activity");
             }}
             onEdgeClick={(id) => {
               const st = frame.edges[id];
@@ -163,7 +187,7 @@ export default function Command() {
 
         {/* right column */}
         <Panel
-          className="max-lg:h-[520px]"
+          className={cx("max-lg:h-[70vh]", mobileTab !== "activity" && "max-lg:hidden")}
           title={
             <Segmented
               size="sm"
@@ -185,21 +209,21 @@ export default function Command() {
 
       {/* key numbers */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[repeat(4,1fr)_1.5fr_auto]">
-        <Kpi label="people rescued" value={m.people_rescued} hint={`${m.people_in_transit} on the way to shelter`} tone="ok" />
-        <Kpi label="not yet safe" value={m.unmet_people} hint={m.people_in_transit ? `${m.people_in_transit} on board · incl. not yet reported` : "incl. people not yet reported"} tone={m.unmet_people > 20 ? "warn" : undefined} />
-        <Kpi label="avg. time to reach people" value={fmt(m.mean_time_to_service)} unit="min" hint={`${m.deadline_misses} of ${m.urgent_incidents} urgent missed deadline`} tone={m.deadline_misses ? "crit" : undefined} />
-        <Kpi label="safety rules broken" value={m.route_violations + m.invariant_violations} hint={`${m.safety_rejections} unsafe plans blocked`} tone={m.route_violations + m.invariant_violations ? "crit" : "ok"} />
+        <Kpi info="People delivered safely to a shelter so far." label="people rescued" value={m.people_rescued} hint={`${m.people_in_transit} on the way to shelter`} tone="ok" />
+        <Kpi info="Everyone not yet at a shelter: people still waiting (including some not reported yet) plus people on board a boat or truck." label="not yet safe" value={m.unmet_people} hint={m.people_in_transit ? `${m.people_in_transit} on board · incl. not yet reported` : "incl. people not yet reported"} tone={m.unmet_people > 20 ? "warn" : undefined} />
+        <Kpi info="Average minutes from a request being reported to the first unit picking people up." label="avg. time to reach people" value={fmt(m.mean_time_to_service)} unit="min" hint={`${m.deadline_misses} of ${m.urgent_incidents} urgent missed deadline`} tone={m.deadline_misses ? "crit" : undefined} />
+        <Kpi info="Times any of the 7 safety rules was broken, e.g. a unit sent to two places or a shelter overfilled. It should always be 0." label="safety rules broken" value={m.route_violations + m.invariant_violations} hint={`${m.safety_rejections} unsafe plans blocked`} tone={m.route_violations + m.invariant_violations ? "crit" : "ok"} />
         <MiniChart />
         <button type="button" aria-expanded={moreKpis} onClick={() => setMoreKpis((v) => !v)} className="panel col-span-2 flex items-center justify-center gap-1 px-4 py-3 text-[13px] font-medium text-ink-2 hover:text-ink md:col-span-4 xl:col-span-1">
           {moreKpis ? "Fewer" : "More"} numbers <ChevronDown className={cx("size-4 transition", moreKpis && "rotate-180")} />
         </button>
         {moreKpis && (
           <div className="panel fade-in col-span-full grid grid-cols-2 gap-x-6 gap-y-4 px-4 py-3.5 md:grid-cols-5">
-            <Stat label="units busy" value={pct(m.utilisation)} hint={`${m.idle_with_demand_ticks} idle minutes while people waited`} />
-            <Stat label="fairness" value={fmt(m.fairness_jain, 2)} hint="1.0 = every area waits equally" tone="info" />
-            <Stat label="route changes" value={m.reroutes} hint="units re-planned their path" />
-            <Stat label="reassignments" value={m.reassignments} hint={`${m.cancellations} missions cancelled`} />
-            <Stat label="blocked moves" value={m.blocked_moves} hint="stopped at a closed road" />
+            <Stat info="Share of time units spent on missions." label="units busy" value={pct(m.utilisation)} hint={`${m.idle_with_demand_ticks} idle minutes while people waited`} />
+            <Stat info="How evenly waiting time is shared between areas: 1.0 means every area waits equally; lower means some areas wait longer." label="fairness" value={fmt(m.fairness_jain, 2)} hint="1.0 = every area waits equally" tone="info" />
+            <Stat info="Times a unit had to change its path, for example because a road flooded or a bridge closed." label="route changes" value={m.reroutes} hint="units re-planned their path" />
+            <Stat info="Rescues handed to a different unit after a failure." label="reassignments" value={m.reassignments} hint={`${m.cancellations} missions cancelled`} />
+            <Stat info="Times a unit reached a closed road and was stopped by the safety check before entering it." label="blocked moves" value={m.blocked_moves} hint="stopped at a closed road" />
           </div>
         )}
       </div>
@@ -207,7 +231,7 @@ export default function Command() {
   );
 }
 
-function Kpi(props: { label: string; value: React.ReactNode; unit?: string; hint?: string; tone?: "crit" | "warn" | "ok" | "info" }) {
+function Kpi(props: { label: string; value: React.ReactNode; unit?: string; hint?: string; tone?: "crit" | "warn" | "ok" | "info"; info?: string }) {
   return (
     <div className="panel px-3.5 py-3">
       <Stat {...props} />
@@ -238,6 +262,57 @@ function MiniChart() {
             <Area type="monotone" dataKey="rescued" stroke="#15803d" fill="#dcfce7" strokeWidth={1.5} isAnimationActive={false} />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+const GUIDE_KEY = "resqnet.guide.dismissed";
+
+/** First-visit tips for the console; dismissed once per browser. */
+function GettingStarted() {
+  const [hidden, setHidden] = useState(() => {
+    try {
+      return localStorage.getItem(GUIDE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  if (hidden) return null;
+  const close = () => {
+    setHidden(true);
+    try {
+      localStorage.setItem(GUIDE_KEY, "1");
+    } catch {
+      /* storage unavailable */
+    }
+  };
+  const steps = [
+    ["Press Start", "The flood rises and rescue units start negotiating who goes where."],
+    ["Simulate a failure", "Break a bridge, a boat or a shelter (top right) and watch the plan repair itself."],
+    ["Click anything", "A request, unit or road shows its details and why each decision was made."],
+    ["Ask AI", "Ask “why was this reassigned?” and get an answer that cites the records."],
+  ];
+  return (
+    <div className="panel fade-in flex flex-col gap-3 border-brand/25 bg-brand-soft/40 px-4 py-3 md:flex-row md:items-center">
+      <div className="shrink-0 text-sm font-semibold text-brand">New here? Four things to try</div>
+      <ol className="grid flex-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {steps.map(([t, d], i) => (
+          <li key={t} className="flex gap-2 text-[12.5px] leading-snug">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand text-[11px] font-semibold text-white">{i + 1}</span>
+            <span>
+              <b className="font-medium text-ink">{t}.</b> <span className="text-ink-2">{d}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      <div className="flex shrink-0 items-center gap-2">
+        <Link to="/demo" className="text-[13px] font-medium text-brand hover:underline">
+          Or watch the guided demo
+        </Link>
+        <Button size="sm" variant="ghost" onClick={close} aria-label="Hide these tips">
+          Got it
+        </Button>
       </div>
     </div>
   );
