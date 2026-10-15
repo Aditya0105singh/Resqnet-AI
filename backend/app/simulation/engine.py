@@ -83,10 +83,13 @@ EVENT_TYPES = (
     "PROPOSE_ACTION",
     "APPROVE_PROPOSAL",
     "REJECT_PROPOSAL",
+    "SOS_REPORT",
 )
 
 # actions that may be proposed for human approval (by the recommender, SOS intake, AI commander)
-PROPOSABLE = ("MANUAL_ASSIGN", "CANCEL_ASSIGNMENT", "REQUEST_REASSIGN", "RESOLVE_DISPUTE")
+PROPOSABLE = ("MANUAL_ASSIGN", "CANCEL_ASSIGNMENT", "REQUEST_REASSIGN", "RESOLVE_DISPUTE", "SOS_REPORT")
+# fields a dispatcher may fill in or correct when approving a proposal
+APPROVAL_OVERRIDES = {"SOS_REPORT": ("node", "people", "urgency")}
 PROPOSAL_TTL = 15  # ticks a proposal stays pending before it expires
 DRY_RUN_DETACH = ("frames", "rounds", "audit_log", "decisions", "metric_series", "hashes", "safety_log", "events", "injected", "listeners", "route_ghosts", "uncovered_series", "proposals")
 
@@ -780,12 +783,18 @@ class Engine:
         by = str(p.get("by") or "dispatcher")[:40]
         if by.lower().startswith("ai"):
             raise EventError("an AI assistant can propose actions but cannot approve them")
-        check = self.dry_run(pr["action"], pr["params"])  # re-validate against the state *now*
+        overrides = p.get("set") or {}
+        allowed = APPROVAL_OVERRIDES.get(pr["action"], ())
+        if not isinstance(overrides, dict) or any(k not in allowed for k in overrides):
+            raise EventError(f"{pr['action']} approval can only set {list(allowed) or 'nothing'}")
+        params = {**pr["params"], **overrides}
+        check = self.dry_run(pr["action"], params)  # re-validate against the state *now*
         if not check["ok"]:
-            pr["preview"] = check
-            raise EventError(f"{pr['id']} no longer valid: {check['summary']}")
-        sub = self._apply_event(pr["action"], pr["params"], f"approved:{pr['id']}")
-        pr.update(status="APPROVED", decided_tick=self.world.tick, decided_by=by, outcome="; ".join(sub.effects))
+            if not overrides:
+                pr["preview"] = check
+            raise EventError(f"{pr['id']} not valid with {overrides}: {check['summary']}" if overrides else f"{pr['id']} no longer valid: {check['summary']}")
+        sub = self._apply_event(pr["action"], params, f"approved:{pr['id']}")
+        pr.update(status="APPROVED", decided_tick=self.world.tick, decided_by=by, outcome="; ".join(sub.effects), params=params, overrides=overrides)
         ev.effects.append(f"{pr['id']} approved by {by}: {pr['outcome']}")
 
     def _ev_reject_proposal(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
@@ -808,6 +817,49 @@ class Engine:
         for pr in self.proposals.values():
             if pr["status"] == "PENDING":
                 pr["preview"] = self.dry_run(pr["action"], pr["params"])
+
+    def _ev_sos_report(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
+        """A citizen SOS (already extracted). Enters fusion as a resident-reliability report;
+        verbatim forwards share a fingerprint the engine computes from the text itself."""
+        from ..intelligence.extract import fingerprint
+
+        w = self.world
+        text = str(p.get("text") or "").strip()[:2000]
+        if not text:
+            raise EventError("SOS text is empty")
+        if not p.get("node"):
+            raise EventError("location required: the dispatcher must place this SOS on the map")
+        node = self._need(p, "node", w.nodes, "node")
+        if node.kind == "river":
+            raise EventError("an SOS must be placed on land")
+        people = p.get("people")
+        if people is not None and (isinstance(people, bool) or not isinstance(people, int) or not 1 <= people <= 60):
+            raise EventError("people must be an integer 1..60 or unknown")
+        urgency = p.get("urgency", 3)
+        if isinstance(urgency, bool) or not isinstance(urgency, int) or not 1 <= urgency <= 5:
+            raise EventError("urgency must be an integer 1..5")
+        claim = p.get("claim") or "PRESENT"
+        if claim not in ("PRESENT", "NO_VICTIMS"):
+            raise EventError("claim must be PRESENT or NO_VICTIMS")
+        fp = fingerprint(text)
+        # simulated ground truth: a citizen SOS describes real people unless it says nobody is there;
+        # forwards of the same message share one truth record
+        prior = next((r for r in w.reports.values() if r.fingerprint == fp and r.truth_id), None)
+        tid = ""
+        if claim == "PRESENT":
+            if prior:
+                tid = prior.truth_id
+            else:
+                tid = f"U{len(w.truth) + 1:03d}"
+                w.truth[tid] = {"id": tid, "tick": w.tick, "node": node.id, "people": people or 4, "urgency": urgency, "exists": True, "remaining": people or 4}
+        shared = p.get("location_source") == "shared"
+        rep = IncidentReport(
+            w.next_id("RPT"), w.tick, "resident", RELIABILITY["resident"], node.id, people, urgency, claim,
+            0.0 if shared else 0.3, tid, note=f"citizen SOS ({p.get('lang') or '?'}, location {p.get('location_source') or 'dispatcher'})",
+            fingerprint=fp, text=text, lang=str(p.get("lang") or ""),
+        )
+        inc = report_mod.ingest(self, rep)
+        ev.effects.append(f"citizen SOS {rep.id} at {node.id} ({people or '?'} people, urgency {urgency}, {claim.lower().replace('_', ' ')}) → {inc.id + ' ' + inc.status.lower() if inc else 'logged, no matching incident'}")
 
     def _ev_manual_assign(self, ev: SimulationEvent, p: dict[str, Any]) -> None:
         w = self.world
@@ -1357,7 +1409,7 @@ class Engine:
                 "eligibility": rule,
             },
             "evidence": [
-                {"id": r.id, "source": r.source, "reliability": r.reliability, "claim": r.claim, "people": r.people, "urgency": r.urgency, "tick": r.tick, "node": r.node, "note": r.note, "fingerprint": r.fingerprint}
+                {"id": r.id, "source": r.source, "reliability": r.reliability, "claim": r.claim, "people": r.people, "urgency": r.urgency, "tick": r.tick, "node": r.node, "note": r.note, "fingerprint": r.fingerprint, "text": r.text[:280], "lang": r.lang}
                 for r in (w.reports[x] for x in inc.report_ids)
             ],
             "candidates": [c.to_dict() for c in sorted(cands, key=lambda c: (not c.feasible, c.cost if c.feasible else 9, c.resource_id))] + others,

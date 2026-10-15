@@ -16,6 +16,7 @@ const Arena = lazy(() => import("./pages/Arena"));
 const Replay = lazy(() => import("./pages/Replay"));
 const Safety = lazy(() => import("./pages/Safety"));
 const Reports = lazy(() => import("./pages/Reports"));
+const Sos = lazy(() => import("./pages/Sos"));
 
 export default function App() {
   const bootstrap = useSim((s) => s.bootstrap);
@@ -46,6 +47,7 @@ export default function App() {
               <Route path="/replay" element={<Replay />} />
               <Route path="/safety" element={<Safety />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/sos" element={<Sos />} />
               <Route path="*" element={<Navigate to="/command" replace />} />
             </Routes>
           </Suspense>
