@@ -11,8 +11,12 @@ import type { FeedDelta, FeedMessage, Frame, LiveCwc, PriorityRow, Recommendatio
  * the real 2018 CWC gauge record (drill) or a synthetic flood; SOS calls and field reports arrive
  * through the same feed. Everything shown is the engine's own state and reasoning. */
 
+/** Live ops runs on Odisha (the Mahanadi delta, Naraj gauge), so it is visibly a different place
+ * from the Kerala 2018 story in Judge Mode. Falls back to the chosen map if the snapshot is absent. */
+export const LIVE_MAP = "odisha_mahanadi_delta";
+
 const SOURCE_TONE: Record<string, string> = { live: "ok", drill: "warn", synthetic: "info", external: "ink" };
-const SOURCE_LABEL: Record<string, string> = { live: "live · CWC", drill: "drill · 2018 CWC readings", synthetic: "synthetic", external: "external sender" };
+const SOURCE_LABEL: Record<string, string> = { live: "live · CWC", drill: "drill · past flood, real CWC readings", synthetic: "synthetic", external: "external sender" };
 const TYPE_ICON: Record<string, React.ReactNode> = {
   gauge: <Gauge className="size-3.5" />,
   sos: <Siren className="size-3.5" />,
@@ -46,7 +50,8 @@ function Spark({ values, w = 140, h = 30, color = "#0891b2" }: { values: number[
 }
 
 export default function Live() {
-  const { world, frame, sim, createSim, inject, focus, feed, feedStatus, openDecision, setSelection, selection, setFocus, toast, mapId } = useSim();
+  const { world, frame, sim, createSim, inject, focus, feed, feedStatus, openDecision, setSelection, selection, setFocus, toast, mapId, maps } = useSim();
+  const liveMap = maps.some((x) => x.id === LIVE_MAP) ? LIVE_MAP : mapId;
   const [cwc, setCwc] = useState<LiveCwc | null>(null);
   const [board, setBoard] = useState<PriorityRow[]>([]);
   const [mode, setMode] = useState<"drill" | "synthetic">("drill");
@@ -55,22 +60,34 @@ export default function Live() {
   const [busy, setBusy] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
   const [deltaSeq, setDeltaSeq] = useState<number | null>(null);
-  const onLive = sim?.scenario === "live_ops";
+  const onLive = sim?.scenario === "live_ops" && sim?.map === liveMap;
   const [showSetup, setShowSetup] = useState(false);
-  const real = !!world?.map.real;
+  const real = liveMap !== "riverbend";
+  const record = cwc?.station?.record ?? "past flood";
+  const gaugeName = cwc?.station?.name ?? "the gauge";
+
+  // open the live map straight away (calm, nothing running), so the page never shows the Kerala story's map
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || !maps.length) return;
+    const st = useSim.getState();
+    if (st.sim?.scenario === "live_ops" && st.sim.map === liveMap && !st.frame?.finished) return;
+    opened.current = true;
+    createSim("live_ops", "decentralized", { seed: 7 }, liveMap).catch(() => {});
+  }, [maps.length, liveMap, createSim]);
 
   // real CWC readings for the map's gauge and dams (the backend caches; CWC updates hourly)
   useEffect(() => {
     if (!real) return;
     let alive = true;
-    const load = () => api.get<LiveCwc>(`/api/live/cwc?map=${encodeURIComponent(mapId)}`).then((d) => alive && setCwc(d)).catch(() => alive && setCwc({ available: false, reason: "backend unreachable" }));
+    const load = () => api.get<LiveCwc>(`/api/live/cwc?map=${encodeURIComponent(liveMap)}`).then((d) => alive && setCwc(d)).catch(() => alive && setCwc({ available: false, reason: "backend unreachable" }));
     load();
     const t = setInterval(load, 60000);
     return () => {
       alive = false;
       clearInterval(t);
     };
-  }, [mapId, real]);
+  }, [liveMap, real]);
 
   // the engine's own ranking, refreshed every 2 s
   useEffect(() => {
@@ -87,7 +104,7 @@ export default function Live() {
 
   const ensureLiveSim = async (fresh: boolean) => {
     const st = useSim.getState();
-    if (fresh || st.sim?.scenario !== "live_ops" || st.frame?.finished) await createSim("live_ops", "decentralized", { seed: 7 });
+    if (fresh || st.sim?.scenario !== "live_ops" || st.sim.map !== liveMap || st.frame?.finished) await createSim("live_ops", "decentralized", { seed: 7 }, liveMap);
     return useSim.getState().sim!;
   };
   const run = async (label: string, fn: () => Promise<void>) => {
@@ -144,6 +161,11 @@ export default function Live() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <h1 className="font-display text-[26px] leading-tight font-semibold tracking-[-0.02em]">Live ops</h1>
+          {onLive && world && (
+            <div className="mt-1 text-sm font-medium text-ink-2">
+              {world.map.name} <span className="font-normal text-mute">· {world.map.region}</span>
+            </div>
+          )}
           <p className="mt-1 max-w-2xl text-sm text-mute">River readings, SOS calls and field reports arrive through one feed. The agents re-plan after every message and the board shows who is helped first.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -168,7 +190,6 @@ export default function Live() {
         </div>
       </div>
 
-      {!real && <p className="rounded-xl border border-warn/25 bg-warn-soft p-3 text-sm text-warn">Live data needs a real Kerala map. Choose Aluva or Chengannur under New run.</p>}
 
       {/* run bar: always visible */}
       <div className="panel flex flex-wrap items-center gap-3 px-4 py-2.5">
@@ -219,7 +240,7 @@ export default function Live() {
                       {d.name}
                     </span>
                     <span className="mono text-[12px]">
-                      outflow <b>{d.outflow_m3s?.toFixed(0) ?? "—"}</b> m³/s
+                      {d.outflow_m3s == null && d.inflow_m3s != null ? "inflow" : "outflow"} <b>{(d.outflow_m3s ?? d.inflow_m3s)?.toFixed(0) ?? "—"}</b> m³/s
                     </span>
                   </div>
                 ))}
@@ -240,7 +261,7 @@ export default function Live() {
               value={mode}
               onChange={setMode}
               options={[
-                { value: "drill", label: "2018 drill · real CWC gauge readings" },
+                { value: "drill", label: `${record} flood drill · real ${gaugeName} readings` },
                 { value: "synthetic", label: "Synthetic flood · your parameters" },
               ]}
             />
@@ -259,7 +280,7 @@ export default function Live() {
               </Field>
               {mode === "synthetic" && (
                 <>
-                  <Field label="peak (share of 2018)" hint={`${Math.round(p.peak * 100)}%`}>
+                  <Field label={`peak (share of the ${record} flood)`} hint={`${Math.round(p.peak * 100)}%`}>
                     <input type="range" min={0.2} max={1.2} step={0.05} value={p.peak} className="w-full accent-[#0a0a0a]" onChange={(e) => setP({ ...p, peak: Number(e.target.value) })} />
                   </Field>
                   <Field label="rise (hours)" hint={`${p.rise_hours} h`}>
