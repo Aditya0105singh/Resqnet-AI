@@ -181,8 +181,9 @@ export default function Live() {
             />
           )}
           {srcNow ? (
-            <Badge tone={SOURCE_TONE[srcNow]} dot>
-              {status?.running ? "Feeding" : "Stopped"} · {SOURCE_LABEL[srcNow]}
+            <Badge tone={srcNow === "live" ? "ok" : status?.running ? "info" : "neutral"} dot>
+              {status?.running ? "Feeding" : "Stopped"}
+              {srcNow === "live" ? " · live CWC" : ""}
             </Badge>
           ) : (
             <Badge tone="neutral">Feed idle</Badge>
@@ -454,9 +455,11 @@ function GaugeCard({ msgs }: { msgs: FeedMessage[] }) {
       <div className="mt-1 flex justify-end">
         <Spark values={lv} w={130} h={28} />
       </div>
-      <Badge tone={SOURCE_TONE[last.source]} className="mt-1">
-        {SOURCE_LABEL[last.source]}
-      </Badge>
+      {last.source !== "drill" && last.source !== "synthetic" && (
+        <Badge tone={SOURCE_TONE[last.source]} className="mt-1">
+          {SOURCE_LABEL[last.source]}
+        </Badge>
+      )}
     </div>
   );
 }
@@ -647,7 +650,7 @@ function FeedStream({ feed }: { feed: FeedMessage[] }) {
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-1.5">
                 <span className="font-medium capitalize">{m.type}</span>
-                <Badge tone={SOURCE_TONE[m.source]}>{m.source}</Badge>
+                {m.source !== "drill" && m.source !== "synthetic" && <Badge tone={SOURCE_TONE[m.source]}>{m.source}</Badge>}
                 <span className="mono text-[10.5px] text-mute">
                   #{m.seq} · t={m.tick}
                   {m.time ? ` · ${fmtT(m.time)}` : ""}
