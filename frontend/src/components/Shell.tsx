@@ -8,6 +8,7 @@ import type { MapListing, Strategy } from "../types";
 
 type NavItem = { to: string; label: string; desc?: string };
 const PRIMARY: NavItem[] = [
+  { to: "/live", label: "Live ops" },
   { to: "/command", label: "Live console" },
   { to: "/sos", label: "Citizen SOS" },
   { to: "/crew", label: "Crew app" },

@@ -333,6 +333,9 @@ class WorldState:
     map_id: str = "riverbend"
     # real flood event: normalised river discharge (0..1) per tick; None -> synthetic ramp
     flood_curve: Optional[list[float]] = None
+    # live feed: river ramp (0..1) set by the latest gauge reading; overrides curve and synthetic ramp
+    river_override: Optional[float] = None
+    gauge_log: list[dict[str, Any]] = field(default_factory=list)
 
     def partition_of(self, agent_id: str) -> Optional[str]:
         for p in self.partitions:

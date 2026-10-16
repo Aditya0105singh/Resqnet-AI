@@ -11,6 +11,8 @@ import Command from "./pages/Command";
 const Dispatch = lazy(() => import("./pages/Dispatch"));
 const Home = lazy(() => import("./pages/Home"));
 const Judge = lazy(() => import("./pages/Judge"));
+const Live = lazy(() => import("./pages/Live"));
+const Data = lazy(() => import("./pages/Data"));
 const Agents = lazy(() => import("./pages/Agents"));
 const Scenarios = lazy(() => import("./pages/Scenarios"));
 const DecisionLab = lazy(() => import("./pages/DecisionLab"));
@@ -52,6 +54,8 @@ export default function App() {
               <Route path="/research" element={<Research />} />
               <Route path="/chaos" element={<Scenarios />} />
               <Route path="/audit" element={<Replay />} />
+              <Route path="/live" element={<Live />} />
+              <Route path="/data" element={<Data />} />
               <Route path="/dispatch" element={<Dispatch />} />
               <Route path="/agents" element={<Agents />} />
               <Route path="/scenarios" element={<Navigate to="/chaos" replace />} />
